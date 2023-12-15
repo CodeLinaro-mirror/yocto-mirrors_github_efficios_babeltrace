@@ -3955,7 +3955,7 @@ enum bt_config_cli_args_status bt_config_convert_from_args(int argc,
 		switch (opt_descr->id) {
 		case OPT_BEGIN:
 			if (trimmer_has_begin) {
-				BT_CLI_LOGE_APPEND_CAUSE("At --begin option: --begin or --timerange option already specified\n    %s\n",
+				BT_CLI_LOGE_APPEND_CAUSE("At --begin option: --begin or --timerange option already specified\n    %s",
 					arg);
 				goto error;
 			}
@@ -3970,7 +3970,7 @@ enum bt_config_cli_args_status bt_config_convert_from_args(int argc,
 			break;
 		case OPT_END:
 			if (trimmer_has_end) {
-				BT_CLI_LOGE_APPEND_CAUSE("At --end option: --end or --timerange option already specified\n    %s\n",
+				BT_CLI_LOGE_APPEND_CAUSE("At --end option: --end or --timerange option already specified\n    %s",
 					arg);
 				goto error;
 			}
@@ -3989,7 +3989,7 @@ enum bt_config_cli_args_status bt_config_convert_from_args(int argc,
 			char *end;
 
 			if (trimmer_has_begin || trimmer_has_end) {
-				BT_CLI_LOGE_APPEND_CAUSE("At --timerange option: --begin, --end, or --timerange option already specified\n    %s\n",
+				BT_CLI_LOGE_APPEND_CAUSE("At --timerange option: --begin, --end, or --timerange option already specified\n    %s",
 					arg);
 				goto error;
 			}
@@ -4035,7 +4035,7 @@ enum bt_config_cli_args_status bt_config_convert_from_args(int argc,
 			break;
 		case OPT_CLOCK_OFFSET:
 			if (ctf_fs_source_clock_class_offset_arg) {
-				BT_CLI_LOGE_APPEND_CAUSE("Duplicate --clock-offset option\n");
+				BT_CLI_LOGE_APPEND_CAUSE("Duplicate --clock-offset option");
 				goto error;
 			}
 
@@ -4047,7 +4047,7 @@ enum bt_config_cli_args_status bt_config_convert_from_args(int argc,
 			break;
 		case OPT_CLOCK_OFFSET_NS:
 			if (ctf_fs_source_clock_class_offset_ns_arg) {
-				BT_CLI_LOGE_APPEND_CAUSE("Duplicate --clock-offset-ns option\n");
+				BT_CLI_LOGE_APPEND_CAUSE("Duplicate --clock-offset-ns option");
 				goto error;
 			}
 

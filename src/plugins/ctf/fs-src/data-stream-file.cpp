@@ -546,7 +546,7 @@ ctf::src::Buf Medium::buf(const bt2c::DataLen requestedOffsetInStream, const bt2
 
     ctf::src::Buf buf {bufStart, bufLen};
 
-    BT_CPPLOGD("CtfFsMedium::buf returns: buf-addr={}, buf-size-bytes={}\n", fmt::ptr(buf.addr()),
+    BT_CPPLOGD("CtfFsMedium::buf returns: buf-addr={}, buf-size-bytes={}", fmt::ptr(buf.addr()),
                buf.size().bytes());
 
     return buf;

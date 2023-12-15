@@ -475,7 +475,7 @@ auto_source_discovery_internal_status support_info_query_all_sources(
 				}
 
 				BT_LOGD("babeltrace.support-info query: success: component-class-name=source.%s.%s, input=%s, "
-					"type=%s, weight=%f, group=%s\n",
+					"type=%s, weight=%f, group=%s",
 					bt_plugin_get_name(plugin), bt_component_class_get_name(cc), input,
 					input_type, weight, group_value ? bt_value_string_get(group_value) : "(none)");
 
@@ -497,7 +497,7 @@ auto_source_discovery_internal_status support_info_query_all_sources(
 				goto error;
 			} else {
 				BT_LOGD("babeltrace.support-info query: failure: component-class-name=source.%s.%s, input=%s, "
-					"type=%s, status=%s\n",
+					"type=%s, status=%s",
 					bt_plugin_get_name(plugin), bt_component_class_get_name(cc), input,
 					input_type,
 					bt_common_func_status_string(query_status));

@@ -28,7 +28,7 @@ static int ctf_visitor_unary_expression(int depth, struct ctf_node *node,
         break;
     default:
         _BT_CPPLOGE_APPEND_CAUSE_LINENO(logger, node->lineno,
-                                        "Unknown expression link type: type={}\n",
+                                        "Unknown expression link type: type={}",
                                         (int) node->u.unary_expression.link);
         return -EINVAL;
     }
@@ -48,7 +48,7 @@ static int ctf_visitor_unary_expression(int depth, struct ctf_node *node,
     case UNARY_UNKNOWN:
     default:
         _BT_CPPLOGE_APPEND_CAUSE_LINENO(logger, node->lineno,
-                                        "Unknown expression link type: type={}\n",
+                                        "Unknown expression link type: type={}",
                                         (int) node->u.unary_expression.link);
         return -EINVAL;
     }
@@ -89,7 +89,7 @@ static int ctf_visitor_type_specifier(int depth, struct ctf_node *node, const bt
 
     case TYPESPEC_UNKNOWN:
     default:
-        _BT_CPPLOGE_APPEND_CAUSE_LINENO(logger, node->lineno, "Unknown type specifier: type={}\n",
+        _BT_CPPLOGE_APPEND_CAUSE_LINENO(logger, node->lineno, "Unknown type specifier: type={}",
                                         (int) node->u.field_class_specifier.type);
         return -EINVAL;
     }
@@ -141,7 +141,7 @@ static int ctf_visitor_field_class_declarator(int depth, struct ctf_node *node,
         break;
     case TYPEDEC_UNKNOWN:
     default:
-        _BT_CPPLOGE_APPEND_CAUSE_LINENO(logger, node->lineno, "Unknown type declarator: type={}\n",
+        _BT_CPPLOGE_APPEND_CAUSE_LINENO(logger, node->lineno, "Unknown type declarator: type={}",
                                         (int) node->u.field_class_declarator.type);
         return -EINVAL;
     }
@@ -434,7 +434,7 @@ int ctf_visitor_parent_links(int depth, struct ctf_node *node, const bt2c::Logge
 
     case NODE_UNKNOWN:
     default:
-        _BT_CPPLOGE_APPEND_CAUSE_LINENO(logger, node->lineno, "Unknown node type: type={}\n",
+        _BT_CPPLOGE_APPEND_CAUSE_LINENO(logger, node->lineno, "Unknown node type: type={}",
                                         (int) node->type);
         return -EINVAL;
     }
