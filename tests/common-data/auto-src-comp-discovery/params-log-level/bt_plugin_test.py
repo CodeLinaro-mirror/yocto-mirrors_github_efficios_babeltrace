@@ -6,63 +6,44 @@
 import os
 
 import bt2
+import bt_tests_cli_utils as btu_cli
 
-# This file defines source component classes to help verify the parameters an
-# log levels passed to components.  Each component creates one stream, with a
-# name derived from either:
+# This file defines source component classes to help verify the parameters, log
+# levels, and Python objects passed to components. The `what` parameter defines
+# what to report (see below).
 #
-#   - the received params that start with `test-`
-#   - the received log level
-#
-# The `what` parameter determines what is used.
-
-
-class TestIter(bt2._UserMessageIterator):
-    def __init__(self, config, output_port):
-        params = output_port.user_data["params"]
-        obj = output_port.user_data["obj"]
-
-        comp_cls_name = self._component.__class__.__name__
-
-        if params["what"] == "test-params":
-            items = sorted([str(x) for x in params.items() if x[0].startswith("test-")])
-            stream_name = f"{comp_cls_name}: {', '.join(items)}"
-        elif params["what"] == "log-level":
-            log_level = self._component.logging_level
-            stream_name = f"{comp_cls_name}: {log_level}"
-        elif params["what"] == "python-obj":
-            assert type(obj) is str or obj is None
-            stream_name = f"{comp_cls_name}: {obj}"
-        else:
-            assert False
-
-        sc = output_port.user_data["sc"]
-        tc = sc.trace_class
-        t = tc()
-        s = t.create_stream(sc, name=stream_name)
-
-        self._msgs = [
-            self._create_stream_beginning_message(s),
-            self._create_stream_end_message(s),
-        ]
-
-    def __next__(self):
-        if len(self._msgs) == 0:
-            raise StopIteration
-
-        return self._msgs.pop(0)
+# Whatever we report, we print it on stdout, prefixed with our class name. The
+# tests capture that output: the CLI tests capture the CLI's stdout, while the
+# Python tests capture their own, through pytest's `capsys` fixture.
 
 
 class Base:
     def __init__(self, params, obj):
-        tc = self._create_trace_class()
-        sc = tc.create_stream_class()
+        comp_cls_name = self.__class__.__name__
 
-        self._add_output_port("out", {"params": params, "obj": obj, "sc": sc})
+        if params["what"] == "test-params":
+            # Report the received parameters, filtering out those that don't
+            # start with `test-`.
+            what = btu_cli.cli_params_from_obj(
+                {k: v for k, v in params.items() if k.startswith("test-")}
+            )
+        elif params["what"] == "log-level":
+            # Report the received log level.
+            what = self.logging_level
+        elif params["what"] == "python-obj":
+            # Report the identity of the Python object we received, so that a
+            # test can check that we received the exact object it passed.
+            what = id(obj) if obj is not None else None
+        else:
+            assert False
+
+        print(f"{comp_cls_name}: {what}")
 
 
 @bt2.plugin_component_class
-class TestSourceA(Base, bt2._UserSourceComponent, message_iterator_class=TestIter):
+class TestSourceA(
+    Base, bt2._UserSourceComponent, message_iterator_class=bt2._UserMessageIterator
+):
     def __init__(self, config, params, obj):
         super().__init__(params, obj)
 
@@ -85,7 +66,9 @@ class TestSourceA(Base, bt2._UserSourceComponent, message_iterator_class=TestIte
 
 
 @bt2.plugin_component_class
-class TestSourceB(Base, bt2._UserSourceComponent, message_iterator_class=TestIter):
+class TestSourceB(
+    Base, bt2._UserSourceComponent, message_iterator_class=bt2._UserMessageIterator
+):
     def __init__(self, config, params, obj):
         super().__init__(params, obj)
 

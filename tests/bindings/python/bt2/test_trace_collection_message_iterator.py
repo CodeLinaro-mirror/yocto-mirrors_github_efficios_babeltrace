@@ -573,45 +573,72 @@ def dir_ab(ascd_params_log_level_dir):
     return ascd_params_log_level_dir / "dir-ab"
 
 
+def _assert_reported(capsys, expected):
+    # Each instantiated component prints one line on stdout, prefixed with its
+    # class name. The order in which the lines are printed is unpredictable (it
+    # depends on the order the filesystem is walked), so sort before comparing.
+    assert sorted(capsys.readouterr().out.splitlines()) == sorted(expected)
+
+
 def _two_comps_from_one_spec(dir_ab, params, obj=None, logging_level=None):
-    msgs = [
-        x
-        for x in bt2.TraceCollectionMessageIterator(
-            [
-                bt2.AutoSourceComponentSpec(
-                    str(dir_ab), params=params, obj=obj, logging_level=logging_level
-                )
-            ]
+    specs = [
+        bt2.AutoSourceComponentSpec(
+            str(dir_ab), params=params, obj=obj, logging_level=logging_level
         )
-        if type(x) is bt2._StreamBeginningMessageConst
     ]
-
-    assert len(msgs) == 2
-    return msgs
+    bt2.TraceCollectionMessageIterator(specs)
 
 
-def test_ascd_params_two_comps_from_one_spec(ascd_params_log_level_env, dir_ab):
-    msgs = _two_comps_from_one_spec(
-        dir_ab, params={"test-allo": "madame", "what": "test-params"}
+def test_ascd_params_two_comps_from_one_spec(ascd_params_log_level_env, dir_ab, capsys):
+    # Both components instantiated from the single `AutoSourceComponentSpec`
+    # receive its parameters.
+    _two_comps_from_one_spec(
+        dir_ab,
+        params={"test-allo": "madame", "what": "test-params"},
     )
 
-    assert msgs[0].stream.name == "TestSourceA: ('test-allo', 'madame')"
-    assert msgs[1].stream.name == "TestSourceB: ('test-allo', 'madame')"
-
-
-def test_ascd_obj_two_comps_from_one_spec(ascd_params_log_level_env, dir_ab):
-    msgs = _two_comps_from_one_spec(dir_ab, params={"what": "python-obj"}, obj="deore")
-    assert msgs[0].stream.name == "TestSourceA: deore"
-    assert msgs[1].stream.name == "TestSourceB: deore"
-
-
-def test_ascd_log_level_two_comps_from_one_spec(ascd_params_log_level_env, dir_ab):
-    msgs = _two_comps_from_one_spec(
-        dir_ab, params={"what": "log-level"}, logging_level=bt2.LoggingLevel.DEBUG
+    _assert_reported(
+        capsys,
+        [
+            'TestSourceA: test-allo="madame"',
+            'TestSourceB: test-allo="madame"',
+        ],
     )
 
-    assert msgs[0].stream.name == f"TestSourceA: {bt2.LoggingLevel.DEBUG}"
-    assert msgs[1].stream.name == f"TestSourceB: {bt2.LoggingLevel.DEBUG}"
+
+def test_ascd_obj_two_comps_from_one_spec(ascd_params_log_level_env, dir_ab, capsys):
+    # Both components instantiated from the single `AutoSourceComponentSpec`
+    # receive its Python object.
+    the_obj = object()
+    _two_comps_from_one_spec(dir_ab, params={"what": "python-obj"}, obj=the_obj)
+
+    _assert_reported(
+        capsys,
+        [
+            f"TestSourceA: {id(the_obj)}",
+            f"TestSourceB: {id(the_obj)}",
+        ],
+    )
+
+
+def test_ascd_log_level_two_comps_from_one_spec(
+    ascd_params_log_level_env, dir_ab, capsys
+):
+    # Both components instantiated from the single `AutoSourceComponentSpec`
+    # receive its log level.
+    _two_comps_from_one_spec(
+        dir_ab,
+        params={"what": "log-level"},
+        logging_level=bt2.LoggingLevel.DEBUG,
+    )
+
+    _assert_reported(
+        capsys,
+        [
+            "TestSourceA: LoggingLevel.DEBUG",
+            "TestSourceB: LoggingLevel.DEBUG",
+        ],
+    )
 
 
 def _two_comps_from_two_specs(
@@ -624,61 +651,75 @@ def _two_comps_from_two_specs(
     logging_level_a=None,
     logging_level_b=None,
 ):
-    msgs = [
-        x
-        for x in bt2.TraceCollectionMessageIterator(
-            [
-                bt2.AutoSourceComponentSpec(
-                    str(dir_a),
-                    params=params_a,
-                    obj=obj_a,
-                    logging_level=logging_level_a,
-                ),
-                bt2.AutoSourceComponentSpec(
-                    str(dir_b),
-                    params=params_b,
-                    obj=obj_b,
-                    logging_level=logging_level_b,
-                ),
-            ]
-        )
-        if type(x) is bt2._StreamBeginningMessageConst
+    specs = [
+        bt2.AutoSourceComponentSpec(
+            str(dir_a),
+            params=params_a,
+            obj=obj_a,
+            logging_level=logging_level_a,
+        ),
+        bt2.AutoSourceComponentSpec(
+            str(dir_b),
+            params=params_b,
+            obj=obj_b,
+            logging_level=logging_level_b,
+        ),
     ]
-
-    assert len(msgs) == 2
-    return msgs
+    bt2.TraceCollectionMessageIterator(specs)
 
 
-def test_ascd_params_two_comps_from_two_specs(ascd_params_log_level_env, dir_a, dir_b):
-    msgs = _two_comps_from_two_specs(
+def test_ascd_params_two_comps_from_two_specs(
+    ascd_params_log_level_env, dir_a, dir_b, capsys
+):
+    # Each component receives the parameters of the
+    # `AutoSourceComponentSpec` it comes from.
+    _two_comps_from_two_specs(
         dir_a,
         dir_b,
         params_a={"test-allo": "madame", "what": "test-params"},
         params_b={"test-bonjour": "monsieur", "what": "test-params"},
     )
 
-    assert msgs[0].stream.name == "TestSourceA: ('test-allo', 'madame')"
-    assert msgs[1].stream.name == "TestSourceB: ('test-bonjour', 'monsieur')"
+    _assert_reported(
+        capsys,
+        [
+            'TestSourceA: test-allo="madame"',
+            'TestSourceB: test-bonjour="monsieur"',
+        ],
+    )
 
 
-def test_ascd_obj_two_comps_from_two_specs(ascd_params_log_level_env, dir_a, dir_b):
-    msgs = _two_comps_from_two_specs(
+def test_ascd_obj_two_comps_from_two_specs(
+    ascd_params_log_level_env, dir_a, dir_b, capsys
+):
+    # Each component receives the Python object of the
+    # `AutoSourceComponentSpec` it comes from.
+    obj_a = object()
+    obj_b = object()
+    _two_comps_from_two_specs(
         dir_a,
         dir_b,
         params_a={"what": "python-obj"},
         params_b={"what": "python-obj"},
-        obj_a="deore",
-        obj_b="alivio",
+        obj_a=obj_a,
+        obj_b=obj_b,
     )
 
-    assert msgs[0].stream.name == "TestSourceA: deore"
-    assert msgs[1].stream.name == "TestSourceB: alivio"
+    _assert_reported(
+        capsys,
+        [
+            f"TestSourceA: {id(obj_a)}",
+            f"TestSourceB: {id(obj_b)}",
+        ],
+    )
 
 
 def test_ascd_log_level_two_comps_from_two_specs(
-    ascd_params_log_level_env, dir_a, dir_b
+    ascd_params_log_level_env, dir_a, dir_b, capsys
 ):
-    msgs = _two_comps_from_two_specs(
+    # Each component receives the log level of the `AutoSourceComponentSpec`
+    # it comes from.
+    _two_comps_from_two_specs(
         dir_a,
         dir_b,
         params_a={"what": "log-level"},
@@ -687,8 +728,13 @@ def test_ascd_log_level_two_comps_from_two_specs(
         logging_level_b=bt2.LoggingLevel.TRACE,
     )
 
-    assert msgs[0].stream.name == f"TestSourceA: {bt2.LoggingLevel.DEBUG}"
-    assert msgs[1].stream.name == f"TestSourceB: {bt2.LoggingLevel.TRACE}"
+    _assert_reported(
+        capsys,
+        [
+            "TestSourceA: LoggingLevel.DEBUG",
+            "TestSourceB: LoggingLevel.TRACE",
+        ],
+    )
 
 
 def _one_comp_from_one_spec_one_comp_from_both_1(
@@ -701,69 +747,78 @@ def _one_comp_from_one_spec_one_comp_from_both_1(
     logging_level_a=None,
     logging_level_ab=None,
 ):
-    msgs = [
-        x
-        for x in bt2.TraceCollectionMessageIterator(
-            [
-                bt2.AutoSourceComponentSpec(
-                    str(dir_a),
-                    params=params_a,
-                    obj=obj_a,
-                    logging_level=logging_level_a,
-                ),
-                bt2.AutoSourceComponentSpec(
-                    str(dir_ab),
-                    params=params_ab,
-                    obj=obj_ab,
-                    logging_level=logging_level_ab,
-                ),
-            ]
-        )
-        if type(x) is bt2._StreamBeginningMessageConst
+    specs = [
+        bt2.AutoSourceComponentSpec(
+            str(dir_a),
+            params=params_a,
+            obj=obj_a,
+            logging_level=logging_level_a,
+        ),
+        bt2.AutoSourceComponentSpec(
+            str(dir_ab),
+            params=params_ab,
+            obj=obj_ab,
+            logging_level=logging_level_ab,
+        ),
     ]
-
-    assert len(msgs) == 2
-    return msgs
+    bt2.TraceCollectionMessageIterator(specs)
 
 
 def test_ascd_params_one_comp_from_one_spec_one_comp_from_both_1(
-    ascd_params_log_level_env, dir_a, dir_ab
+    ascd_params_log_level_env, dir_a, dir_ab, capsys
 ):
-    msgs = _one_comp_from_one_spec_one_comp_from_both_1(
+    # `TestSourceA` comes from both `AutoSourceComponentSpec`s, so it receives
+    # the merged parameters, while `TestSourceB` only receives those of the
+    # second one.
+    _one_comp_from_one_spec_one_comp_from_both_1(
         dir_a,
         dir_ab,
         params_a={"test-allo": "madame", "what": "test-params"},
         params_ab={"test-bonjour": "monsieur", "what": "test-params"},
     )
 
-    assert (
-        msgs[0].stream.name
-        == "TestSourceA: ('test-allo', 'madame'), ('test-bonjour', 'monsieur')"
+    _assert_reported(
+        capsys,
+        [
+            'TestSourceA: test-allo="madame", test-bonjour="monsieur"',
+            'TestSourceB: test-bonjour="monsieur"',
+        ],
     )
-
-    assert msgs[1].stream.name == "TestSourceB: ('test-bonjour', 'monsieur')"
 
 
 def test_ascd_obj_one_comp_from_one_spec_one_comp_from_both_1(
-    ascd_params_log_level_env, dir_a, dir_ab
+    ascd_params_log_level_env, dir_a, dir_ab, capsys
 ):
-    msgs = _one_comp_from_one_spec_one_comp_from_both_1(
+    # `TestSourceA` comes from both `AutoSourceComponentSpec`s, so the Python
+    # object of the second one overrides the one of the first: neither
+    # component receives `obj_a`.
+    obj_a = object()
+    obj_ab = object()
+
+    _one_comp_from_one_spec_one_comp_from_both_1(
         dir_a,
         dir_ab,
         params_a={"what": "python-obj"},
         params_ab={"what": "python-obj"},
-        obj_a="deore",
-        obj_ab="alivio",
+        obj_a=obj_a,
+        obj_ab=obj_ab,
     )
 
-    assert msgs[0].stream.name == "TestSourceA: alivio"
-    assert msgs[1].stream.name == "TestSourceB: alivio"
+    _assert_reported(
+        capsys,
+        [
+            f"TestSourceA: {id(obj_ab)}",
+            f"TestSourceB: {id(obj_ab)}",
+        ],
+    )
 
 
 def test_ascd_log_level_one_comp_from_one_spec_one_comp_from_both_1(
-    ascd_params_log_level_env, dir_a, dir_ab
+    ascd_params_log_level_env, dir_a, dir_ab, capsys
 ):
-    msgs = _one_comp_from_one_spec_one_comp_from_both_1(
+    # `TestSourceA` comes from both `AutoSourceComponentSpec`s, so the log
+    # level of the second one overrides the one of the first.
+    _one_comp_from_one_spec_one_comp_from_both_1(
         dir_a,
         dir_ab,
         params_a={"what": "log-level"},
@@ -772,8 +827,13 @@ def test_ascd_log_level_one_comp_from_one_spec_one_comp_from_both_1(
         logging_level_ab=bt2.LoggingLevel.TRACE,
     )
 
-    assert msgs[0].stream.name == f"TestSourceA: {bt2.LoggingLevel.TRACE}"
-    assert msgs[1].stream.name == f"TestSourceB: {bt2.LoggingLevel.TRACE}"
+    _assert_reported(
+        capsys,
+        [
+            "TestSourceA: LoggingLevel.TRACE",
+            "TestSourceB: LoggingLevel.TRACE",
+        ],
+    )
 
 
 def _one_comp_from_one_spec_one_comp_from_both_2(
@@ -786,35 +846,30 @@ def _one_comp_from_one_spec_one_comp_from_both_2(
     logging_level_ab=None,
     logging_level_a=None,
 ):
-    msgs = [
-        x
-        for x in bt2.TraceCollectionMessageIterator(
-            [
-                bt2.AutoSourceComponentSpec(
-                    str(dir_ab),
-                    params=params_ab,
-                    obj=obj_ab,
-                    logging_level=logging_level_ab,
-                ),
-                bt2.AutoSourceComponentSpec(
-                    str(dir_a),
-                    params=params_a,
-                    obj=obj_a,
-                    logging_level=logging_level_a,
-                ),
-            ]
-        )
-        if type(x) is bt2._StreamBeginningMessageConst
+    specs = [
+        bt2.AutoSourceComponentSpec(
+            str(dir_ab),
+            params=params_ab,
+            obj=obj_ab,
+            logging_level=logging_level_ab,
+        ),
+        bt2.AutoSourceComponentSpec(
+            str(dir_a),
+            params=params_a,
+            obj=obj_a,
+            logging_level=logging_level_a,
+        ),
     ]
-
-    assert len(msgs) == 2
-    return msgs
+    bt2.TraceCollectionMessageIterator(specs)
 
 
 def test_ascd_params_one_comp_from_one_spec_one_comp_from_both_2(
-    ascd_params_log_level_env, dir_a, dir_ab
+    ascd_params_log_level_env, dir_a, dir_ab, capsys
 ):
-    msgs = _one_comp_from_one_spec_one_comp_from_both_2(
+    # Same as above, with the `AutoSourceComponentSpec`s in the other order:
+    # `TestSourceA` comes from both, so it receives the merged parameters,
+    # with those of the second one winning.
+    _one_comp_from_one_spec_one_comp_from_both_2(
         dir_ab,
         dir_a,
         params_ab={
@@ -825,37 +880,48 @@ def test_ascd_params_one_comp_from_one_spec_one_comp_from_both_2(
         params_a={"test-bonjour": "monsieur", "what": "test-params"},
     )
 
-    assert (
-        msgs[0].stream.name
-        == "TestSourceA: ('test-bonjour', 'monsieur'), ('test-salut', 'les amis')"
-    )
-
-    assert (
-        msgs[1].stream.name
-        == "TestSourceB: ('test-bonjour', 'madame'), ('test-salut', 'les amis')"
+    _assert_reported(
+        capsys,
+        [
+            'TestSourceA: test-bonjour="monsieur", test-salut="les amis"',
+            'TestSourceB: test-bonjour="madame", test-salut="les amis"',
+        ],
     )
 
 
 def test_ascd_obj_one_comp_from_one_spec_one_comp_from_both_2(
-    ascd_params_log_level_env, dir_a, dir_ab
+    ascd_params_log_level_env, dir_a, dir_ab, capsys
 ):
-    msgs = _one_comp_from_one_spec_one_comp_from_both_2(
+    # `TestSourceA` comes from both `AutoSourceComponentSpec`s, so the Python
+    # object of the second one wins, while `TestSourceB` receives the one of
+    # the first.
+    obj_ab = object()
+    obj_a = object()
+    _one_comp_from_one_spec_one_comp_from_both_2(
         dir_ab,
         dir_a,
         params_ab={"what": "python-obj"},
         params_a={"what": "python-obj"},
-        obj_ab="deore",
-        obj_a="alivio",
+        obj_ab=obj_ab,
+        obj_a=obj_a,
     )
 
-    assert msgs[0].stream.name == "TestSourceA: alivio"
-    assert msgs[1].stream.name == "TestSourceB: deore"
+    _assert_reported(
+        capsys,
+        [
+            f"TestSourceA: {id(obj_a)}",
+            f"TestSourceB: {id(obj_ab)}",
+        ],
+    )
 
 
 def test_ascd_log_level_one_comp_from_one_spec_one_comp_from_both_2(
-    ascd_params_log_level_env, dir_a, dir_ab
+    ascd_params_log_level_env, dir_a, dir_ab, capsys
 ):
-    msgs = _one_comp_from_one_spec_one_comp_from_both_2(
+    # `TestSourceA` comes from both `AutoSourceComponentSpec`s, so the log
+    # level of the second one wins, while `TestSourceB` receives the one of
+    # the first.
+    _one_comp_from_one_spec_one_comp_from_both_2(
         dir_ab,
         dir_a,
         params_ab={"what": "log-level"},
@@ -864,48 +930,61 @@ def test_ascd_log_level_one_comp_from_one_spec_one_comp_from_both_2(
         logging_level_a=bt2.LoggingLevel.TRACE,
     )
 
-    assert msgs[0].stream.name == f"TestSourceA: {bt2.LoggingLevel.TRACE}"
-    assert msgs[1].stream.name == f"TestSourceB: {bt2.LoggingLevel.DEBUG}"
+    _assert_reported(
+        capsys,
+        [
+            "TestSourceA: LoggingLevel.TRACE",
+            "TestSourceB: LoggingLevel.DEBUG",
+        ],
+    )
 
 
-def test_ascd_obj_override_with_none(ascd_params_log_level_env, dir_a, dir_ab):
-    msgs = [
-        x
-        for x in bt2.TraceCollectionMessageIterator(
-            [
-                bt2.AutoSourceComponentSpec(
-                    str(dir_ab), params={"what": "python-obj"}, obj="deore"
-                ),
-                bt2.AutoSourceComponentSpec(
-                    str(dir_a), params={"what": "python-obj"}, obj=None
-                ),
-            ]
-        )
-        if type(x) is bt2._StreamBeginningMessageConst
+def test_ascd_obj_override_with_none(ascd_params_log_level_env, dir_a, dir_ab, capsys):
+    # `TestSourceA` comes from both `AutoSourceComponentSpec`s, and the second
+    # one explicitly overrides the Python object with `None`, so `TestSourceA`
+    # receives `None` while `TestSourceB` receives `obj_ab`.
+    obj_ab = object()
+    specs = [
+        bt2.AutoSourceComponentSpec(
+            str(dir_ab), params={"what": "python-obj"}, obj=obj_ab
+        ),
+        bt2.AutoSourceComponentSpec(
+            str(dir_a), params={"what": "python-obj"}, obj=None
+        ),
     ]
+    bt2.TraceCollectionMessageIterator(specs)
 
-    assert len(msgs) == 2
-    assert msgs[0].stream.name == "TestSourceA: None"
-    assert msgs[1].stream.name == "TestSourceB: deore"
+    _assert_reported(
+        capsys,
+        [
+            "TestSourceA: None",
+            f"TestSourceB: {id(obj_ab)}",
+        ],
+    )
 
 
-def test_ascd_obj_no_override_with_no_obj(ascd_params_log_level_env, dir_a, dir_ab):
-    msgs = [
-        x
-        for x in bt2.TraceCollectionMessageIterator(
-            [
-                bt2.AutoSourceComponentSpec(
-                    str(dir_ab), params={"what": "python-obj"}, obj="deore"
-                ),
-                bt2.AutoSourceComponentSpec(str(dir_a), params={"what": "python-obj"}),
-            ]
-        )
-        if type(x) is bt2._StreamBeginningMessageConst
+def test_ascd_obj_no_override_with_no_obj(
+    ascd_params_log_level_env, dir_a, dir_ab, capsys
+):
+    # The second `AutoSourceComponentSpec` doesn't specify a Python object at
+    # all, so it doesn't override the one of the first: both components
+    # receive `obj_ab`.
+    obj_ab = object()
+    specs = [
+        bt2.AutoSourceComponentSpec(
+            str(dir_ab), params={"what": "python-obj"}, obj=obj_ab
+        ),
+        bt2.AutoSourceComponentSpec(str(dir_a), params={"what": "python-obj"}),
     ]
+    bt2.TraceCollectionMessageIterator(specs)
 
-    assert len(msgs) == 2
-    assert msgs[0].stream.name == "TestSourceA: deore"
-    assert msgs[1].stream.name == "TestSourceB: deore"
+    _assert_reported(
+        capsys,
+        [
+            f"TestSourceA: {id(obj_ab)}",
+            f"TestSourceB: {id(obj_ab)}",
+        ],
+    )
 
 
 @pytest.fixture(scope="session")
