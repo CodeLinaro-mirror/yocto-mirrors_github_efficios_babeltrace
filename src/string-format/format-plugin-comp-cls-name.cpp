@@ -4,93 +4,80 @@
  * Copyright EfficiOS, Inc.
  */
 
-/* clang-format off */
-
 #define BT_LOG_OUTPUT_LEVEL log_level
-#define BT_LOG_TAG "COMMON/FORMAT-PLUGIN-COMP-CLS-NAME"
+#define BT_LOG_TAG          "COMMON/FORMAT-PLUGIN-COMP-CLS-NAME"
+#include <common/common.h>
 #include <logging/log.h>
 
 #include "format-plugin-comp-cls-name.h"
 
-#include <common/common.h>
-
-
-static
-const char *component_type_str(bt_component_class_type type)
+static const char *component_type_str(bt_component_class_type type)
 {
-	switch (type) {
-	case BT_COMPONENT_CLASS_TYPE_SOURCE:
-		return "source";
-	case BT_COMPONENT_CLASS_TYPE_SINK:
-		return "sink";
-	case BT_COMPONENT_CLASS_TYPE_FILTER:
-		return "filter";
-	default:
-		return "(unknown)";
-	}
+    switch (type) {
+    case BT_COMPONENT_CLASS_TYPE_SOURCE:
+        return "source";
+    case BT_COMPONENT_CLASS_TYPE_SINK:
+        return "sink";
+    case BT_COMPONENT_CLASS_TYPE_FILTER:
+        return "filter";
+    default:
+        return "(unknown)";
+    }
 }
 
-gchar *format_plugin_comp_cls_opt(const char *plugin_name,
-		const char *comp_cls_name, bt_component_class_type type,
-		enum bt_common_color_when use_colors)
+gchar *format_plugin_comp_cls_opt(const char *plugin_name, const char *comp_cls_name,
+                                  bt_component_class_type type,
+                                  enum bt_common_color_when use_colors)
 {
-	GString *str;
-	GString *shell_plugin_name = NULL;
-	GString *shell_comp_cls_name = NULL;
-	gchar *ret;
-	struct bt_common_color_codes codes;
+    GString *str;
+    GString *shell_plugin_name = NULL;
+    GString *shell_comp_cls_name = NULL;
+    gchar *ret;
+    struct bt_common_color_codes codes;
 
-	str = g_string_new(NULL);
-	if (!str) {
-		goto end;
-	}
+    str = g_string_new(NULL);
+    if (!str) {
+        goto end;
+    }
 
-	if (plugin_name) {
-		shell_plugin_name = bt_common_shell_quote(plugin_name, false);
-		if (!shell_plugin_name) {
-			goto end;
-		}
-	}
+    if (plugin_name) {
+        shell_plugin_name = bt_common_shell_quote(plugin_name, false);
+        if (!shell_plugin_name) {
+            goto end;
+        }
+    }
 
-	shell_comp_cls_name = bt_common_shell_quote(comp_cls_name, false);
-	if (!shell_comp_cls_name) {
-		goto end;
-	}
+    shell_comp_cls_name = bt_common_shell_quote(comp_cls_name, false);
+    if (!shell_comp_cls_name) {
+        goto end;
+    }
 
-	bt_common_color_get_codes(&codes, use_colors);
+    bt_common_color_get_codes(&codes, use_colors);
 
-	g_string_append_printf(str, "'%s%s%s%s",
-		codes.bold,
-		codes.fg_bright_cyan,
-		component_type_str(type),
-		codes.fg_default);
+    g_string_append_printf(str, "'%s%s%s%s", codes.bold, codes.fg_bright_cyan,
+                           component_type_str(type), codes.fg_default);
 
-	if (shell_plugin_name) {
-		g_string_append_printf(str, ".%s%s%s",
-			codes.fg_blue,
-			shell_plugin_name->str,
-			codes.fg_default);
-	}
+    if (shell_plugin_name) {
+        g_string_append_printf(str, ".%s%s%s", codes.fg_blue, shell_plugin_name->str,
+                               codes.fg_default);
+    }
 
-	g_string_append_printf(str, ".%s%s%s'",
-		codes.fg_yellow,
-		shell_comp_cls_name->str,
-		codes.reset);
+    g_string_append_printf(str, ".%s%s%s'", codes.fg_yellow, shell_comp_cls_name->str, codes.reset);
 
 end:
-	if (shell_plugin_name) {
-		g_string_free(shell_plugin_name, TRUE);
-	}
+    if (shell_plugin_name) {
+        g_string_free(shell_plugin_name, TRUE);
+    }
 
-	if (shell_comp_cls_name) {
-		g_string_free(shell_comp_cls_name, TRUE);
-	}
+    if (shell_comp_cls_name) {
+        g_string_free(shell_comp_cls_name, TRUE);
+    }
 
-	if (str) {
-		ret = g_string_free(str, FALSE);
-	} else {
-		ret = NULL;
-	}
+    if (str) {
+        ret = g_string_free(str, FALSE);
+    } else {
+        ret = NULL;
+    }
 
-	return ret;
+    return ret;
 }
