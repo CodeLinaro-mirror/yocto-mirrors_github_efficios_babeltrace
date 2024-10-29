@@ -66,6 +66,11 @@ std::cout << bt2::wrap(myMsg).asEvent().event().cls().name();
 
 namespace bt2 {
 
+inline ConstError wrap(const bt_error * const libObjPtr) noexcept
+{
+    return ConstError {libObjPtr};
+}
+
 inline ConstErrorCause wrap(const bt_error_cause * const libObjPtr) noexcept
 {
     return ConstErrorCause {libObjPtr};

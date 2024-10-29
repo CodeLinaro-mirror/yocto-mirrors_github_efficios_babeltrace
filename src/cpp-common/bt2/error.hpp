@@ -317,69 +317,71 @@ private:
     ConstErrorCause _mCause;
 };
 
-class UniqueConstError;
+namespace internal {
 
-/*!
-@brief
-    Error iterator (provides causes).
-
-@note
-    @parblock
-    The individual methods of this class aren't documented yet, but
-    they're straightforward to understand if you know the iterator
-    concept.
-
-    Please see <code>%src/cpp-common/bt2/error.hpp</code>.
-    @endparblock
-*/
-class ConstErrorIterator final
+/*
+ * Functionality common between `ConstError` and `UniqueConstError`.
+ */
+template <typename ErrorType>
+class ErrorMixin
 {
-    friend UniqueConstError;
-
-private:
-    explicit ConstErrorIterator(const UniqueConstError& error, const std::uint64_t index) noexcept
-        : _mError {&error},
-          _mIndex {index}
-    {
-    }
-
 public:
-    bool operator==(const ConstErrorIterator& other) const noexcept
+    /*!
+    @brief
+        Number of causes of this error.
+
+    @returns
+        Number of causes of this error.
+    */
+    std::uint64_t length() const noexcept
     {
-        BT_ASSERT(other._mError == _mError);
-        return other._mIndex == _mIndex;
+        return bt_error_get_cause_count(_libObjPtr());
     }
 
-    bool operator!=(const ConstErrorIterator& other) const noexcept
+    /*!
+    @brief
+        Cause of this error at the index \bt_p{index}.
+
+    @param[in] index
+        Index of the cause to borrow.
+
+    @returns
+        Borrowed cause at the index \bt_p{index} of this error.
+
+    @pre
+        \bt_p{index} is less than what length() returns.
+    */
+    ConstErrorCause operator[](const std::uint64_t index) const noexcept
     {
-        return !(*this == other);
+        return ConstErrorCause {bt_error_borrow_cause_by_index(_libObjPtr(), index)};
     }
 
-    ConstErrorIterator& operator++() noexcept
-    {
-        ++_mIndex;
-        return *this;
-    }
+    /*!
+    @brief
+        Iterator at the first cause of this error.
 
-    ConstErrorIterator operator++(int) noexcept
-    {
-        const auto ret = *this;
+    @returns
+        Iterator at the first cause of this error.
+    */
+    ConstErrorIterator begin() const noexcept;
 
-        ++_mIndex;
-        return ret;
-    }
+    /*!
+    @brief
+        Iterator \em after the last cause of this error.
 
-    ConstErrorCause operator*() const noexcept;
-
-    ConstErrorCauseProxy operator->() const noexcept
-    {
-        return ConstErrorCauseProxy {**this};
-    }
+    @returns
+        Iterator \em after the last cause of this error.
+    */
+    ConstErrorIterator end() const noexcept;
 
 private:
-    const UniqueConstError *_mError;
-    std::uint64_t _mIndex;
+    const bt_error *_libObjPtr() const noexcept
+    {
+        return static_cast<const ErrorType *>(this)->libObjPtr();
+    }
 };
+
+}; /* namespace internal */
 
 /*!
 @brief
@@ -401,7 +403,7 @@ thread error with <code>bt_error_release()</code>.
 Move back the wrapped thread error to the current thread
 with moveErrorToCurrentThread().
 */
-class UniqueConstError final
+class UniqueConstError final : public internal::ErrorMixin<UniqueConstError>
 {
 public:
     /// libbabeltrace2 raw object pointer type.
@@ -466,62 +468,6 @@ public:
         return _mLibError.release();
     }
 
-    /*!
-    @brief
-        Number of causes of this error.
-
-    @returns
-        Number of causes of this error.
-    */
-    std::uint64_t length() const noexcept
-    {
-        return bt_error_get_cause_count(this->libObjPtr());
-    }
-
-    /*!
-    @brief
-        Cause of this error at the index \bt_p{index}.
-
-    @param[in] index
-        Index of the cause to borrow.
-
-    @returns
-        Borrowed cause at the index \bt_p{index} of this error.
-
-    @pre
-        \bt_p{index} is less than what length() returns.
-    */
-    ConstErrorCause operator[](const std::uint64_t index) const noexcept
-    {
-        return ConstErrorCause {bt_error_borrow_cause_by_index(this->libObjPtr(), index)};
-    }
-
-    /*!
-    @brief
-        Iterator at the first cause of this error.
-
-    @returns
-        Iterator at the first cause of this error.
-    */
-    ConstErrorIterator begin() const noexcept
-    {
-        BT_ASSERT(_mLibError);
-        return ConstErrorIterator {*this, 0};
-    }
-
-    /*!
-    @brief
-        Iterator \em after the last cause of this error.
-
-    @returns
-        Iterator \em after the last cause of this error.
-    */
-    ConstErrorIterator end() const noexcept
-    {
-        BT_ASSERT(_mLibError);
-        return ConstErrorIterator {*this, this->length()};
-    }
-
 private:
     struct _LibErrorDeleter final
     {
@@ -534,10 +480,164 @@ private:
     std::unique_ptr<std::remove_pointer_t<LibObjPtr>, _LibErrorDeleter> _mLibError;
 };
 
-inline ConstErrorCause ConstErrorIterator::operator*() const noexcept
+/*!
+@brief
+    Error wrapper.
+
+This class wraps a <code>const bt_error *</code> pointer without
+managing it: unlike #UniqueConstError, destroying a #ConstError instance
+does \em not release the wrapped error.
+
+Use this class to wrap a <code>const bt_error *</code> pointer which you
+don't own.
+
+Unlike #UniqueConstError, a #ConstError instance may never be empty: it
+always wraps a valid error.
+
+You may build a #ConstError from a #UniqueConstError, borrowing its
+wrapped pointer.
+*/
+class ConstError final : public internal::ErrorMixin<ConstError>
 {
-    return (*_mError)[_mIndex];
+public:
+    /// libbabeltrace2 raw object pointer type.
+    using LibObjPtr = const bt_error *;
+
+    /*!
+    @brief
+        Builds an error to wrap the libbabeltrace2 error pointer
+        \bt_p{libError}.
+
+    @param[in] libError
+        libbabeltrace2 error pointer to wrap.
+
+    @bt_pre_not_null{libError}
+    */
+    explicit ConstError(const LibObjPtr libError) noexcept
+        : _mLibError {libError}
+    {
+        BT_ASSERT(libError);
+    }
+
+    /*!
+    @brief
+        Builds an error to wrap the libbabeltrace2 error pointer of the
+        unique error \bt_p{unique}.
+
+    @param[in] unique
+        Unique error of which to borrow the wrapped pointer.
+
+    @pre
+        \bt_p{unique} isn't empty.
+
+    @note
+        Intentionally not explicit.
+    */
+    ConstError(const UniqueConstError& unique) noexcept
+        : _mLibError {unique.libObjPtr()}
+    {
+        BT_ASSERT(_mLibError);
+    }
+
+    /*!
+    @brief
+        Wrapped libbabeltrace2 error pointer.
+
+    @returns
+        Wrapped libbabeltrace2 error pointer.
+    */
+    LibObjPtr libObjPtr() const noexcept
+    {
+        return _mLibError;
+    }
+
+private:
+    LibObjPtr _mLibError;
+};
+
+/*!
+@brief
+    Error iterator (provides causes).
+
+@note
+    @parblock
+    The individual methods of this class aren't documented yet, but
+    they're straightforward to understand if you know the iterator
+    concept.
+
+    Please see <code>%src/cpp-common/bt2/error.hpp</code>.
+    @endparblock
+*/
+class ConstErrorIterator final
+{
+    friend internal::ErrorMixin<ConstError>;
+    friend internal::ErrorMixin<UniqueConstError>;
+
+private:
+    explicit ConstErrorIterator(ConstError error, const std::uint64_t index) noexcept
+        : _mError {error},
+          _mIndex {index}
+    {
+    }
+
+public:
+    bool operator==(const ConstErrorIterator& other) const noexcept
+    {
+        BT_ASSERT(other._mError.libObjPtr() == _mError.libObjPtr());
+        return other._mIndex == _mIndex;
+    }
+
+    bool operator!=(const ConstErrorIterator& other) const noexcept
+    {
+        return !(*this == other);
+    }
+
+    ConstErrorIterator& operator++() noexcept
+    {
+        ++_mIndex;
+        return *this;
+    }
+
+    ConstErrorIterator operator++(int) noexcept
+    {
+        const auto ret = *this;
+
+        ++_mIndex;
+        return ret;
+    }
+
+    ConstErrorCause operator*() const noexcept
+    {
+        return _mError[_mIndex];
+    }
+
+    ConstErrorCauseProxy operator->() const noexcept
+    {
+        return ConstErrorCauseProxy {**this};
+    }
+
+private:
+    ConstError _mError;
+    std::uint64_t _mIndex;
+};
+
+namespace internal {
+
+template <typename ErrorType>
+ConstErrorIterator ErrorMixin<ErrorType>::begin() const noexcept
+{
+    BT_ASSERT(_libObjPtr());
+    return ConstErrorIterator {ConstError {*static_cast<const ErrorType *>(this)}, 0};
 }
+
+template <typename ErrorType>
+ConstErrorIterator ErrorMixin<ErrorType>::end() const noexcept
+{
+    BT_ASSERT(_libObjPtr());
+    return ConstErrorIterator {ConstError {*static_cast<const ErrorType *>(this)}, this->length()};
+}
+
+} /* namespace internal */
 
 /*!
 @brief
