@@ -88,6 +88,10 @@ void destroy_bit_array_field_class(struct bt_object *obj)
 		g_ptr_array_free(ba_fc->flags, TRUE);
 	}
 
+	if (ba_fc->label_buf) {
+		g_ptr_array_free(ba_fc->label_buf, TRUE);
+	}
+
 	finalize_field_class((void *) obj);
 	g_free(obj);
 }
