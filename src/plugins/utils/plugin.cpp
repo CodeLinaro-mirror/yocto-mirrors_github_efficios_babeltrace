@@ -6,7 +6,7 @@
 
 #include <babeltrace2/babeltrace.h>
 
-#include "cpp-common/bt2/plugin-dev.hpp"
+#include "cpp-common/bt2/plugin-so-dev.hpp"
 
 #include "counter/counter.hpp"
 #include "dummy/dummy.hpp"
