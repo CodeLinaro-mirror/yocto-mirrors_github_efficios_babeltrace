@@ -45,14 +45,13 @@ class TestFind:
         assert len(pset) >= 3
 
     def test_file(self, plugins_path, os_type):
-        if os_type in (btu.OsType.CYGWIN, btu.OsType.MINGW):
-            extension = "dll"
-        else:
-            extension = "so"
-
-        plugin_name = f"babeltrace-plugin-utils.{extension}"
-        path = plugins_path / "utils/.libs" / plugin_name
-        pset = bt2.find_plugins_in_path(str(path))
+        pset = bt2.find_plugins_in_path(
+            str(
+                btu.shared_lib_path(
+                    plugins_path / "utils/.libs/babeltrace-plugin-utils"
+                )
+            )
+        )
         assert len(pset) == 1
 
     def test_find_plugin_none(self):

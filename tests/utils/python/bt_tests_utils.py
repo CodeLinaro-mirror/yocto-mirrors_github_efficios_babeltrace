@@ -91,6 +91,15 @@ def exe_path(path: pathlib.Path) -> pathlib.Path:
     return path
 
 
+# Returns the shared library file path from `path`, appending `.dll`
+# on MinGW and Cygwin, or `.so` on other platforms if not already present.
+def shared_lib_path(path: pathlib.Path) -> pathlib.Path:
+    if os_type() in (OsType.MINGW, OsType.CYGWIN):
+        return path.with_suffix(f"{path.suffix}.dll")
+    else:
+        return path.with_suffix(f"{path.suffix}.so")
+
+
 # Cached set of standard and test utils (from `tests/utils/python`) plugins,
 # loaded lazily and only once by plugin_set().
 _plugin_set: Optional[bt2._PluginSet] = None

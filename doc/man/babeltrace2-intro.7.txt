@@ -438,17 +438,24 @@ messages from their input ports, making all the graph
 trace conversion or analysis duty.
 
 [[plugin]]Plugin::
-    A container, or package, of <<comp-cls,component classes>> as a
-    shared library or Python module.
+    A container, or package, of <<comp-cls,component classes>>.
 +
 Each component class within a plugin has a type (source, filter, or
 sink) and a name. The type and name pair is unique within a given
 plugin.
 +
-<<libbabeltrace2,libbabeltrace2>> can load a plugin (`.so`, `.dll`, or
-`.py` file) at run time: the result is a plugin object in which you can
-find a specific component class and instantiate it within a
-<<graph,trace processing graph>> as a <<comp,component>>.
+<<libbabeltrace2,libbabeltrace2>> can load a plugin at run time: the
+result is a plugin object in which you can find a specific component
+class and instantiate it within a <<graph,trace processing graph>> as
+a <<comp,component>>.
++
+libbabeltrace2 delegates the actual loading of a plugin to a plugin
+provider, which knows how to load a specific kind of plugin. The
+Babeltrace{nbsp}2 project ships with plugin providers for shared library
+(`.so` or `.dll` file) and Python module (`.py` file) plugins; you
+can install other plugin providers separately. List the available
+plugin providers with the man:babeltrace2-list-plugin-providers[1]
+command.
 +
 The <<babeltrace2,`babeltrace2` program>> uses the
 _COMP-CLS-TYPE.PLUGIN-NAME.COMP-CLS-NAME_ format to identify a specific

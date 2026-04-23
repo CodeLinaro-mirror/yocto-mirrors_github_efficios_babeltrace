@@ -1,13 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Copyright (C) 2026 EfficiOS Inc.
 
+import pathlib
+
 import bt2
 import pytest
 import bt_tests_utils as btu
-
-_SHARED_LIB_SUFFIX = (
-    "dll" if btu.os_type() in (btu.OsType.MINGW, btu.OsType.CYGWIN) else "so"
-)
 
 
 class TestSet:
@@ -26,12 +24,11 @@ class TestSet:
     @pytest.fixture(scope="class")
     def expected_provider_names(self, build_root_dir):
         names = {"so", "test-provider-1", "test-provider-2", "test-provider-3"}
-        python_provider = build_root_dir / (
-            "src/python-plugin-provider/.libs/"
-            f"babeltrace2-python-plugin-provider.{_SHARED_LIB_SUFFIX}"
-        )
 
-        if python_provider.exists():
+        if btu.shared_lib_path(
+            build_root_dir
+            / ("src/python-plugin-provider/.libs/babeltrace2-python-plugin-provider")
+        ).exists():
             names.add("python")
 
         return names
@@ -81,7 +78,9 @@ class TestProps:
 
     def test_path(self, provider_1):
         assert provider_1.path is not None
-        assert provider_1.path.endswith(f"bt-plugin-provider.{_SHARED_LIB_SUFFIX}")
+        assert provider_1.path.endswith(
+            str(btu.shared_lib_path(pathlib.Path("bt-plugin-provider")))
+        )
 
     def test_version(self, provider_1):
         version = provider_1.version

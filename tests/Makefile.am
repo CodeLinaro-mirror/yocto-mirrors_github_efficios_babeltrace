@@ -49,6 +49,7 @@ EXTRA_DIST = \
 	cli/test_exit_status.py \
 	cli/test_help.py \
 	cli/test_intersection.py \
+	cli/test_list_plugin_providers.py \
 	cli/test_list_plugins.py \
 	cli/test_output_ctf_metadata.py \
 	cli/test_output_path_ctf_non_lttng_trace.py \
