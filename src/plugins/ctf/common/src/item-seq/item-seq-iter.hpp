@@ -1244,6 +1244,10 @@ private:
      */
     bt2c::DataLen _remainingPktContentLen() const noexcept
     {
+        if (G_UNLIKELY(_mHeadOffsetInCurPkt >= _mCurPktExpectedLens.content)) {
+            return bt2c::DataLen::fromBits(0);
+        }
+
         return _mCurPktExpectedLens.content - _mHeadOffsetInCurPkt;
     }
 
@@ -3602,9 +3606,19 @@ private:
             _mItems.dataStreamInfo._mId = val;
             break;
         case UIntFieldRole::PktTotalLen:
-            _mCurPktExpectedLens.total = bt2c::DataLen::fromBits(val);
-            _mItems.pktInfo._mExpectedTotalLen = _mCurPktExpectedLens.total;
+        {
+            const auto totalLen = bt2c::DataLen::fromBits(val);
+
+            if (totalLen.hasExtraBits()) {
+                CTF_SRC_ITEM_SEQ_ITER_CPPLOGE_APPEND_CAUSE_AND_THROW(
+                    "expected total length of current packet ({} bits) isn't a multiple of 8 bits.",
+                    *totalLen);
+            }
+
+            _mCurPktExpectedLens.total = totalLen;
+            _mItems.pktInfo._mExpectedTotalLen = totalLen;
             break;
+        }
         case UIntFieldRole::PktContentLen:
             _mCurPktExpectedLens.content = bt2c::DataLen::fromBits(val);
             _mItems.pktInfo._mExpectedContentLen = _mCurPktExpectedLens.content;
