@@ -1,0 +1,48 @@
+--- metadata
+/* CTF 1.8 */
+
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 32; align = 8; signed = false; } := uint32_t;
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+    packet.header := struct {
+        uint32_t magic;
+        uint32_t stream_id;
+    };
+};
+
+stream {
+    id = 0;
+    packet.context := struct {
+        uint8_t content_size;
+        uint8_t packet_size;
+    };
+};
+
+event {
+    stream_id = 0;
+    name = "ev";
+    fields := struct { uint8_t v; };
+};
+
+--- channel0
+!le
+
+<beg>
+# packet header
+[     0xc1fc1fc1 : 32]  # `magic`
+[             99 : 32]  # `stream_id` (no class with this ID)
+
+# packet context
+[8 * (end - beg) : 8]   # `content_size`
+[8 * (end - beg) : 8]   # `packet_size`
+
+# event
+00                      # `v`
+<end>
+
+--- @error
+At 64 bits: no data stream class exists with ID 99

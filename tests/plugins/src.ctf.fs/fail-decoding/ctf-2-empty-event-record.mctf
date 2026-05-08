@@ -1,0 +1,19 @@
+--- metadata
+[
+{
+  "type": "preamble",
+  "version": 2
+},
+{
+  "type": "data-stream-class"
+},
+{
+  "type": "event-record-class"
+}
+]
+
+--- channel0
+"foo" 0a
+
+--- @error
+At 0 bits: Invalid empty event record.

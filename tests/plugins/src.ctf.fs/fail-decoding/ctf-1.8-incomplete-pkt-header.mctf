@@ -1,0 +1,31 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = be;
+};
+
+stream {
+    packet.context := struct {
+        integer { size = 16; } packet_size;
+        integer { size = 16; } meow_mix;
+    };
+};
+
+event {
+    name = ev;
+    fields := struct {
+        integer { size = 8; } v;
+    };
+};
+
+--- channel0
+# The packet.context is 4 bytes (2 + 2), but the file is only 3
+# bytes long — the medium can't return enough bytes for the header,
+# so the source reports "Insufficient data in file to fulfill request".
+00 50 70
+
+--- @error
+Insufficient data in file to fulfill request

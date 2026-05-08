@@ -1,0 +1,43 @@
+--- metadata
+/* CTF 1.8 */
+
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 16; align = 8; signed = false; } := uint16_t;
+typealias integer { size = 32; align = 8; signed = false; } := uint32_t;
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+    packet.header := struct {
+        uint32_t magic;
+    };
+};
+
+stream {
+    packet.context := struct {
+        uint16_t content_size;
+        uint16_t packet_size;
+    };
+};
+
+event {
+    name = "ev";
+    fields := struct { uint8_t v; };
+};
+
+--- channel0
+!le
+
+# packet header
+[     0xc1fc1fc1 : 32]  # `magic`
+
+# packet context
+[            200 : 16]  # `content_size`
+[             64 : 16]  # `packet_size`
+
+# event
+00                      # `v`
+
+--- @error
+At 64 bits: expected content length of current packet (200 bits) is greater than its expected total length (64 bits)

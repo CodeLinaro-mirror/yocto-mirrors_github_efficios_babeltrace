@@ -1,0 +1,92 @@
+--- metadata
+[
+{
+  "type": "preamble",
+  "version": 2
+},
+{
+  "type": "trace-class",
+  "packet-header-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "magic",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 32,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-magic-number"]
+      }
+    }]
+  }
+},
+{
+  "type": "data-stream-class",
+  "packet-context-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "content_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-content-length"]
+      }
+    },{
+      "name": "packet_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-total-length"]
+      }
+    }]
+  }
+},
+{
+  "type": "event-record-class",
+  "payload-field-class": {
+    "type": "structure",
+    "minimum-alignment": 32,
+    "member-classes": [{
+      "name": "a",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian"
+      }
+    },{
+      "name": "b",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 32,
+        "alignment": 32,
+        "byte-order": "little-endian"
+      }
+    }]
+  }
+}
+]
+
+--- channel0
+!le
+
+<beg>
+# packet header
+[     0xc1fc1fc1 : 32]  # `magic`
+
+# packet context
+[             72 : 8]   # `content_size` (no room for `b`'s 24-bit alignment skip)
+[             80 : 8]   # `packet_size`
+
+# event
+00 00                   # struct. alignment padding to 32-bit boundary
+00                      # `a`
+00                      # padding (after content) to fill packet total length
+<end>
+
+--- @error
+At 72 bits: 24 bits of packet content required at this point, but only 0 bits of packet content remain

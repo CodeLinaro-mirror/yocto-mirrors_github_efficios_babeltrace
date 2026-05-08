@@ -1,0 +1,91 @@
+--- metadata
+[
+{
+  "type": "preamble",
+  "version": 2,
+  "uuid": [168, 208, 115, 138, 74, 109, 70, 107, 131, 167, 138, 179, 195, 135, 213, 187]
+},
+{
+  "type": "trace-class",
+  "packet-header-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "magic",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 32,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-magic-number"]
+      }
+    },{
+      "name": "uuid",
+      "field-class": {
+        "type": "static-length-blob",
+        "length": 16,
+        "roles": ["metadata-stream-uuid"]
+      }
+    }]
+  }
+},
+{
+  "type": "data-stream-class",
+  "packet-context-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "content_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-content-length"]
+      }
+    },{
+      "name": "packet_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-total-length"]
+      }
+    }]
+  }
+},
+{
+  "type": "event-record-class",
+  "name": "ev",
+  "payload-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "v",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian"
+      }
+    }]
+  }
+}
+]
+
+--- channel0
+!le
+
+<beg>
+# packet header
+[0xc1fc1fc1 : 32]                     # `magic`
+f5f86ab3-ee0e-4318-8743-cdccb537404a  # `uuid`
+
+# packet context
+[8 * (end - beg) : 8]                 # `content_size`
+[8 * (end - beg) : 8]                 # `packet_size`
+
+# event
+00                                    # `v`
+<end>
+
+--- @error
+Invalid metadata stream UUID: uuid=f5f86ab3-ee0e-4318-8743-cdccb537404a, expected-uuid=a8d0738a-4a6d-466b-83a7-8ab3c387d5bb

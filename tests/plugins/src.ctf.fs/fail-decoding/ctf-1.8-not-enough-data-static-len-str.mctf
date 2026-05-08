@@ -1,0 +1,48 @@
+--- metadata
+/* CTF 1.8 */
+
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 32; align = 8; signed = false; } := uint32_t;
+typealias integer { size = 8; align = 8; signed = false; encoding = UTF8; } := char;
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+    packet.header := struct {
+        uint32_t magic;
+    };
+};
+
+stream {
+    packet.context := struct {
+        uint8_t content_size;
+        uint8_t packet_size;
+    };
+};
+
+event {
+    name = "ev";
+    fields := struct {
+        char s[10];
+    };
+};
+
+--- channel0
+!le
+
+<beg>
+# packet header
+[     0xc1fc1fc1 : 32]  # `magic`
+
+# packet context
+[             56 : 8]   # `content_size`
+[            128 : 8]   # `packet_size`
+
+# event
+"a"                     # 1 of 10 expected bytes of `s`
+00 * 9  				# padding to fill packet total length
+<end>
+
+--- @error
+At 48 bits: 10 string/BLOB field bytes required at this point, but only 8 bits of packet content remain

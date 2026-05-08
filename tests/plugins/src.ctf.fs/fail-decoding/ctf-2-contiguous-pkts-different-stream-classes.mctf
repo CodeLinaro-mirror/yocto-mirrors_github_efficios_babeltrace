@@ -1,0 +1,142 @@
+--- metadata
+[
+{
+  "type": "preamble",
+  "version": 2
+},
+{
+  "type": "trace-class",
+  "packet-header-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "magic",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 32,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-magic-number"]
+      }
+    },{
+      "name": "stream_id",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 32,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["data-stream-class-id"]
+      }
+    }]
+  }
+},
+{
+  "type": "data-stream-class",
+  "id": 0,
+  "packet-context-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "content_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-content-length"]
+      }
+    },{
+      "name": "packet_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-total-length"]
+      }
+    }]
+  }
+},
+{
+  "type": "data-stream-class",
+  "id": 1,
+  "packet-context-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "content_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-content-length"]
+      }
+    },{
+      "name": "packet_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-total-length"]
+      }
+    }]
+  }
+},
+{
+  "type": "event-record-class",
+  "data-stream-class-id": 0,
+  "name": "ev0",
+  "payload-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "v",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian"
+      }
+    }]
+  }
+},
+{
+  "type": "event-record-class",
+  "data-stream-class-id": 1,
+  "name": "ev1",
+  "payload-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "v",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian"
+      }
+    }]
+  }
+}
+]
+
+--- channel0
+!le
+
+!macro packet(sid, payload)
+  <beg>
+  # packet header
+  [     0xc1fc1fc1 : 32]  # `magic`
+  [            sid : 32]  # `stream_id`
+
+  # packet context
+  [8 * (end - beg) : 8]   # `content_size`
+  [8 * (end - beg) : 8]   # `packet_size`
+
+  # event
+  [        payload : 8]   # `v`
+  <end>
+!end
+
+m:packet(0, 0x10)
+m:packet(1, 0x20)
+
+--- @error
+Two contiguous packets belong to data streams having different classes: expected-data-stream-class-class-id=1, data-stream-class-id=0

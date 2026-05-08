@@ -1,0 +1,75 @@
+--- metadata
+[
+{
+  "type": "preamble",
+  "version": 2
+},
+{
+  "type": "trace-class",
+  "packet-header-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "magic",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 32,
+        "byte-order": "little-endian",
+        "roles": ["packet-magic-number"]
+      }
+    }]
+  }
+},
+{
+  "type": "data-stream-class",
+  "packet-context-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "content_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-content-length"]
+      }
+    },{
+      "name": "packet_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-total-length"]
+      }
+    }]
+  }
+},
+{
+  "type": "event-record-class",
+  "payload-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "v",
+      "field-class": {
+        "type": "variable-length-unsigned-integer"
+      }
+    }]
+  }
+}
+]
+
+--- channel0
+!le
+
+<beg>
+# packet header
+[     0xc1fc1fc1 : 32]  # `magic`
+
+# packet context
+[8 * (end - beg) : 8]   # `content_size`
+[8 * (end - beg) : 8]   # `packet_size`
+
+# event
+80                      # LEB128 byte: continuation bit set
+<end>
+
+--- @error
+At 56 bits: 8 bits of packet content required at this point, but only 0 bits of packet content remain

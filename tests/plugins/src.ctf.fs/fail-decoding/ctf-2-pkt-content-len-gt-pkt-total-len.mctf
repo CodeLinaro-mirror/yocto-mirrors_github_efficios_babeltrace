@@ -1,0 +1,79 @@
+--- metadata
+[
+{
+  "type": "preamble",
+  "version": 2
+},
+{
+  "type": "trace-class",
+  "packet-header-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "magic",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 32,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-magic-number"]
+      }
+    }]
+  }
+},
+{
+  "type": "data-stream-class",
+  "packet-context-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "content_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 16,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-content-length"]
+      }
+    },{
+      "name": "packet_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 16,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-total-length"]
+      }
+    }]
+  }
+},
+{
+  "type": "event-record-class",
+  "payload-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "v",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian"
+      }
+    }]
+  }
+}
+]
+
+--- channel0
+!le
+
+# packet header
+[     0xc1fc1fc1 : 32]  # `magic`
+
+# packet context
+[            200 : 16]  # `content_size`
+[             64 : 16]  # `packet_size`
+
+# event
+00                      # `v`
+
+--- @error
+At 64 bits: expected content length of current packet (200 bits) is greater than its expected total length (64 bits)

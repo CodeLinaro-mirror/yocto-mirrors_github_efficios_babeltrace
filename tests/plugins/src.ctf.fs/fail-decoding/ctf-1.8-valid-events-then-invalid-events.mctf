@@ -1,0 +1,28 @@
+--- metadata
+/* CTF 1.8 */
+
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = be;
+};
+
+stream {
+    event.header := struct {
+        uint8_t id;
+    };
+};
+
+event {
+    name = ev;
+    id = 1;
+};
+
+--- channel0
+# Two valid events (id=1) followed by one invalid event (id=255).
+01 01 ff
+
+--- @error
+At 24 bits: no event record class exists with ID 255 within the data stream

@@ -1,0 +1,49 @@
+--- metadata
+/* CTF 1.8 */
+
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 32; align = 32; signed = false; } := uint32_t;
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+    packet.header := struct {
+        uint32_t magic;
+    };
+};
+
+stream {
+    packet.context := struct {
+        uint8_t content_size;
+        uint8_t packet_size;
+    };
+};
+
+event {
+    name = "ev";
+    fields := struct {
+        uint8_t a;
+        uint32_t b;
+    };
+};
+
+--- channel0
+!le
+
+<beg>
+# packet header
+[     0xc1fc1fc1 : 32]  # `magic`
+
+# packet context
+[             72 : 8]   # `content_size` (no room for `b`'s 24-bit alignment skip)
+[             80 : 8]   # `packet_size`
+
+# event
+00 00                   # struct. alignment padding to 32-bit boundary
+00                      # `a`
+00                      # padding (after content) to fill packet total length
+<end>
+
+--- @error
+At 72 bits: 24 bits of packet content required at this point, but only 0 bits of packet content remain

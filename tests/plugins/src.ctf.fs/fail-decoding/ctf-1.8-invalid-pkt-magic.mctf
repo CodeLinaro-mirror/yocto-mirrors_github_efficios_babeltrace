@@ -1,0 +1,44 @@
+--- metadata
+/* CTF 1.8 */
+
+typealias integer { size = 8; align = 8; signed = false; byte_order = le; } := uint8_t;
+typealias integer { size = 32; align = 8; signed = false; byte_order = le; } := uint32_t;
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+    packet.header := struct {
+        uint32_t magic;
+    };
+};
+
+stream {
+    packet.context := struct {
+        uint8_t content_size;
+        uint8_t packet_size;
+    };
+};
+
+event {
+    name = "ev";
+    fields := struct { uint8_t v; };
+};
+
+--- channel0
+!le
+
+<beg>
+# packet header
+[     0xdeadbeef : 32]  # `magic`
+
+# packet context
+[8 * (end - beg) : 8]   # `content_size`
+[8 * (end - beg) : 8]   # `packet_size`
+
+# event
+00                      # `v`
+<end>
+
+--- @error
+Invalid packet magic number: val=0xdeadbeef, expected-val=0xc1fc1fc1

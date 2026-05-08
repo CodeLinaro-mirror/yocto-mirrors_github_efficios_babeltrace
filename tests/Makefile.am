@@ -161,6 +161,37 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/test_enum.py \
 	plugins/sink.text.pretty/test_pretty.py \
 	plugins/src.ctf.fs/empty-event-record.expect \
+	plugins/src.ctf.fs/fail-decoding/conftest.py \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-contiguous-pkts-different-stream-classes.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-contiguous-pkts-different-stream-ids.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-incomplete-pkt-header.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-invalid-metadata-stream-uuid.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-invalid-pkt-size.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-invalid-pkt-magic.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-not-enough-data-alignment-padding.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-not-enough-data-fixed-len-int.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-not-enough-data-null-term-string.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-not-enough-data-static-len-array.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-not-enough-data-static-len-str.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-pkt-content-len-gt-pkt-total-len.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-pkt-total-len-not-multiple-of-8.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-unknown-data-stream-cls-id.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-1.8-valid-events-then-invalid-events.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-contiguous-pkts-different-stream-classes.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-contiguous-pkts-different-stream-ids.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-empty-event-record.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-invalid-metadata-stream-uuid.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-invalid-pkt-magic.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-not-enough-data-alignment-padding.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-not-enough-data-fixed-len-int.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-not-enough-data-null-term-string.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-not-enough-data-static-len-array.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-not-enough-data-static-len-str.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-not-enough-data-var-len-int.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-pkt-content-len-gt-pkt-total-len.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-pkt-total-len-not-multiple-of-8.mctf \
+	plugins/src.ctf.fs/fail-decoding/ctf-2-unknown-data-stream-cls-id.mctf \
+	plugins/src.ctf.fs/fail-decoding/README.adoc \
 	plugins/src.ctf.fs/field/conftest.py \
 	plugins/src.ctf.fs/field/ctf-1.8-fail-mixed-byte-order-unaligned-be-le.mp \
 	plugins/src.ctf.fs/field/ctf-1.8-fail-mixed-byte-order-unaligned-le-be.mp \

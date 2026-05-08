@@ -1,0 +1,100 @@
+// SPDX-FileCopyrightText: 2026 Philippe Proulx <pproulx@efficios.com>
+// SPDX-License-Identifier: CC-BY-4.0
+
+= `src.ctf.fs` structural data stream decoding failure tests
+Philippe Proulx
+:toc: left
+
+This directory holds data-driven tests which verify that the
+`src.ctf.fs` component _gracefully fails_ on malformed CTF data
+streams, producing the expected error message.
+
+These tests target the _structure_ of the trace: packet headers, packet
+contexts, data stream/event class IDs, packet boundaries, and similar
+data stream-level concerns. They do **not** cover the decoding of
+individual CTF fields; see
+`tests/plugins/src.ctf.fs/field` for those.
+
+Each test file here targets a single, specific failure mode rather than
+bundling many cases into one shared trace. When a test fails, the narrow
+scope of the file makes the cause of the failure immediately obvious:
+the metadata stream, the data stream, and the expected error message all
+describe just the one behaviour under test.
+
+Each `.mctf` file represents a single pytest test. `conftest.py`
+collects and runs those files. You can "`run`" a single one if you
+want:
+
+----
+$ bt-pytest ctf-2-invalid-pkt-magic.mctf
+----
+
+== File naming
+
+pytest only collects files matching one of these patterns:
+
+`ctf-1.8-*.mctf`::
+    A https://diamon.org/ctf/v1.8.3/[CTF{nbsp}1.8] trace which must
+    cause `src.ctf.fs` to raise a decoding error.
+
+`ctf-2-*.mctf`::
+    A https://diamon.org/ctf/[CTF{nbsp}2] trace which must cause
+    `src.ctf.fs` to raise a decoding error.
+
+== File format
+
+Each `.mctf` file is a moultipart file (see `moultipart.py` in the
+source tree) containing three parts, separated by `---` lines:
+
+. **Metadata stream**, always named `metadata`:
++
+--
+CTF{nbsp}1.8::
+    A complete TSDL metadata stream (the part content goes directly
+    into the materialized `metadata` file).
+
+CTF{nbsp}2::
+    A JSON array of metadata fragments.
++
+`mctf.py` converts it into the corresponding JSON text sequence
+when materializing the `metadata` file.
+--
+
+. **Data streams**, written as
+  https://github.com/efficios/normand[Normand] text.
++
+This is 100% of the data stream(s) to write.
+
+. **Expected error message**, always named `@error`:
++
+The substring which must appear in the leaf error cause message of the
+`bt2._Error` that the graph raises (index{nbsp}0 in the cause chain,
+that is, the deepest, originating cause).
++
+Leading and trailing whitespaces are stripped before the comparison.
+
+== How a test runs
+
+For each collected `.mctf` file, `_FailMctfItem.runtest()`:
+
+. Materializes the trace into a temporary directory using
+  `mctf.generate()`. This produces:
++
+--
+* One `metadata` file.
+* One or more data stream files.
+--
+
+. Reads the `@error` part (stripped) to obtain the expected substring.
+
+. Feeds the materialized trace directory into a graph made of
+  `src.ctf.fs` and `sink.utils.dummy`, and expects the conversion to
+  raise `bt2._Error`.
+
+. Asserts that the expected substring (`@error` part) is
+  contained in the leaf cause message (index{nbsp}0). If the graph
+  raises no error, or if the leaf cause message doesn't contain the
+  expected substring, then the test fails.
+
+On a mismatch, the test shows the file path, the expected content,
+and the actual content.

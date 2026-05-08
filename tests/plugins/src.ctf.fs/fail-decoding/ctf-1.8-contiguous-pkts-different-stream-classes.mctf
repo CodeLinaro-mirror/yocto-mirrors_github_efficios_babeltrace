@@ -1,0 +1,67 @@
+--- metadata
+/* CTF 1.8 */
+
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 32; align = 8; signed = false; } := uint32_t;
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+    packet.header := struct {
+        uint32_t magic;
+        uint32_t stream_id;
+    };
+};
+
+stream {
+    id = 0;
+    packet.context := struct {
+        uint8_t content_size;
+        uint8_t packet_size;
+    };
+};
+
+stream {
+    id = 1;
+    packet.context := struct {
+        uint8_t content_size;
+        uint8_t packet_size;
+    };
+};
+
+event {
+    stream_id = 0;
+    name = "ev0";
+    fields := struct { uint8_t v; };
+};
+
+event {
+    stream_id = 1;
+    name = "ev1";
+    fields := struct { uint8_t v; };
+};
+
+--- channel0
+!le
+
+!macro packet(sid, payload)
+  <beg>
+  # packet header
+  [     0xc1fc1fc1 : 32]  # `magic`
+  [            sid : 32]  # `stream_id`
+
+  # packet context
+  [8 * (end - beg) : 8]   # `content_size`
+  [8 * (end - beg) : 8]   # `packet_size`
+
+  # event
+  [        payload : 8]   # `v`
+  <end>
+!end
+
+m:packet(0, 0x10)
+m:packet(1, 0x20)
+
+--- @error
+Two contiguous packets belong to data streams having different classes: expected-data-stream-class-class-id=1, data-stream-class-id=0

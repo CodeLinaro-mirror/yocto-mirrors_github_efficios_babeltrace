@@ -1,0 +1,97 @@
+--- metadata
+[
+{
+  "type": "preamble",
+  "version": 2
+},
+{
+  "type": "trace-class",
+  "packet-header-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "magic",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 32,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-magic-number"]
+      }
+    },{
+      "name": "stream_instance_id",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 64,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["data-stream-id"]
+      }
+    }]
+  }
+},
+{
+  "type": "data-stream-class",
+  "packet-context-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "content_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-content-length"]
+      }
+    },{
+      "name": "packet_size",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian",
+        "roles": ["packet-total-length"]
+      }
+    }]
+  }
+},
+{
+  "type": "event-record-class",
+  "name": "ev",
+  "payload-field-class": {
+    "type": "structure",
+    "member-classes": [{
+      "name": "v",
+      "field-class": {
+        "type": "fixed-length-unsigned-integer",
+        "length": 8,
+        "alignment": 8,
+        "byte-order": "little-endian"
+      }
+    }]
+  }
+}
+]
+
+--- channel0
+!le
+
+!macro packet(sid, payload)
+  <beg>
+  # packet header
+  [     0xc1fc1fc1 : 32]  # `magic`
+  [            sid : 64]  # `stream_instance_id`
+
+  # packet context
+  [8 * (end - beg) : 8]   # `content_size`
+  [8 * (end - beg) : 8]   # `packet_size`
+
+  # event
+  [        payload : 8]   # `v`
+  <end>
+!end
+
+m:packet(7, 0x10)
+m:packet(8, 0x20)
+
+--- @error
+Two contiguous packets belong to different data streams: expected-data-stream-id=8, data-stream-id=7

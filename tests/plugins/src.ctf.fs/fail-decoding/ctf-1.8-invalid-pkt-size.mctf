@@ -1,0 +1,36 @@
+--- metadata
+/* CTF 1.8 */
+
+typealias integer { size = 8; align = 8; signed = false; byte_order = le; } := uint8_t;
+typealias integer { size = 16; align = 8; signed = false; byte_order = le; } := uint16_t;
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+stream {
+    packet.context := struct {
+        uint16_t content_size;
+        uint16_t packet_size;
+    };
+};
+
+event {
+    name = "ev";
+    fields := struct { uint8_t v; };
+};
+
+--- channel0
+!le
+
+# packet context: declare a packet much larger than the file
+[64 : 16]    # `content_size` (in bits)
+[8000 : 16]  # `packet_size` (in bits = 1000 bytes, but file has only ~5)
+
+# event
+00
+
+--- @error
+Failed to index CTF stream file
