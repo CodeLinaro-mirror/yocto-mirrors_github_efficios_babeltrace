@@ -67,8 +67,16 @@ bt2::ConstMessage::Shared MsgIter::next()
              * sequence iterator.
              */
             if (const auto item = _mItemSeqIter.next()) {
-                /* Handle item if needed */
-                if (!_mSkipItemsUntilScopeEndItem || item->isScopeEnd()) {
+                /*
+                 * Handle item if needed.
+                 *
+                 * `PktMagicNumberItem` and `MetadataStreamUuidItem` are
+                 * emitted within the `Scope::PktHeader` scope, which is
+                 * fast-forwarded: let them through so that their
+                 * validation handlers run.
+                 */
+                if (!_mSkipItemsUntilScopeEndItem || item->isScopeEnd() ||
+                    item->isPktMagicNumber() || item->isMetadataStreamUuid()) {
                     this->_handleItem(*item);
 
                     if (auto msg = this->_releaseNextMsg()) {
@@ -277,7 +285,15 @@ void MsgIter::_handleItem(const ScopeBeginItem& item)
     /* Handle specific scope */
     switch (item.scope()) {
     case Scope::PktHeader:
-        /* Nothing needed from the packet header: fast-forward */
+        /*
+         * libbabeltrace2 doesn't expose a packet header field, so
+         * there's no scope field to deserialize into: fast-forward
+         * the structural items of this scope.
+         *
+         * `PktMagicNumberItem` and `MetadataStreamUuidItem` items are
+         * still let through the skip gate in next() so that their
+         * validation handlers run.
+         */
         _mSkipItemsUntilScopeEndItem = true;
         break;
     case Scope::PktCtx:
