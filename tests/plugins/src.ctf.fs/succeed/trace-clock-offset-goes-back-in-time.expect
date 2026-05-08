@@ -12,6 +12,9 @@ Trace class:
     Event class `the-event` (ID 0):
       Payload field class: Structure (1 member):
         the-field: Unsigned integer (8-bit, Base 10)
+    Event class `the-other-event` (ID 1):
+      Payload field class: Structure (1 member):
+        the-other-field: Unsigned integer (8-bit, Base 10)
 
 [Unknown]
 {Trace 0, Stream class ID 0, Stream ID 0}

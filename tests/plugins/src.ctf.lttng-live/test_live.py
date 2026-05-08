@@ -346,17 +346,15 @@ def test_compare_to_ctf_fs(
 
 # Split metadata, where the new metadata requires additional stored
 # value slots in CTF message iterators.
-def test_stored_values(live_comp_cls, ctf_traces_dir, test_data_dir, tmp_path):
-    # Generate test trace from `.mctf` file
-    mctf.generate(
-        str(ctf_traces_dir / "1/live/stored-values.mctf"),
-        str(tmp_path / "stored-values"),
-        False,
-    )
-
+def test_stored_values(live_comp_cls, ctf_traces_dir, test_data_dir, materialize_mctf):
+    # `materialize_mctf` materializes into `<cache>/<N>/stored-values/`,
+    # therefore the parent directory is a valid prefix containing just
+    # one session.
     with _lttng_live_server(
         str(test_data_dir / "stored-values.json"),
-        trace_path_prefix=str(tmp_path),
+        trace_path_prefix=str(
+            materialize_mctf(ctf_traces_dir / "1/live/stored-values.mctf").path.parent
+        ),
         max_minor_version=4,
     ) as server:
         _convert_attach(

@@ -8,16 +8,18 @@ import re
 import sys
 import logging
 import pathlib
-from typing import Any, List, Optional
+import itertools
+from typing import Any, Dict, List, Union, Callable, Optional, NamedTuple
 
 import pytest
 
 try:
     import bt2
+    import moultipart
     import bt_tests_utils as btu
 except ImportError:
     pytest.exit(
-        "Cannot import `bt2` or `bt_tests_utils`: make sure to source `tests/utils/env.sh` before you run `bt-pytest`!",
+        "Cannot import `bt2`, `moultipart`, or `bt_tests_utils`: make sure to source `tests/utils/env.sh` before you run `bt-pytest`!",
         returncode=1,
     )
 
@@ -142,6 +144,47 @@ def common_data_dir() -> pathlib.Path:
 @pytest.fixture(scope="session")
 def ctf_traces_dir() -> pathlib.Path:
     return _src_tests_dir() / "common-data/ctf-traces"
+
+
+class MaterializedMctf(NamedTuple):
+    path: pathlib.Path
+    non_ctf_parts: Dict[str, moultipart.Part]
+
+
+# A callable that materializes a single `.mctf` file into a generated
+# CTF trace directory and returns a `MaterializedMctf` named tuple with
+# the attributes `path` (the materialized trace directory) and
+# `non_ctf_parts` (the dictionary of non-CTF parts produced by
+# `mctf.generate()`, keyed by header info).
+#
+# Generates each `.mctf` trace once per session and caches it.
+@pytest.fixture(scope="session")
+def materialize_mctf(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Callable[[Union[str, pathlib.Path]], MaterializedMctf]:
+    import mctf
+
+    base_dir = tmp_path_factory.mktemp("mctf-cache")
+    cache: Dict[pathlib.Path, MaterializedMctf] = {}
+    counter = itertools.count()
+
+    def materialize(path: Union[str, pathlib.Path]) -> MaterializedMctf:
+        abs_path = pathlib.Path(path).resolve()
+
+        assert (
+            abs_path.is_file() and abs_path.suffix == ".mctf"
+        ), f"`{path}` isn't a `.mctf` file"
+
+        if abs_path in cache:
+            return cache[abs_path]
+
+        out_dir = base_dir / f"{next(counter):08d}" / abs_path.stem
+        _logger.info(f"Materializing `.mctf` file `{abs_path}` to `{out_dir}`")
+        non_ctf_parts = mctf.generate(str(abs_path), str(out_dir), False)
+        cache[abs_path] = MaterializedMctf(path=out_dir, non_ctf_parts=non_ctf_parts)
+        return cache[abs_path]
+
+    return materialize
 
 
 @pytest.fixture(scope="session")

@@ -5,7 +5,6 @@ import pathlib
 import tempfile
 
 import bt2
-import mctf
 import pytest
 import bt_tests_utils as btu
 
@@ -177,18 +176,13 @@ def test_packet_end(
 
 # Test for clock offset going back in time (generated from
 # `.mctf` files).
-def test_clock_offset_goes_back_in_time(expect_dir, tmp_path):
-    trace_dir = tmp_path / "trace"
-    trace_dir.mkdir()
-
-    # Generate trace chunks from .mctf files
+def test_clock_offset_goes_back_in_time(expect_dir, materialize_mctf):
     mctf_dir = expect_dir / "clock-offset-goes-back-in-time"
-    mctf.generate(str(mctf_dir / "chunk1.mctf"), str(trace_dir / "chunk1"), False)
-    mctf.generate(str(mctf_dir / "chunk2.mctf"), str(trace_dir / "chunk2"), False)
-
-    # Validate output
     btu.convert_sink_text_details_test(
-        trace_dir,
+        [
+            materialize_mctf(mctf_dir / "chunk1.mctf").path,
+            materialize_mctf(mctf_dir / "chunk2.mctf").path,
+        ],
         expect_dir / "trace-clock-offset-goes-back-in-time.expect",
         details_params={"with-stream-name": False},
     )
