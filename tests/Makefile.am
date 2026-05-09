@@ -1134,9 +1134,9 @@ lib_utils_liblib_utils_la_SOURCES = \
 	lib/utils/run-in.cpp \
 	lib/utils/run-in.hpp
 
-noinst_PROGRAMS += lib/test-bt-values
-lib_test_bt_values_SOURCES = lib/test-bt-values.cpp
-lib_test_bt_values_LDADD = \
+noinst_PROGRAMS += lib/test-values
+lib_test_values_SOURCES = lib/test-values.cpp
+lib_test_values_LDADD = \
 	$(LIB_COMMON_TEST_LDADD) \
 	$(top_builddir)/src/lib/libbabeltrace2.la
 
