@@ -1186,6 +1186,16 @@ lib_test_plugins_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DPLUGINS_DIR=\"$(abs_builddir)/lib/plugins/.libs\"
 
+noinst_PROGRAMS += lib/test-find-plugins
+lib_test_find_plugins_SOURCES = lib/test-find-plugins.cpp
+lib_test_find_plugins_LDADD = \
+	$(LIB_COMMON_TEST_LDADD) \
+	$(top_builddir)/src/lib/libbabeltrace2.la
+lib_test_find_plugins_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-DPLUGINS_DIR=\"$(abs_builddir)/lib/plugins/.libs\" \
+	-DINIT_FAIL_PLUGIN_DIR=\"$(abs_builddir)/lib/init-fail-plugin/.libs\"
+
 noinst_LTLIBRARIES += lib/plugins/bt-plugin-minimal.la
 lib_plugins_bt_plugin_minimal_la_SOURCES = lib/plugins/minimal.c
 lib_plugins_bt_plugin_minimal_la_LDFLAGS = \
@@ -1207,15 +1217,6 @@ lib_plugins_bt_plugin_sfs_la_LIBADD = \
 	$(top_builddir)/src/lib/libbabeltrace2.la \
 	$(top_builddir)/src/common/libcommon.la \
 	$(top_builddir)/src/logging/liblogging.la
-
-noinst_PROGRAMS += lib/test-plugin-init-fail
-lib_test_plugin_init_fail_SOURCES = lib/test-plugin-init-fail.cpp
-lib_test_plugin_init_fail_LDADD = \
-	$(LIB_COMMON_TEST_LDADD) \
-	$(top_builddir)/src/lib/libbabeltrace2.la
-lib_test_plugin_init_fail_CPPFLAGS = \
-	$(AM_CPPFLAGS) \
-	-DPLUGIN_DIR=\"$(abs_builddir)/lib/init-fail-plugin/.libs\"
 
 noinst_LTLIBRARIES += lib/init-fail-plugin/bt-plugin.la
 lib_init_fail_plugin_bt_plugin_la_SOURCES = lib/init-fail-plugin/plugin.cpp

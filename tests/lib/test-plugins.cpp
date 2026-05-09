@@ -4,7 +4,6 @@
  * Copyright (C) 2017 Philippe Proulx <pproulx@efficios.com>
  */
 
-#include <functional>
 #include <string>
 
 #include <fmt/core.h>
@@ -12,15 +11,12 @@
 
 #include <babeltrace2/babeltrace.h>
 
-#include "cpp-common/bt2/exc.hpp"
 #include "cpp-common/bt2/graph.hpp"
 #include "cpp-common/bt2/plugin-load.hpp"
 #include "cpp-common/bt2/query-executor.hpp"
 #include "cpp-common/bt2/value.hpp"
 
 #include "catch2/catch_test_macros.hpp"
-
-#define NON_EXISTING_PATH "/this/hopefully/does/not/exist/5bc75f8d-0dba-4043-a509-d7984b97e42b.so"
 
 namespace {
 
@@ -160,50 +156,4 @@ TEST_CASE_METHOD(SfsPluginFixture, "sfs plugin: add sink component to graph")
     const auto sinkComponent = graph->addComponent(*sinkCompCls, "the-sink");
 
     CHECK(sinkComponent.name() == "the-sink");
-}
-
-TEST_CASE("bt2::findAllPluginsFromDir() with nonexistent path")
-{
-    CHECK(std::invoke([] {
-        try {
-            bt2::findAllPluginsFromDir(NON_EXISTING_PATH, BT_FALSE, BT_FALSE);
-            return false;
-        } catch (const bt2::Error&) {
-            bt_current_thread_clear_error();
-            return true;
-        }
-    }));
-}
-
-TEST_CASE("bt2::findAllPluginsFromDir() with valid path")
-{
-    const auto plugins = bt2::findAllPluginsFromDir(PLUGINS_DIR, BT_FALSE, BT_FALSE);
-
-    REQUIRE(plugins);
-
-    /* 2 or 4, if `.la` files are considered or not */
-    CHECK((plugins->length() == 2 || plugins->length() == 4));
-}
-
-TEST_CASE("bt2::findPlugin() with unknown plugin name")
-{
-    CHECK_FALSE(bt2::findPlugin(NON_EXISTING_PATH, true, false, false, false, false));
-}
-
-TEST_CASE("bt2::findPlugin() finds a plugin using `BABELTRACE_PLUGIN_PATH`")
-{
-    g_setenv("BABELTRACE_PLUGIN_PATH",
-             fmt::format("{}" G_SEARCHPATH_SEPARATOR_S G_DIR_SEPARATOR_S
-                         "ec1d09e5-696c-442e-b1c3-f9c6cf7f5958" G_SEARCHPATH_SEPARATOR_S
-                             G_SEARCHPATH_SEPARATOR_S G_SEARCHPATH_SEPARATOR_S
-                         "{}" G_SEARCHPATH_SEPARATOR_S
-                         "8db46494-a398-466a-9649-c765ae077629" G_SEARCHPATH_SEPARATOR_S,
-                         NON_EXISTING_PATH, PLUGINS_DIR)
-                 .c_str(),
-             1);
-
-    const auto plugin = bt2::findPlugin("test_minimal", true, false, false, false, false);
-
-    REQUIRE(plugin);
-    CHECK(plugin->author() == "Janine Sutto");
 }
