@@ -3186,6 +3186,7 @@ BT_EXPORT
 struct bt_value *bt_field_class_borrow_user_attributes(
 		struct bt_field_class *field_class)
 {
+	BT_ASSERT_PRE_DEV_FC_NON_NULL(field_class);
 	return (void *) bt_field_class_borrow_user_attributes_const(
 		(void *) field_class);
 }
