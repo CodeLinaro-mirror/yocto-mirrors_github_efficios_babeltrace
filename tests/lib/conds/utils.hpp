@@ -10,12 +10,12 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 #include <babeltrace2/babeltrace.h>
 
-#include "cpp-common/bt2c/c-string-view.hpp"
 #include "cpp-common/bt2s/span.hpp"
 
 #include "../utils/run-in.hpp"
@@ -52,7 +52,7 @@ protected:
      * name of the created condition trigger with name().
      */
     explicit CondTrigger(Type type, const std::string& condId,
-                         const bt2c::CStringView nameSuffix) noexcept;
+                         const std::string_view nameSuffix) noexcept;
 
 public:
     virtual ~CondTrigger() = default;
@@ -92,7 +92,7 @@ class SimpleCondTrigger : public CondTrigger
 {
 public:
     explicit SimpleCondTrigger(std::function<void()> func, Type type, const std::string& condId,
-                               const bt2c::CStringView nameSuffix = {});
+                               const std::string_view nameSuffix = {});
 
     void operator()() noexcept override
     {
@@ -116,7 +116,7 @@ class RunInCondTrigger : public CondTrigger
 public:
     explicit RunInCondTrigger(RunInT runIn, const Type type, const std::string& condId,
                               const std::uint64_t graphMipVersion,
-                              const bt2c::CStringView nameSuffix = {})
+                              const std::string_view nameSuffix = {})
         : CondTrigger {type, condId, nameSuffix},
           _mRunIn {std::move(runIn)},
           _mGraphMipVersion {graphMipVersion}
@@ -124,7 +124,7 @@ public:
     }
 
     explicit RunInCondTrigger(const Type type, const std::string& condId,
-                              const bt2c::CStringView nameSuffix = {})
+                              const std::string_view nameSuffix = {})
         : RunInCondTrigger {RunInT {}, type, condId, nameSuffix}
     {
     }
@@ -177,7 +177,7 @@ private:
 inline CondTrigger::UP makeRunInCompInitTrigger(OnCompInitFunc func, const CondTrigger::Type type,
                                                 const std::string& condId,
                                                 const std::uint64_t graphMipVersion,
-                                                const bt2c::CStringView nameSuffix = {})
+                                                const std::string_view nameSuffix = {})
 {
     return std::make_unique<RunInCondTrigger<RunInCompInitDelegator>>(
         RunInCompInitDelegator::makeOnCompInit(std::move(func)), type, condId, graphMipVersion,

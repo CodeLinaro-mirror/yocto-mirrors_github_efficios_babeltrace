@@ -26,15 +26,15 @@
 #endif
 
 CondTrigger::CondTrigger(const Type type, const std::string& condId,
-                         const bt2c::CStringView nameSuffix) noexcept
+                         const std::string_view nameSuffix) noexcept
     : _mType {type},
       _mCondId {fmt::format("{}:{}", type == Type::Pre ? "pre" : "post", condId)},
-      _mName {fmt::format("{}{}{}", condId, nameSuffix ? ":" : "", nameSuffix ? nameSuffix : "")}
+      _mName {fmt::format("{}{}{}", condId, nameSuffix.empty() ? "" : ":", nameSuffix)}
 {
 }
 
 SimpleCondTrigger::SimpleCondTrigger(std::function<void()> func, const Type type,
-                                     const std::string& condId, const bt2c::CStringView nameSuffix)
+                                     const std::string& condId, const std::string_view nameSuffix)
     : CondTrigger {type, condId, nameSuffix},
       _mFunc {std::move(func)}
 {
