@@ -546,7 +546,7 @@ enum bt_resolve_field_xref_status bt_resolve_field_paths(
 			BT_ASSERT(opt_fc->selector_field.path.class);
 			BT_ASSERT(!opt_fc->selector_field.path.path);
 			status = resolve_field_path(
-				fc, opt_fc->selector_field.path.class, ctx, __func__,
+				fc, opt_fc->selector_field.path.class, ctx, api_func,
 				&opt_fc->selector_field.path.path);
 			if (status != BT_RESOLVE_FIELD_XREF_STATUS_OK) {
 				goto end;
@@ -559,7 +559,7 @@ enum bt_resolve_field_xref_status bt_resolve_field_paths(
 			BT_ASSERT(dyn_array_fc->length_field.path.class);
 			BT_ASSERT(!dyn_array_fc->length_field.path.path);
 			status = resolve_field_path(
-				fc, dyn_array_fc->length_field.path.class, ctx, __func__,
+				fc, dyn_array_fc->length_field.path.class, ctx, api_func,
 				&dyn_array_fc->length_field.path.path);
 			if (status != BT_RESOLVE_FIELD_XREF_STATUS_OK) {
 				goto end;
@@ -575,7 +575,7 @@ enum bt_resolve_field_xref_status bt_resolve_field_paths(
 			BT_ASSERT(!var_fc->selector_field.path.path);
 			status = resolve_field_path(fc,
 				(void *) var_fc->selector_field.path.class, ctx,
-				__func__, &var_fc->selector_field.path.path);
+				api_func, &var_fc->selector_field.path.path);
 			if (status != BT_RESOLVE_FIELD_XREF_STATUS_OK) {
 				goto end;
 			}

@@ -194,16 +194,16 @@ struct bt_integer_range_set_signed *bt_integer_range_set_signed_create(void)
 
 static
 void add_range_to_range_set(struct bt_integer_range_set *range_set,
-		uint64_t u_lower, uint64_t u_upper)
+		uint64_t u_lower, uint64_t u_upper, const char *api_func)
 {
 	struct bt_integer_range range = {
 		.lower.u = u_lower,
 		.upper.u = u_upper,
 	};
 
-	BT_ASSERT_PRE_INT_RANGE_SET_NON_NULL(range_set);
-	BT_ASSERT_PRE_DEV_HOT("integer-range-set", range_set,
-		"Integer range set", ": %!+R", range_set);
+	BT_ASSERT_PRE_INT_RANGE_SET_NON_NULL_FROM_FUNC(api_func, range_set);
+	BT_ASSERT_PRE_DEV_HOT_FROM_FUNC(api_func, "integer-range-set",
+		range_set, "Integer range set", ": %!+R", range_set);
 	g_array_append_val(range_set->ranges, range);
 	BT_LIB_LOGD("Added integer range to integer range set: "
 		"%![range-set-]+R, lower-unsigned=%" PRIu64 ", "
@@ -220,7 +220,7 @@ bt_integer_range_set_unsigned_add_range(
 	BT_ASSERT_PRE("lower-lteq-upper", lower <= upper,
 		"Range's upper bound is less than lower bound: "
 		"upper=%" PRIu64 ", lower=%" PRIu64, lower, upper);
-	add_range_to_range_set((void *) range_set, lower, upper);
+	add_range_to_range_set((void *) range_set, lower, upper, __func__);
 	return BT_FUNC_STATUS_OK;
 }
 
@@ -235,7 +235,7 @@ bt_integer_range_set_signed_add_range(
 		"Range's upper bound is less than lower bound: "
 		"upper=%" PRId64 ", lower=%" PRId64, lower, upper);
 	add_range_to_range_set((void *) range_set,
-		(int64_t) lower, (int64_t) upper);
+		(int64_t) lower, (int64_t) upper, __func__);
 	return BT_FUNC_STATUS_OK;
 }
 

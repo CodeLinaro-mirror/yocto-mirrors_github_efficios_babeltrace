@@ -289,14 +289,14 @@ bool trace_has_environment_entry(const struct bt_trace *trace, const char *name)
 static
 enum bt_trace_set_environment_entry_status set_environment_entry(
 		struct bt_trace *trace,
-		const char *name, struct bt_value *value)
+		const char *name, struct bt_value *value, const char *api_func)
 {
 	int ret;
 
 	BT_ASSERT(trace);
 	BT_ASSERT(name);
 	BT_ASSERT(value);
-	BT_ASSERT_PRE("not-frozen:trace",
+	BT_ASSERT_PRE_FROM_FUNC(api_func, "not-frozen:trace",
 		!trace->frozen ||
 			!trace_has_environment_entry(trace, name),
 		"Trace is frozen: cannot replace environment entry: "
@@ -339,7 +339,7 @@ bt_trace_set_environment_entry_string(
 	}
 
 	/* set_environment_entry() logs errors */
-	ret = set_environment_entry(trace, name, value_obj);
+	ret = set_environment_entry(trace, name, value_obj, __func__);
 
 end:
 	bt_object_put_ref(value_obj);
@@ -367,7 +367,7 @@ bt_trace_set_environment_entry_integer(
 	}
 
 	/* set_environment_entry() logs errors */
-	ret = set_environment_entry(trace, name, value_obj);
+	ret = set_environment_entry(trace, name, value_obj, __func__);
 
 end:
 	bt_object_put_ref(value_obj);

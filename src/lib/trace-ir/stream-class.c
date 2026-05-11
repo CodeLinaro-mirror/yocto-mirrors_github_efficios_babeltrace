@@ -87,12 +87,12 @@ end:
 
 static
 struct bt_stream_class *create_stream_class_with_id(
-		struct bt_trace_class *tc, uint64_t id)
+		struct bt_trace_class *tc, uint64_t id, const char *api_func)
 {
 	struct bt_stream_class *stream_class = NULL;
 
 	BT_ASSERT(tc);
-	BT_ASSERT_PRE("stream-class-id-is-unique",
+	BT_ASSERT_PRE_FROM_FUNC(api_func, "stream-class-id-is-unique",
 		stream_class_id_is_unique(tc, id),
 		"Duplicate stream class ID: %![tc-]+T, id=%" PRIu64, tc, id);
 	BT_LIB_LOGD("Creating stream class object: %![tc-]+T, id=%" PRIu64,
@@ -146,7 +146,7 @@ struct bt_stream_class *bt_stream_class_create(struct bt_trace_class *tc)
 		"Trace class does not automatically assigns stream class IDs: "
 		"%![sc-]+T", tc);
 	return create_stream_class_with_id(tc,
-		(uint64_t) tc->stream_classes->len);
+		(uint64_t) tc->stream_classes->len, __func__);
 }
 
 BT_EXPORT
@@ -160,7 +160,7 @@ struct bt_stream_class *bt_stream_class_create_with_id(
 		!tc->assigns_automatic_stream_class_id,
 		"Trace class automatically assigns stream class IDs: "
 		"%![sc-]+T", tc);
-	return create_stream_class_with_id(tc, id);
+	return create_stream_class_with_id(tc, id, __func__);
 }
 
 BT_EXPORT
