@@ -4,14 +4,11 @@
  * Copyright (C) 2020-2023 EfficiOS, inc.
  */
 
-#include <functional>
-
 #include "common/assert.h"
 #include "cpp-common/bt2/component-class-dev.hpp"
 #include "cpp-common/bt2/component-class.hpp"
 #include "cpp-common/bt2/graph.hpp"
-#include "cpp-common/bt2/plugin-load.hpp"
-#include "cpp-common/bt2/plugin.hpp"
+#include "cpp-common/bt2/message-iterator.hpp"
 #include "cpp-common/bt2/query-executor.hpp"
 
 #include "run-in.hpp"
@@ -86,6 +83,35 @@ private:
     RunIn *_mRunIn;
 };
 
+/*
+ * Inline version of `sink.utils.dummy` to avoid loading plugins on
+ * every test.
+ */
+class RunInSink final : public bt2::UserSinkComponent<RunInSink>
+{
+public:
+    static constexpr auto name = "run-in-sink";
+
+    explicit RunInSink(const bt2::SelfSinkComponent self, bt2::ConstMapValue, void *)
+        : bt2::UserSinkComponent<RunInSink> {self, "RUN-IN-SINK"}
+    {
+        this->_addInputPort("in");
+    }
+
+    void _graphIsConfigured()
+    {
+        _mMsgIter = this->_createMessageIterator(this->_inputPorts()["in"]);
+    }
+
+    bool _consume()
+    {
+        return _mMsgIter->next().has_value();
+    }
+
+private:
+    bt2::MessageIterator::Shared _mMsgIter;
+};
+
 } /* namespace */
 
 void runIn(RunIn& runIn, const std::uint64_t graphMipVersion)
@@ -101,18 +127,9 @@ void runIn(RunIn& runIn, const std::uint64_t graphMipVersion)
     /* Add custom source component (executes `compCtxFunc`) */
     const auto srcComp = graph->addComponent(*srcCompCls, "the-source", runIn);
 
-    /* Add dummy sink component */
-    const auto sinkComp = std::invoke([&] {
-        const auto utilsPlugin = bt2::findPlugin("utils");
-
-        BT_ASSERT(utilsPlugin);
-
-        const auto dummySinkCompCls = utilsPlugin->sinkComponentClasses()["dummy"];
-
-        BT_ASSERT(dummySinkCompCls);
-
-        return graph->addComponent(*dummySinkCompCls, "the-sink");
-    });
+    /* Add custom sink component */
+    const auto sinkCompCls = bt2::createComponentClass<RunInSink>();
+    const auto sinkComp = graph->addComponent(*sinkCompCls, "the-sink");
 
     /* Connect ports */
     const auto outPort = srcComp.outputPorts()["out"];
