@@ -51,19 +51,46 @@ The program supports two subcommands (see `condMain()` in `utils.cpp`):
 The function is expected to make libbabeltrace2 abort.
 --
 
-`clk-cls-compat-postconds-triggers.pass:[{cpp,hpp}]`::
-`fc-tc-match-preconds-triggers.pass:[{cpp,hpp}]`::
-    Additional groups of triggers that `conds-triggers.cpp` adds to
-    its trigger list through `addClkClsCompatTriggers()` and
-    `addFcTcMatchTriggers()`.
+`*-triggers.cpp`::
+    Groups of triggers that `conds-triggers.cpp` adds to
+    its trigger list.
++
+Each file exposes a single `add__Topic__Triggers(CondTriggers&)`
+function which `main()` calls.
+
+`conds-triggers.hpp`::
+    Declares every `add__Topic__Triggers(CondTriggers&)` function
+    exposed by the `*-triggers.cpp` files.
++
+Both `conds-triggers.cpp` and each `*-triggers.cpp` file include this
+header, so the declarations stay in one place.
 
 `utils.pass:[{cpp,hpp}]`::
     Common types and helpers:
 +
 * The `CondTrigger` base class.
 * The `SimpleCondTrigger` and `RunInCondTrigger` flavours.
+* The `CondTriggers` list type.
+* The `makeSimpleTrigger()` factory and its higher-level wrappers
+  `addPreTrigger()` and `addPreNoErrorTrigger()` (the latter trips
+  `no-error` preconditions by appending an error cause before the
+  triggering call).
 * The `makeRunInCompInitTrigger()` factory which schedules a trigger to
   run inside a component initialization context.
+* The `makeRunInMsgIterInitTrigger()` and `makeRunInMsgIterNextTrigger()`
+  factories which schedule a trigger to run inside the initialization
+  or "next" method of a message iterator
+  (use these when the violation needs a built
+  trace IR, a freshly created event message, or a frozen object such as
+  a frozen event class, stream, or packet context field).
+* The `addRunInCompInitTriggerPerMipVersion()` helper which adds one
+  such trigger per supported MIP version, with a `mip__N__` name suffix.
+* The `withCurrentThreadError()` helper which appends an error to the
+  current thread and then invokes the given function, used to trip
+  `no-error` preconditions from contexts other than a bare process
+  (typically inside an `addRunInCompInitTriggerPerMipVersion()`
+  callback; for plain process-context cases prefer
+  `addPreNoErrorTrigger()`).
 * `condMain()`.
 
 `conftest.py`::
@@ -77,33 +104,46 @@ list that `conds-triggers.cpp` builds. There's no test file to write:
 the trigger _is_ the test, and `conftest.py` collects it
 automatically.
 
-. Pick the right place to add the trigger:
+. Pick the right `*-triggers.cpp` file to add the trigger to:
 +
 --
-* If a topical group already exists (for example,
-  `fc-tc-match-preconds-triggers.cpp` for "`field class belongs to the
-  expected trace class`" preconditions), add the new trigger to
-  the `add*Triggers()` function of that group.
+A topical group already exists::
+    For example, `fc-trace-cls-match-preconds-triggers.cpp` covers
+    "`field class belongs to the expected trace class`" preconditions.
++
+Add the new trigger to the `add__Topic__Triggers()` function of that
+group.
 
-* Otherwise, either add it directly to `main()` in
-  `conds-triggers.cpp` or, if you expect several related triggers,
-  create a new group: a `__topic__-triggers.pass:[{cpp,hpp}]` pair which
-  exposes a single `add__Topic__Triggers(CondTriggers&)` function, and
-  call that function from `main()`.
+No suitable group exists::
+    Create a new `__topic__-triggers.cpp` file which exposes a single
+    `add__Topic__Triggers(CondTriggers&)` function, declare that
+    function in `conds-triggers.hpp`, and call it from `main()` in
+    `conds-triggers.cpp`.
++
+List the new file in `tests/lib/Makefile.am`.
 --
+
+Don't add triggers directly to `main()`: every trigger lives in some
+`*-triggers.cpp` file.
 
 . Choose the right factory:
 +
 --
-`makeSimpleTrigger()`::
-    For conditions that the library checks at the entry of a function
-    callable from anywhere.
+`addPreTrigger()`::
+`addPreNoErrorTrigger()`::
+    For preconditions that the library checks at the entry of a
+    function callable from anywhere.
 +
 For example: "`the field class parameter isn't `NULL``" on a public
 API function.
 +
 The trigger lambda runs in the bare process, with no graph or component
-around it.
+around it. Use `addPreNoErrorTrigger()` when targeting a
+`no-error` precondition: it appends an error cause to the current
+thread error before calling the lambda.
++
+Both are thin wrappers over `makeSimpleTrigger()`; reach for the raw
+factory only if you need a `Post` trigger or a custom shape.
 
 `makeRunInCompInitTrigger()`::
     For conditions on APIs which require a component context, most
@@ -115,8 +155,27 @@ initialized source component.
 +
 Pass the target MIP version as the `graphMipVersion` argument so that
 the condition is exercised under the right graph mode. If the
-condition exists at every MIP version, loop from{nbsp}0 to
-`bt2::getMaximalMipVersion()` and emit one trigger per version.
+condition exists at every MIP version, use
+`addRunInCompInitTriggerPerMipVersion()` instead: it emits one trigger
+per supported MIP version, with the right `mip__N__` name suffix on
+each.
+
+`makeRunInMsgIterInitTrigger()`::
+`makeRunInMsgIterNextTrigger()`::
+    For conditions you can only trip from inside a running message
+    iterator, typically because the violation needs a built trace IR
+    plus a freshly created or frozen object.
++
+`makeRunInMsgIterInitTrigger()` runs the lambda once when the
+message iterator initializes, receiving the
+`bt2::SelfMessageIterator` instance.
++
+`makeRunInMsgIterNextTrigger()` runs it during
+a "`next`" call and additionally receives the `bt2::ConstMessageArray`
+instance to append created messages to (necessary when freezing requires
+that a message stays alive past the violating call).
++
+Use these instead of writing a one-off `RunIn` subclass.
 --
 
 . Write the trigger function so that it _violates exactly one

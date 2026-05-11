@@ -1232,12 +1232,25 @@ if DEV_MODE
 noinst_PROGRAMS += lib/conds/conds-triggers.bin
 lib_conds_conds_triggers_bin_SOURCES = \
 	lib/conds/conds-triggers.cpp \
+	lib/conds/conds-triggers.hpp \
 	lib/conds/utils.cpp \
 	lib/conds/utils.hpp \
 	lib/conds/clk-cls-compat-postconds-triggers.cpp \
-	lib/conds/clk-cls-compat-postconds-triggers.hpp \
-	lib/conds/fc-tc-match-preconds-triggers.cpp \
-	lib/conds/fc-tc-match-preconds-triggers.hpp
+	lib/conds/clk-cls-preconds-triggers.cpp \
+	lib/conds/clk-snapshot-preconds-triggers.cpp \
+	lib/conds/event-cls-preconds-triggers.cpp \
+	lib/conds/event-preconds-triggers.cpp \
+	lib/conds/fc-preconds-triggers.cpp \
+	lib/conds/fc-trace-cls-match-preconds-triggers.cpp \
+	lib/conds/field-loc-preconds-triggers.cpp \
+	lib/conds/field-path-preconds-triggers.cpp \
+	lib/conds/field-preconds-triggers.cpp \
+	lib/conds/graph-preconds-triggers.cpp \
+	lib/conds/pkt-preconds-triggers.cpp \
+	lib/conds/stream-cls-preconds-triggers.cpp \
+	lib/conds/stream-preconds-triggers.cpp \
+	lib/conds/trace-cls-preconds-triggers.cpp \
+	lib/conds/trace-preconds-triggers.cpp
 lib_conds_conds_triggers_bin_LDADD = \
 	$(LIB_COMMON_TEST_LDADD) \
 	$(top_builddir)/src/lib/libbabeltrace2.la

@@ -4,98 +4,102 @@
  * Copyright (C) 2024 EfficiOS Inc.
  */
 
-#include <memory>
+#include <array>
+#include <cstdint>
+#include <functional>
+#include <string_view>
+#include <utility>
 
 #include <fmt/format.h> /* IWYU pragma: keep */
 
-#include "../utils/run-in.hpp"
-#include "clk-cls-compat-postconds-triggers.hpp"
+#include "cpp-common/bt2c/uuid.hpp"
+
 #include "common.hpp"
+#include "conds-triggers.hpp"
+#include "utils.hpp"
 
 namespace {
 
-/*
- * `RunIn` implementation to trigger clock (in)compatibility postcondition
- * assertions.
- */
-class ClockClsCompatRunIn final : public RunIn
+enum class MsgType
 {
-public:
-    enum class MsgType
-    {
-        StreamBeg,
-        MsgIterInactivity,
-    };
-
-    using CreateClockCls = std::function<bt2::ClockClass::Shared(bt2::SelfComponent)>;
-
-    explicit ClockClsCompatRunIn(const MsgType msgType1, CreateClockCls createClockCls1,
-                                 const MsgType msgType2, CreateClockCls createClockCls2) noexcept
-        : _mMsgType1 {msgType1},
-          _mMsgType2 {msgType2},
-          _mCreateClockCls1 {std::move(createClockCls1)},
-          _mCreateClockCls2 {std::move(createClockCls2)}
-    {
-    }
-
-    void onMsgIterNext(bt2::SelfMessageIterator self, bt2::ConstMessageArray& msgs) override
-    {
-        /* In case the expected assertion doesn't trigger, avoid looping indefinitely. */
-        BT_ASSERT(!_mBeenThere);
-
-        const auto traceCls = self.component().createTraceClass();
-        const auto trace = traceCls->instantiate();
-
-        msgs.append(this->_createOneMsg(self, _mMsgType1, _mCreateClockCls1, *trace));
-        msgs.append(this->_createOneMsg(self, _mMsgType2, _mCreateClockCls2, *trace));
-        _mBeenThere = true;
-    }
-
-private:
-    static bt2::Message::Shared _createOneMsg(const bt2::SelfMessageIterator self,
-                                              const MsgType msgType,
-                                              const CreateClockCls& createClockCls,
-                                              const bt2::Trace trace)
-    {
-        const auto clockCls =
-            createClockCls ? createClockCls(self.component()) : bt2::ClockClass::Shared {};
-
-        switch (msgType) {
-        case MsgType::StreamBeg:
-        {
-            const auto streamCls = trace.cls().createStreamClass();
-
-            if (clockCls) {
-                streamCls->defaultClockClass(*clockCls);
-            }
-
-            return self.createStreamBeginningMessage(*streamCls->instantiate(trace));
-        }
-
-        case MsgType::MsgIterInactivity:
-            BT_ASSERT(clockCls);
-            return self.createMessageIteratorInactivityMessage(*clockCls, 12);
-        };
-
-        bt_common_abort();
-    }
-
-    MsgType _mMsgType1, _mMsgType2;
-    CreateClockCls _mCreateClockCls1, _mCreateClockCls2;
-    bool _mBeenThere = false;
+    StreamBeg,
+    MsgIterInactivity,
 };
 
-__attribute__((used)) const char *format_as(const ClockClsCompatRunIn::MsgType msgType)
+/*
+ * Configures a freshly created clock class for a single message of the
+ * two-message stream that clock class compatibility triggers build.
+ *
+ * An empty `std::function` means "no clock class": the helper builds
+ * the message without one, which itself drives some triggers (for
+ * example, `*:stream-class-has-no-clock-class`).
+ *
+ * A non-empty function means "create a default clock class and run this
+ * configurator on it". Use `defaultClkClsFunc` for the common "default
+ * clock class, no further tweaks" case.
+ */
+using ClkClsCfgFunc = std::function<void(bt2::ClockClass)>;
+
+const ClkClsCfgFunc defaultClkClsFunc = [](auto) {
+};
+
+__attribute__((used)) const char *format_as(const MsgType msgType)
 {
     switch (msgType) {
-    case ClockClsCompatRunIn::MsgType::StreamBeg:
+    case MsgType::StreamBeg:
         return "sb";
 
-    case ClockClsCompatRunIn::MsgType::MsgIterInactivity:
+    case MsgType::MsgIterInactivity:
         return "mii";
     }
 
     bt_common_abort();
+}
+
+bt2::Message::Shared createOneMsg(const bt2::SelfMessageIterator selfMsgIter, const MsgType msgType,
+                                  const ClkClsCfgFunc& clkClsCfgFunc, const bt2::Trace trace)
+{
+    bt2::ClockClass::Shared clkCls;
+
+    if (clkClsCfgFunc) {
+        clkCls = selfMsgIter.component().createClockClass();
+        clkClsCfgFunc(*clkCls);
+    }
+
+    switch (msgType) {
+    case MsgType::StreamBeg:
+    {
+        const auto streamCls = trace.cls().createStreamClass();
+
+        if (clkCls) {
+            streamCls->defaultClockClass(*clkCls);
+        }
+
+        return selfMsgIter.createStreamBeginningMessage(*streamCls->instantiate(trace));
+    }
+
+    case MsgType::MsgIterInactivity:
+        BT_ASSERT(clkCls);
+        return selfMsgIter.createMessageIteratorInactivityMessage(*clkCls, 12);
+    };
+
+    bt_common_abort();
+}
+
+void addClkClsCompatTrigger(CondTriggers& triggers, const MsgType msgType1,
+                            ClkClsCfgFunc clkClsCfgFunc1, const MsgType msgType2,
+                            ClkClsCfgFunc clkClsCfgFunc2, const char * const condId,
+                            const std::uint64_t graphMipVersion, const std::string_view nameSuffix)
+{
+    triggers.emplace_back(makeRunInMsgIterNextTrigger(
+        [msgType1, msgType2, clkClsCfg1 = std::move(clkClsCfgFunc1),
+         clkClsCfg2 = std::move(clkClsCfgFunc2)](const auto selfMsgIter, auto& msgs) {
+            const auto trace = selfMsgIter.component().createTraceClass()->instantiate();
+
+            msgs.append(createOneMsg(selfMsgIter, msgType1, clkClsCfg1, *trace));
+            msgs.append(createOneMsg(selfMsgIter, msgType2, clkClsCfg2, *trace));
+        },
+        CondTrigger::Type::Post, condId, graphMipVersion, nameSuffix));
 }
 
 const bt2c::Uuid uuidA {"f00aaf65-ebec-4eeb-85b2-fc255cf1aa8a"};
@@ -110,250 +114,175 @@ constexpr const char *uidB = "uid-b";
 } /* namespace */
 
 /*
- * Add clock class compatibility postcondition failures triggers.
- *
- * Each trigger below makes a message iterator return two messages with
- * incompatible clock classes, leading to a postcondition failure.
+ * Adds clock class compatibility postcondition failure triggers.
  */
 void addClkClsCompatTriggers(CondTriggers& triggers)
 {
-    const auto addValidCases = [&triggers](
-                                   const ClockClsCompatRunIn::CreateClockCls& createClockCls1,
-                                   const ClockClsCompatRunIn::CreateClockCls& createClockCls2,
-                                   const char * const condId, std::uint64_t graphMipVersion) {
+    const auto addValidCases = [&triggers](const auto& clkClsCfgFunc1, const auto& clkClsCfgFunc2,
+                                           const char * const condId, const auto graphMipVersion) {
         /*
          * Add triggers for all possible combinations of message types.
          *
          * It's not possible to create message iterator inactivity messages
          * without a clock class.
          */
-        static constexpr std::array<ClockClsCompatRunIn::MsgType, 2> msgTypes {
-            ClockClsCompatRunIn::MsgType::StreamBeg,
-            ClockClsCompatRunIn::MsgType::MsgIterInactivity,
+        static constexpr std::array msgTypes {
+            MsgType::StreamBeg,
+            MsgType::MsgIterInactivity,
         };
 
-        const auto isInvalidCase = [](const ClockClsCompatRunIn::MsgType msgType,
-                                      const ClockClsCompatRunIn::CreateClockCls& createClockCls) {
-            return msgType == ClockClsCompatRunIn::MsgType::MsgIterInactivity && !createClockCls;
+        const auto isInvalidCase = [](const auto msgType, const auto& clkClsCfgFunc) {
+            return msgType == MsgType::MsgIterInactivity && !ClkClsCfgFunc {clkClsCfgFunc};
         };
 
         for (const auto msgType1 : msgTypes) {
-            if (isInvalidCase(msgType1, createClockCls1)) {
+            if (isInvalidCase(msgType1, clkClsCfgFunc1)) {
                 continue;
             }
 
             for (const auto msgType2 : msgTypes) {
-                if (isInvalidCase(msgType2, createClockCls2)) {
+                if (isInvalidCase(msgType2, clkClsCfgFunc2)) {
                     continue;
                 }
 
-                triggers.emplace_back(std::make_unique<RunInCondTrigger<ClockClsCompatRunIn>>(
-                    ClockClsCompatRunIn {msgType1, createClockCls1, msgType2, createClockCls2},
-                    CondTrigger::Type::Post, condId, graphMipVersion,
-                    fmt::format("mip{}-{}-{}", graphMipVersion, msgType1, msgType2)));
+                addClkClsCompatTrigger(
+                    triggers, msgType1, clkClsCfgFunc1, msgType2, clkClsCfgFunc2, condId,
+                    graphMipVersion,
+                    fmt::format("mip{}-{}-{}", graphMipVersion, msgType1, msgType2));
             }
         }
     };
 
-    forEachMipVersion([&](const std::uint64_t graphMipVersion) {
-        addValidCases(
-            {},
-            [](const bt2::SelfComponent self) {
-                return self.createClockClass();
-            },
-            "message-iterator-class-next-method:stream-class-has-no-clock-class", graphMipVersion);
+    forEachMipVersion([&](const auto graphMipVersion) {
+        addValidCases(ClkClsCfgFunc {}, defaultClkClsFunc,
+                      "message-iterator-class-next-method:stream-class-has-no-clock-class",
+                      graphMipVersion);
 
         if (graphMipVersion == 0) {
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(true);
-                    return clockCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(true);
                 },
-                {},
+                ClkClsCfgFunc {},
                 "message-iterator-class-next-method:stream-class-has-clock-class-with-unix-epoch-origin",
                 graphMipVersion);
 
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(true);
-                    return clockCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(true);
                 },
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(false);
-                    return clockCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false);
                 },
                 "message-iterator-class-next-method:clock-class-has-unix-epoch-origin",
                 graphMipVersion);
 
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(false).uuid(uuidA);
-                    return clockCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false).uuid(uuidA);
                 },
-                {}, "message-iterator-class-next-method:stream-class-has-clock-class-with-uuid",
+                ClkClsCfgFunc {},
+                "message-iterator-class-next-method:stream-class-has-clock-class-with-uuid",
                 graphMipVersion);
 
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(false).uuid(uuidA);
-                    return clockCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false).uuid(uuidA);
                 },
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(true);
-                    return clockCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(true);
                 },
                 "message-iterator-class-next-method:clock-class-has-unknown-origin",
                 graphMipVersion);
 
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clkCls = self.createClockClass();
-
-                    clkCls->originIsUnixEpoch(false).uuid(uuidA);
-                    return clkCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false).uuid(uuidA);
                 },
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(false);
-                    return clockCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false);
                 },
                 "message-iterator-class-next-method:clock-class-has-uuid", graphMipVersion);
 
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clkCls = self.createClockClass();
-
-                    clkCls->originIsUnixEpoch(false).uuid(uuidA);
-                    return clkCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false).uuid(uuidA);
                 },
-                [](const bt2::SelfComponent self) {
-                    const auto clkCls = self.createClockClass();
-
-                    clkCls->originIsUnixEpoch(false).uuid(uuidB);
-                    return clkCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false).uuid(uuidB);
                 },
                 "message-iterator-class-next-method:clock-class-has-expected-uuid",
                 graphMipVersion);
         } else {
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(true);
-                    return clockCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(true);
                 },
-                {},
+                ClkClsCfgFunc {},
                 "message-iterator-class-next-method:stream-class-has-clock-class-with-known-origin",
                 graphMipVersion);
 
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(true);
-                    return clockCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(true);
                 },
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(false);
-                    return clockCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false);
                 },
                 "message-iterator-class-next-method:clock-class-has-known-origin", graphMipVersion);
 
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(false).nameSpace("ze-ns").name("ze-name").uid(
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false).nameSpace("ze-ns").name("ze-name").uid(
                         "ze-uid");
-                    return clockCls;
                 },
-                {}, "message-iterator-class-next-method:stream-class-has-clock-class-with-id",
+                ClkClsCfgFunc {},
+                "message-iterator-class-next-method:stream-class-has-clock-class-with-id",
                 graphMipVersion);
 
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(false).nameSpace("ze-ns").name("ze-name").uid(
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false).nameSpace("ze-ns").name("ze-name").uid(
                         "ze-uid");
-                    return clockCls;
                 },
-                [](const bt2::SelfComponent self) {
-                    const auto clockCls = self.createClockClass();
-
-                    clockCls->originIsUnixEpoch(true);
-                    return clockCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(true);
                 },
                 "message-iterator-class-next-method:clock-class-has-unknown-origin",
                 graphMipVersion);
 
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clkCls = self.createClockClass();
-
-                    clkCls->originIsUnixEpoch(false).nameSpace(nsA).name(nameA).uid(uidA);
-                    return clkCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false).nameSpace(nsA).name(nameA).uid(uidA);
                 },
-                [](const bt2::SelfComponent self) {
-                    const auto clkCls = self.createClockClass();
-
-                    clkCls->originIsUnixEpoch(false);
-                    return clkCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false);
                 },
                 "message-iterator-class-next-method:clock-class-has-id", graphMipVersion);
 
             addValidCases(
-                [](const bt2::SelfComponent self) {
-                    const auto clkCls = self.createClockClass();
-
-                    clkCls->originIsUnixEpoch(false).nameSpace(nsA).name(nameA).uid(uidA);
-                    return clkCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false).nameSpace(nsA).name(nameA).uid(uidA);
                 },
-                [](const bt2::SelfComponent self) {
-                    const auto clkCls = self.createClockClass();
-
-                    clkCls->originIsUnixEpoch(false).nameSpace(nsB).name(nameB).uid(uidB);
-                    return clkCls;
+                [](auto clkCls) {
+                    clkCls.originIsUnixEpoch(false).nameSpace(nsB).name(nameB).uid(uidB);
                 },
                 "message-iterator-class-next-method:clock-class-has-expected-id", graphMipVersion);
         }
 
         addValidCases(
-            [](const bt2::SelfComponent self) {
-                const auto clkCls = self.createClockClass();
-
-                clkCls->originIsUnixEpoch(false);
-                return clkCls;
+            [](auto clkCls) {
+                clkCls.originIsUnixEpoch(false);
             },
-            {}, "message-iterator-class-next-method:stream-class-has-clock-class", graphMipVersion);
+            ClkClsCfgFunc {}, "message-iterator-class-next-method:stream-class-has-clock-class",
+            graphMipVersion);
 
         addValidCases(
-            [](const bt2::SelfComponent self) {
-                const auto clkCls = self.createClockClass();
-
-                clkCls->originIsUnixEpoch(false);
-                return clkCls;
+            [](auto clkCls) {
+                clkCls.originIsUnixEpoch(false);
             },
-            [](const bt2::SelfComponent self) {
-                const auto clkCls = self.createClockClass();
-
-                clkCls->originIsUnixEpoch(false);
-                return clkCls;
+            [](auto clkCls) {
+                clkCls.originIsUnixEpoch(false);
             },
             "message-iterator-class-next-method:clock-class-is-expected", graphMipVersion);
     });
