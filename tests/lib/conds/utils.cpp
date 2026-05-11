@@ -21,6 +21,10 @@
 #    include <sys/resource.h>
 #endif /* HAVE_SETRLIMIT */
 
+#ifdef __linux__
+#    include <sys/prctl.h>
+#endif
+
 CondTrigger::CondTrigger(const Type type, const std::string& condId,
                          const bt2c::CStringView nameSuffix) noexcept
     : _mType {type},
@@ -49,6 +53,22 @@ void disableCoreDumps() noexcept
         std::exit(1);
     }
 #endif /* HAVE_SETRLIMIT */
+
+#ifdef __linux__
+    /*
+     * Mark the process non-dumpable so that the kernel skips the
+     * `core_pattern` handler on abort.
+     *
+     * When the `core_pattern` of the system pipes to a helper such as
+     * `systemd-coredump`, that handler runs synchronously before the
+     * process is reaped, adding many milliseconds per abort even when
+     * `RLIMIT_CORE` is zero (see above).
+     */
+    if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) != 0) {
+        std::perror("prctl(PR_SET_DUMPABLE)");
+        std::exit(1);
+    }
+#endif
 }
 
 void listCondTriggers(const CondTriggers& condTriggers) noexcept
