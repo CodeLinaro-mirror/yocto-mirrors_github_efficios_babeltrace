@@ -89,17 +89,12 @@ end:
 
 static
 struct bt_event_class *create_event_class_with_id(
-		struct bt_stream_class *stream_class, uint64_t id,
-		const char *api_func)
+		struct bt_stream_class *stream_class, uint64_t id)
 {
 	int ret;
 	struct bt_event_class *event_class;
 
 	BT_ASSERT(stream_class);
-	BT_ASSERT_PRE_FROM_FUNC(api_func, "event-class-id-is-unique",
-		event_class_id_is_unique(stream_class, id),
-		"Duplicate event class ID: %![sc-]+S, id=%" PRIu64,
-		stream_class, id);
 	BT_LIB_LOGD("Creating event class object: %![sc-]+S, id=%" PRIu64,
 		stream_class, id);
 	event_class = g_new0(struct bt_event_class, 1);
@@ -157,7 +152,7 @@ struct bt_event_class *bt_event_class_create(
 		"Stream class does not automatically assigns event class IDs: "
 		"%![sc-]+S", stream_class);
 	return create_event_class_with_id(stream_class,
-		(uint64_t) stream_class->event_classes->len, __func__);
+		(uint64_t) stream_class->event_classes->len);
 }
 
 BT_EXPORT
@@ -170,7 +165,11 @@ struct bt_event_class *bt_event_class_create_with_id(
 		!stream_class->assigns_automatic_event_class_id,
 		"Stream class automatically assigns event class IDs: "
 		"%![sc-]+S", stream_class);
-	return create_event_class_with_id(stream_class, id, __func__);
+	BT_ASSERT_PRE("event-class-id-is-unique",
+		event_class_id_is_unique(stream_class, id),
+		"Duplicate event class ID: %![sc-]+S, id=%" PRIu64,
+		stream_class, id);
+	return create_event_class_with_id(stream_class, id);
 }
 
 BT_EXPORT

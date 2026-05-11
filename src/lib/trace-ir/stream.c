@@ -86,9 +86,6 @@ struct bt_stream *create_stream_with_id(struct bt_stream_class *stream_class,
 			bt_stream_class_borrow_trace_class_inline(stream_class),
 		"Trace's class is different from stream class's parent trace class: "
 		"%![sc-]+S, %![trace-]+t", stream_class, trace);
-	BT_ASSERT_PRE_FROM_FUNC(api_func, "stream-id-is-unique",
-		stream_id_is_unique(trace, stream_class, id),
-		"Duplicate stream ID: %![trace-]+t, id=%" PRIu64, trace, id);
 	BT_LIB_LOGD("Creating stream object: %![trace-]+t, id=%" PRIu64,
 		trace, id);
 	stream = g_new0(struct bt_stream, 1);
@@ -161,6 +158,9 @@ struct bt_stream *bt_stream_create_with_id(struct bt_stream_class *stream_class,
 		!stream_class->assigns_automatic_stream_id,
 		"Stream class automatically assigns stream IDs: "
 		"%![sc-]+S", stream_class);
+	BT_ASSERT_PRE("stream-id-is-unique",
+		stream_id_is_unique(trace, stream_class, id),
+		"Duplicate stream ID: %![trace-]+t, id=%" PRIu64, trace, id);
 	return create_stream_with_id(stream_class, trace, id, __func__);
 }
 
