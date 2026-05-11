@@ -3529,7 +3529,6 @@ bt_field_class_blob_dynamic_with_length_field_borrow_length_field_location_const
 		"dynamic-blob-field-class-with-length-field",
 		BT_FIELD_CLASS_TYPE_DYNAMIC_BLOB_WITH_LENGTH_FIELD,
 		"Field class");
-	BT_ASSERT_PRE_FC_MIP_VERSION_GE(fc, 1);
 	BT_ASSERT(blob_fc->length_fl);
 
 	return blob_fc->length_fl;
