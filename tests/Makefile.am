@@ -1250,7 +1250,8 @@ lib_conds_conds_triggers_bin_SOURCES = \
 	lib/conds/stream-cls-preconds-triggers.cpp \
 	lib/conds/stream-preconds-triggers.cpp \
 	lib/conds/trace-cls-preconds-triggers.cpp \
-	lib/conds/trace-preconds-triggers.cpp
+	lib/conds/trace-preconds-triggers.cpp \
+	lib/conds/value-conds-triggers.cpp
 lib_conds_conds_triggers_bin_LDADD = \
 	$(LIB_COMMON_TEST_LDADD) \
 	$(top_builddir)/src/lib/libbabeltrace2.la

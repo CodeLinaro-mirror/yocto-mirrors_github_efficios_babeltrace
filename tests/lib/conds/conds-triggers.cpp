@@ -29,5 +29,6 @@ int main(const int argc, const char ** const argv)
     addStreamPreCondsTriggers(triggers);
     addTraceClassPreCondsTriggers(triggers);
     addTracePreCondsTriggers(triggers);
+    addValueCondsTriggers(triggers);
     condMain(bt2c::makeSpan(argv, argc), triggers);
 }

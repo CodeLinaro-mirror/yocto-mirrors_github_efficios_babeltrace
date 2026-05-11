@@ -25,5 +25,6 @@ void addStreamClsPreCondsTriggers(CondTriggers& triggers);
 void addStreamPreCondsTriggers(CondTriggers& triggers);
 void addTraceClassPreCondsTriggers(CondTriggers& triggers);
 void addTracePreCondsTriggers(CondTriggers& triggers);
+void addValueCondsTriggers(CondTriggers& triggers);
 
 #endif /* BABELTRACE_TESTS_LIB_CONDS_CONDS_TRIGGERS_HPP */
