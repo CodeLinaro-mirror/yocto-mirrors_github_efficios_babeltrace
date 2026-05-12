@@ -1247,6 +1247,7 @@ lib_conds_conds_triggers_bin_SOURCES = \
 	lib/conds/field-preconds-triggers.cpp \
 	lib/conds/graph-preconds-triggers.cpp \
 	lib/conds/int-range-preconds-triggers.cpp \
+	lib/conds/int-range-set-preconds-triggers.cpp \
 	lib/conds/pkt-preconds-triggers.cpp \
 	lib/conds/stream-cls-preconds-triggers.cpp \
 	lib/conds/stream-preconds-triggers.cpp \

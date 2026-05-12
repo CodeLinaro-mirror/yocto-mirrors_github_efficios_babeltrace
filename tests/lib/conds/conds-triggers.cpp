@@ -25,6 +25,7 @@ int main(const int argc, const char ** const argv)
     addFieldPreCondsTriggers(triggers);
     addGraphPreCondsTriggers(triggers);
     addIntRangePreCondsTriggers(triggers);
+    addIntRangeSetPreCondsTriggers(triggers);
     addPktPreCondsTriggers(triggers);
     addStreamClsPreCondsTriggers(triggers);
     addStreamPreCondsTriggers(triggers);
