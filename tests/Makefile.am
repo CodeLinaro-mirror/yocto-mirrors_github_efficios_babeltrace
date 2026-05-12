@@ -160,6 +160,7 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/fl-bm-ctf2.expect \
 	plugins/sink.text.pretty/test_enum.py \
 	plugins/sink.text.pretty/test_pretty.py \
+	plugins/sink.utils.dummy/test_dummy.py \
 	plugins/src.ctf.fs/empty-event-record.expect \
 	plugins/src.ctf.fs/fail-decoding/conftest.py \
 	plugins/src.ctf.fs/fail-decoding/ctf-1.8-contiguous-pkts-different-stream-classes.mctf \
