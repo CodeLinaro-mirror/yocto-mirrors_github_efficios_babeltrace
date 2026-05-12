@@ -681,8 +681,8 @@ plugin_LTLIBRARIES = \
 plugin_utils_sources = \
 	plugins/utils/counter/counter.c \
 	plugins/utils/counter/counter.h \
-	plugins/utils/dummy/dummy.c \
-	plugins/utils/dummy/dummy.h \
+	plugins/utils/dummy/dummy.cpp \
+	plugins/utils/dummy/dummy.hpp \
 	plugins/utils/muxer/comp.cpp \
 	plugins/utils/muxer/comp.hpp \
 	plugins/utils/muxer/msg-iter.cpp \

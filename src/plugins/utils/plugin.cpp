@@ -9,7 +9,7 @@
 #include "cpp-common/bt2/plugin-dev.hpp"
 
 #include "counter/counter.h"
-#include "dummy/dummy.h"
+#include "dummy/dummy.hpp"
 #include "muxer/comp.hpp"
 #include "muxer/msg-iter.hpp"
 #include "trimmer/trimmer.h"
@@ -25,12 +25,7 @@ BT_PLUGIN_LICENSE("MIT");
 BT_PLUGIN_VERSION(2, 0, 0, NULL);
 
 /* sink.utils.dummy */
-BT_PLUGIN_SINK_COMPONENT_CLASS(dummy, dummy_consume);
-BT_PLUGIN_SINK_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD(dummy,
-                                                                 dummy_supported_mip_versions);
-BT_PLUGIN_SINK_COMPONENT_CLASS_INITIALIZE_METHOD(dummy, dummy_init);
-BT_PLUGIN_SINK_COMPONENT_CLASS_FINALIZE_METHOD(dummy, dummy_finalize);
-BT_PLUGIN_SINK_COMPONENT_CLASS_GRAPH_IS_CONFIGURED_METHOD(dummy, dummy_graph_is_configured);
+BT_CPP_PLUGIN_SINK_COMPONENT_CLASS(dummy, bt2dummy::Comp);
 BT_PLUGIN_SINK_COMPONENT_CLASS_DESCRIPTION(dummy, "Consume messages and discard them.");
 BT_PLUGIN_SINK_COMPONENT_CLASS_HELP(dummy, "See the babeltrace2-sink.utils.dummy(7) manual page.");
 
