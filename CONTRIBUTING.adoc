@@ -523,6 +523,10 @@ The available format specifiers are:
 |Interrupter
 |`+struct bt_interrupter *+`
 
+|`U`
+|Plugin provider
+|`+const struct bt_plugin_provider *+`
+
 |`l`
 |Plugin
 |`+const struct bt_plugin *+`

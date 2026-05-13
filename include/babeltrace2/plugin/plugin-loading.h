@@ -33,6 +33,22 @@ bt_plugin_find_all_from_dir(), and bt_plugin_find_all_from_static()
 functions return a <strong>\bt_plugin_set</strong>, that is, a shared
 object containing one or more \bt_p_plugin.
 
+To actually find and load plugins, \bt_name relies on <strong>plugin
+providers</strong>: each plugin provider handles plugins of a given kind
+(for example, shared object (<code>*.so</code>/<code>*.dll</code>) plugins
+or Python (<code>bt_plugin_*.py</code>) plugins).
+\bt_name ships with shared object and Python plugin providers,
+and you can install additional ones as standalone shared objects (see
+\ref api-plugin-provider-dev).
+
+libbabeltrace2 loads plugin providers automatically from a set of
+default locations (see
+\ref api-plugin-provider-loading-def-dirs "Automatic plugin provider loading"
+below); the plugin loading functions documented here then delegate to
+all the known plugin providers. You can list those and inspect their
+properties with the
+\ref api-plugin-provider "plugin provider" API.
+
 @attention
     The plugin loading API offers functions to <em>find and load</em>
     existing plugins and use the packaged \bt_p_comp_cls. To \em write a
@@ -82,9 +98,11 @@ and static plugins with bt_plugin_find_all().
 
 <h2>Find and load plugins from a specific file or directory</h2>
 
-Find and load plugins from a specific file (<code>.so</code>,
-<code>.dll</code>, or <code>.py</code>) with
-bt_plugin_find_all_from_file().
+Find and load plugins from a specific file with
+bt_plugin_find_all_from_file(). Which files this function recognizes as
+plugins depends on the loaded \ref api-plugin-provider "plugin
+providers" (for example, <code>.so</code>, <code>.dll</code>, or
+<code>.py</code> files with the providers \bt_name ships with).
 
 A single shared object file can contain multiple plugins, although it's
 not common practice to do so.
@@ -99,6 +117,43 @@ Find and load static plugins with bt_plugin_find_all_from_static().
 
 A static plugin is built directly into the application or library
 instead of being a separate shared object file.
+
+<h1>Automatic plugin provider loading</h1>
+
+\anchor api-plugin-provider-loading-def-dirs libbabeltrace2 automatically
+loads plugin providers from the default plugin provider search
+directories and from the static plugin providers.
+
+The plugin provider search order is:
+
+-# The colon-separated (or semicolon-separated on Windows) list of
+   directories in the \c BABELTRACE_PLUGIN_PROVIDER_PATH environment
+   variable, if it's set. libbabeltrace2 searches each directory in this
+   list, without recursing.
+
+-# If the \c LIBBABELTRACE2_DISABLE_STD_PLUGIN_PROVIDER_DIRS
+   environment variable is \em not set to <code>1</code>:
+
+   -# <code>$HOME/.local/lib/babeltrace2/plugin-providers</code>,
+      without recursing.
+
+   -# The system \bt_name plugin provider directory, typically
+      <code>/usr/lib/babeltrace2/plugin-providers</code> or
+      <code>/usr/local/lib/babeltrace2/plugin-providers</code> on Linux,
+      without recursing.
+
+-# The static plugin providers.
+
+libbabeltrace2 loads the plugin providers the first time it needs them
+(for example, when you call bt_plugin_provider_set_borrow() or one of the
+\ref api-plugin-loading "plugin loading functions"). Once the loading
+succeeds, libbabeltrace2 caches the result for the remaining lifetime of
+the library: adding plugin providers to any of the search directories
+afterwards has no effect, as libbabeltrace2 does \em not reload them.
+
+If the loading fails, however, libbabeltrace2 does \em not cache the
+failure: the next call which needs the plugin providers attempts to load
+them again.
 */
 
 /*! @{ */
@@ -168,9 +223,11 @@ This function returns the first plugin which has the name
     object or Python file). For example, a plugin found in the file
     \c patente.so can be named <code>Dan</code>.
 
-If this function finds a file which looks like a plugin (shared object
-file or Python file with the \c bt_plugin_ prefix), but it fails to load
-it for any reason, then this function:
+If this function finds a file which looks like a plugin to one of the
+loaded \ref api-plugin-provider "plugin providers" (for example, a
+shared object file or a Python file with the \c bt_plugin_ prefix for
+the providers \bt_name ships with), but it fails to load it for any
+reason, then this function:
 
 <dl>
   <dt>If \bt_p{fail_on_load_error} is #BT_TRUE</dt>
@@ -294,9 +351,11 @@ This function returns all the plugins within, in order:
 During the search process, if a found plugin shares the name of an
 already loaded plugin, this function ignores it and continues.
 
-If this function finds a file which looks like a plugin (shared object
-file or Python file with the \c bt_plugin_ prefix), but it fails to load
-it for any reason, the function:
+If this function finds a file which looks like a plugin to one of the
+loaded \ref api-plugin-provider "plugin providers" (for example, a
+shared object file or a Python file with the \c bt_plugin_ prefix for
+the providers \bt_name ships with), but it fails to load it for any
+reason, the function:
 
 <dl>
   <dt>If \bt_p{fail_on_load_error} is #BT_TRUE</dt>

@@ -30,6 +30,34 @@ static bt_property_availability bt_bt2_plugin_get_version(const bt_plugin *plugi
     return ret;
 }
 
+static bt_plugin_provider_set_borrow_status
+bt_bt2_plugin_provider_set_borrow(const bt_plugin_provider_set **plugin_provider_set)
+{
+    bt_plugin_provider_set_borrow_status status;
+
+    status = bt_plugin_provider_set_borrow(plugin_provider_set);
+    if (status != BT_PLUGIN_PROVIDER_SET_BORROW_STATUS_OK) {
+        *plugin_provider_set = NULL;
+    }
+
+    return status;
+}
+
+static bt_property_availability
+bt_bt2_plugin_provider_get_version(const bt_plugin_provider *plugin_provider, unsigned int *major,
+                                   unsigned int *minor, unsigned int *patch, const char **extra)
+{
+    bt_property_availability ret;
+
+    ret = bt_plugin_provider_get_version(plugin_provider, major, minor, patch, extra);
+
+    if (ret == BT_PROPERTY_AVAILABILITY_NOT_AVAILABLE) {
+        *extra = NULL;
+    }
+
+    return ret;
+}
+
 static bt_plugin_find_status bt_bt2_plugin_find(const char *plugin_name,
                                                 bt_bool find_in_std_env_var,
                                                 bt_bool find_in_user_dir, bt_bool find_in_sys_dir,

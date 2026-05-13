@@ -11,7 +11,7 @@ from bt2 import component as bt2_component
 from bt2 import native_bt
 
 
-class _PluginVersion:
+class _Version:
     def __init__(self, major, minor, patch, extra):
         self._major = major
         self._minor = minor
@@ -36,6 +36,77 @@ class _PluginVersion:
 
     def __str__(self) -> str:
         return f"{self._major}.{self._minor}.{self._patch}{self._extra if self._extra is not None else ''}"
+
+
+class _PluginVersion(_Version):
+    pass
+
+
+class _PluginProviderVersion(_Version):
+    pass
+
+
+class _PluginProvider(bt2_object._BaseObject):
+    # A plugin provider is not reference-counted: it remains valid for the
+    # lifetime of libbabeltrace2, so this is a plain wrapper around the
+    # borrowed pointer.
+
+    @property
+    def name(self) -> str:
+        return native_bt.plugin_provider_get_name(self._ptr)
+
+    @property
+    def description(self) -> typing.Optional[str]:
+        return native_bt.plugin_provider_get_description(self._ptr)
+
+    @property
+    def author(self) -> typing.Optional[str]:
+        return native_bt.plugin_provider_get_author(self._ptr)
+
+    @property
+    def license(self) -> typing.Optional[str]:
+        return native_bt.plugin_provider_get_license(self._ptr)
+
+    @property
+    def path(self) -> typing.Optional[str]:
+        return native_bt.plugin_provider_get_path(self._ptr)
+
+    @property
+    def version(self) -> typing.Optional[_PluginProviderVersion]:
+        status, major, minor, patch, extra = native_bt.bt2_plugin_provider_get_version(
+            self._ptr
+        )
+
+        if status == native_bt.PROPERTY_AVAILABILITY_NOT_AVAILABLE:
+            return
+
+        return _PluginProviderVersion(major, minor, patch, extra)
+
+
+class _PluginProviderSet(bt2_object._BaseObject, typing.Sequence[_PluginProvider]):
+    # The plugin provider set is not reference-counted: it remains valid
+    # for the lifetime of libbabeltrace2.
+
+    def __len__(self) -> int:
+        return native_bt.plugin_provider_set_get_plugin_provider_count(self._ptr)
+
+    def __getitem__(self, index: int) -> _PluginProvider:
+        bt2_utils._check_uint64(index)
+
+        if index >= len(self):
+            raise IndexError
+
+        return _PluginProvider(
+            native_bt.plugin_provider_set_borrow_plugin_provider_by_index(
+                self._ptr, index
+            )
+        )
+
+
+def plugin_providers() -> _PluginProviderSet:
+    status, ptr = native_bt.bt2_plugin_provider_set_borrow()
+    bt2_utils._handle_func_status(status, "failed to borrow plugin provider set")
+    return _PluginProviderSet(ptr)
 
 
 class _PluginComponentClassesIterator(typing.Iterator[str]):
@@ -186,6 +257,15 @@ class _Plugin(bt2_object._SharedObject):
             return
 
         return _PluginVersion(major, minor, patch, extra)
+
+    @property
+    def provider(self) -> typing.Optional[_PluginProvider]:
+        ptr = native_bt.plugin_borrow_provider(self._ptr)
+
+        if ptr is None:
+            return
+
+        return _PluginProvider(ptr)
 
     @property
     def source_component_classes(

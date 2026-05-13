@@ -125,6 +125,9 @@ from bt2.plugin import (
     _PluginSet,
     find_plugin,
     find_plugins,
+    _PluginProvider,
+    plugin_providers,
+    _PluginProviderSet,
     find_plugins_in_path,
 )
 from bt2.stream import _Stream, _StreamConst

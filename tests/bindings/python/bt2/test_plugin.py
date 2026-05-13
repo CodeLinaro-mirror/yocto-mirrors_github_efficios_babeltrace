@@ -121,3 +121,7 @@ class TestProps:
 
     def test_sink_comp_classes_len(self, ctf_plugin):
         assert len(ctf_plugin.sink_component_classes) == 1
+
+    def test_provider(self, ctf_plugin):
+        assert ctf_plugin.provider is not None
+        assert ctf_plugin.provider.name == "so"

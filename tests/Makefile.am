@@ -26,6 +26,7 @@ EXTRA_DIST = \
 	bindings/python/bt2/test_package.py \
 	bindings/python/bt2/test_packet.py \
 	bindings/python/bt2/test_plugin.py \
+	bindings/python/bt2/test_plugin_provider.py \
 	bindings/python/bt2/test_port.py \
 	bindings/python/bt2/test_query_executor.py \
 	bindings/python/bt2/test_stream.py \
@@ -62,6 +63,7 @@ EXTRA_DIST = \
 	ctf-writer/test_ctf_writer_trace.py \
 	lib/conds/conftest.py \
 	lib/conds/README.adoc \
+	lib/plugin-providers/test_plugin_providers.py \
 	plugins/flt.lttng-utils.debug-info/bins/i386-linux-gnu/build-id/.build-id/cd/d98cdd87f7fe64c13b6daad553987eafd40cbb.debug \
 	plugins/flt.lttng-utils.debug-info/bins/i386-linux-gnu/build-id/libhello-so \
 	plugins/flt.lttng-utils.debug-info/bins/i386-linux-gnu/debug-link/libhello-so \
@@ -1394,6 +1396,45 @@ lib_plugins_bt_plugin_multi_la_LIBADD = \
 	$(top_builddir)/src/common/libcommon.la \
 	$(top_builddir)/src/logging/liblogging.la
 
+noinst_LTLIBRARIES += lib/plugin-providers/multi/bt-plugin-provider-multi.la
+lib_plugin_providers_multi_bt_plugin_provider_multi_la_SOURCES = lib/plugin-providers/multi/multi.cpp
+lib_plugin_providers_multi_bt_plugin_provider_multi_la_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	$(LT_NO_UNDEFINED) \
+	-rpath / -avoid-version -module $(LD_NOTEXT)
+lib_plugin_providers_multi_bt_plugin_provider_multi_la_LIBADD = \
+	$(top_builddir)/src/lib/libbabeltrace2.la \
+	$(top_builddir)/src/common/libcommon.la \
+	$(top_builddir)/src/logging/liblogging.la
+
+noinst_LTLIBRARIES += lib/plugin-providers/init-fail/bt-plugin-provider-init-fail.la
+lib_plugin_providers_init_fail_bt_plugin_provider_init_fail_la_SOURCES = lib/plugin-providers/init-fail/init-fail.cpp
+lib_plugin_providers_init_fail_bt_plugin_provider_init_fail_la_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	$(LT_NO_UNDEFINED) \
+	-rpath / -avoid-version -module $(LD_NOTEXT)
+lib_plugin_providers_init_fail_bt_plugin_provider_init_fail_la_LIBADD = \
+	$(top_builddir)/src/lib/libbabeltrace2.la \
+	$(top_builddir)/src/common/libcommon.la \
+	$(top_builddir)/src/logging/liblogging.la
+
+noinst_LTLIBRARIES += lib/plugin-providers/dup/bt-plugin-provider-dup.la
+lib_plugin_providers_dup_bt_plugin_provider_dup_la_SOURCES = lib/plugin-providers/dup/dup.cpp
+lib_plugin_providers_dup_bt_plugin_provider_dup_la_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	$(LT_NO_UNDEFINED) \
+	-rpath / -avoid-version -module $(LD_NOTEXT)
+lib_plugin_providers_dup_bt_plugin_provider_dup_la_LIBADD = \
+	$(top_builddir)/src/lib/libbabeltrace2.la \
+	$(top_builddir)/src/common/libcommon.la \
+	$(top_builddir)/src/logging/liblogging.la
+
+noinst_PROGRAMS += lib/plugin-providers/load-plugin-providers.bin
+lib_plugin_providers_load_plugin_providers_bin_SOURCES = lib/plugin-providers/load-plugin-providers.cpp
+lib_plugin_providers_load_plugin_providers_bin_LDADD = \
+	$(top_builddir)/src/lib/libbabeltrace2.la \
+	$(FMT_LDADD)
+
 noinst_LTLIBRARIES += lib/init-fail-plugin/bt-plugin.la
 lib_init_fail_plugin_bt_plugin_la_SOURCES = lib/init-fail-plugin/plugin.cpp
 lib_init_fail_plugin_bt_plugin_la_LDFLAGS = \
@@ -1402,6 +1443,17 @@ lib_init_fail_plugin_bt_plugin_la_LDFLAGS = \
 	-rpath / -avoid-version -module $(LD_NOTEXT)
 lib_init_fail_plugin_bt_plugin_la_LIBADD = \
 	$(top_builddir)/src/lib/libbabeltrace2.la
+
+noinst_LTLIBRARIES += utils/plugin-providers/bt-plugin-provider.la
+utils_plugin_providers_bt_plugin_provider_la_SOURCES = utils/plugin-providers/provider.cpp
+utils_plugin_providers_bt_plugin_provider_la_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	$(LT_NO_UNDEFINED) \
+	-rpath / -avoid-version -module $(LD_NOTEXT)
+utils_plugin_providers_bt_plugin_provider_la_LIBADD = \
+	$(top_builddir)/src/lib/libbabeltrace2.la \
+	$(top_builddir)/src/common/libcommon.la \
+	$(top_builddir)/src/logging/liblogging.la
 
 if DEV_MODE
 

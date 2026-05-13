@@ -32,7 +32,7 @@ A <strong><em>plugin</em></strong> is a package of \bt_p_comp_cls:
 
 @image html plugin.png "A plugin is a package of component classes."
 
-There are three types of plugins:
+\bt_name ships with support for three kinds of plugins:
 
 <dl>
   <dt>Shared object plugin</dt>
@@ -56,8 +56,15 @@ There are three types of plugins:
   </dd>
 </dl>
 
-libbabeltrace2 \ref api-plugin-loading "loads" shared object and
-Python plugins. Those plugins need libbabeltrace2 in turn to create
+libbabeltrace2 finds and loads plugins through
+\ref api-plugin-provider "plugin providers": it ships with a shared
+object plugin provider and a Python plugin provider, but anyone can
+write and install a custom plugin provider (see
+\ref api-plugin-provider-dev) to make libbabeltrace2 find and load
+other kinds of plugins.
+
+libbabeltrace2 \ref api-plugin-loading "loads" plugins through such
+plugin providers. Those plugins need libbabeltrace2 in turn to create
 and use \bt_name objects:
 
 @image html linking.png "libbabeltrace2 loads plugins which need libbabeltrace2."
@@ -164,6 +171,16 @@ A plugin has the following properties:
     compatibility.
 
     Use bt_plugin_set_version() and bt_plugin_get_version().
+  </dd>
+
+  <dt>
+    \anchor api-plugin-prop-provider
+    \bt_dt_opt Provider
+  </dt>
+  <dd>
+    The \ref api-plugin-provider "provider" of the plugin, if any.
+
+    Use bt_plugin_borrow_provider().
   </dd>
 </dl>
 */
@@ -667,6 +684,32 @@ extern bt_property_availability bt_plugin_get_version(
 		const bt_plugin *plugin, unsigned int *major,
 		unsigned int *minor, unsigned int *patch,
 		const char **extra) __BT_NOEXCEPT;
+
+/*!
+@brief
+    Borrows the provider of the plugin \bt_p{plugin}.
+
+See the \ref api-plugin-prop-provider "provider" property.
+
+This function returns \c NULL if \bt_p{plugin} has no associated
+provider. This is the case when you create a plugin directly
+with bt_plugin_create(), without using any plugin provider.
+
+@param[in] plugin
+    Plugin of which to get the provider.
+
+@returns
+    @parblock
+    Provider of \bt_p{plugin}, or \c NULL if
+    not available.
+
+    The returned pointer remains valid until libbabeltrace2 is unloaded.
+    @endparblock
+
+@bt_pre_not_null{plugin}
+*/
+extern const bt_plugin_provider *
+bt_plugin_borrow_provider(const bt_plugin *plugin) __BT_NOEXCEPT;
 
 /*! @} */
 
