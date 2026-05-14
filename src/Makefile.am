@@ -829,10 +829,11 @@ plugin_text_sources = \
 	plugins/text/details/write.h \
 	plugins/text/dmesg/dmesg.c \
 	plugins/text/dmesg/dmesg.h \
-	plugins/text/pretty/pretty.c \
-	plugins/text/pretty/pretty.h \
-	plugins/text/pretty/print.c \
-	plugins/text/plugin.c
+	plugins/text/pretty/pretty.cpp \
+	plugins/text/pretty/pretty.hpp \
+	plugins/text/pretty/writer.cpp \
+	plugins/text/pretty/writer.hpp \
+	plugins/text/plugin.cpp
 
 plugins_text_babeltrace_plugin_text_la_SOURCES = $(plugin_text_sources)
 
@@ -844,6 +845,7 @@ plugins_text_babeltrace_plugin_text_la_LDFLAGS = \
 plugins_text_babeltrace_plugin_text_la_LIBADD = \
 	lib/libbabeltrace2.la \
 	common/libcommon.la \
+	$(FMT_LDADD) \
 	logging/liblogging.la \
 	compat/libcompat.la \
 	plugins/common/param-validation/libparam-validation.la
