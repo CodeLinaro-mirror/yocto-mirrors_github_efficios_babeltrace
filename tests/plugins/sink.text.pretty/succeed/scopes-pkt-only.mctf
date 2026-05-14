@@ -1,0 +1,41 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+stream {
+    packet.context := struct {
+        integer { size = 32; align = 8; signed = false; byte_order = le; } content_size;
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } pc;
+    };
+    event.header := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; } id;
+    };
+};
+
+event {
+    id = 0;
+    name = "e";
+};
+
+--- stream
+!le
+
+<beg>
+# packet context
+[8 * (end - beg) : 32]  # `content_size`
+[              1 :  8]  # `pc`
+
+# event header
+[              0 :  8]  # `id`
+<end>
+
+--- @params
+name-scope=yes
+
+--- @output
+e: stream.packet.context = { pc = 1 }

@@ -1,0 +1,25 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "e";
+    fields := struct {
+        enum : integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } {
+            ALPHA = 7,
+            BETA = 7,
+            GAMMA = 100
+        } v;
+    };
+};
+
+--- stream
+$7
+
+--- @output
+e: { v = ( { "ALPHA", "BETA" } : container = 7 ) }

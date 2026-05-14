@@ -1,0 +1,63 @@
+--- metadata
+[
+  {
+    "type": "preamble",
+    "version": 2
+  },
+  {
+    "type": "trace-class"
+  },
+  {
+    "type": "data-stream-class"
+  },
+  {
+    "type": "event-record-class",
+    "name": "e",
+    "payload-field-class": {
+      "type": "structure",
+      "member-classes": [
+        {
+          "name": "sel",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 8,
+            "alignment": 8,
+            "byte-order": "little-endian",
+            "preferred-display-base": 10
+          }
+        },
+        {
+          "name": "opt",
+          "field-class": {
+            "type": "optional",
+            "field-class": {
+              "type": "fixed-length-unsigned-integer",
+              "length": 8,
+              "alignment": 8,
+              "byte-order": "little-endian",
+              "preferred-display-base": 16
+            },
+            "selector-field-location": {
+              "origin": "event-record-payload",
+              "path": [
+                "sel"
+              ]
+            },
+            "selector-field-ranges": [
+              [
+                1,
+                10
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  }
+]
+
+--- stream
+$5 ab
+
+--- @output
+e: { sel = 5, opt = { 0xAB } }

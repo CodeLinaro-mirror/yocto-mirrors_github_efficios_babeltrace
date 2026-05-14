@@ -1,0 +1,24 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "e";
+    fields := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = hexadecimal; } v;
+    };
+};
+
+--- stream
+ab
+
+--- @params
+name-default=show
+
+--- @output
+name = e, event.fields = { v = 0xAB }

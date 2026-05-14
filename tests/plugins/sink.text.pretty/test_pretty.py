@@ -1,12 +1,8 @@
 # SPDX-FileCopyrightText: 2020 EfficiOS, Inc.
 # SPDX-License-Identifier: GPL-2.0-only
 
-import pathlib
-import tempfile
-
 import bt2
 import pytest
-import bt_tests_utils as btu
 
 
 # Tests that the component returns an error if the graph is configured
@@ -22,21 +18,3 @@ def test_unconnected_port_raises(pretty_comp_cls):
         'Single input port is not connected: port-name="in"'
         in exc_info.value[0].message
     )
-
-
-def test_basic_bit_array_fields_with_flags(ctf_traces_dir, pretty_comp_cls):
-    with tempfile.TemporaryDirectory(prefix="bt-test-pretty-") as temp_dir:
-        temp_path = pathlib.Path(temp_dir) / "output.txt"
-
-        btu.convert(
-            ctf_traces_dir / "2/succeed/fl-bm",
-            btu.SinkComponentSpec(
-                pretty_comp_cls,
-                {"path": str(temp_path), "color": "never"},
-            ),
-        )
-
-        expected = (btu.this_src_dir(__file__) / "fl-bm-ctf2.expect").read_text(
-            encoding="utf-8"
-        )
-        assert temp_path.read_text(encoding="utf-8") == expected

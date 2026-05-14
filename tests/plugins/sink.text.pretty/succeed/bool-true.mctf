@@ -1,0 +1,37 @@
+--- metadata
+[
+  {
+    "type": "preamble",
+    "version": 2
+  },
+  {
+    "type": "trace-class"
+  },
+  {
+    "type": "data-stream-class"
+  },
+  {
+    "type": "event-record-class",
+    "name": "e",
+    "payload-field-class": {
+      "type": "structure",
+      "member-classes": [
+        {
+          "name": "v",
+          "field-class": {
+            "type": "fixed-length-boolean",
+            "length": 8,
+            "alignment": 8,
+            "byte-order": "little-endian"
+          }
+        }
+      ]
+    }
+  }
+]
+
+--- stream
+01
+
+--- @output
+e: { v = true }

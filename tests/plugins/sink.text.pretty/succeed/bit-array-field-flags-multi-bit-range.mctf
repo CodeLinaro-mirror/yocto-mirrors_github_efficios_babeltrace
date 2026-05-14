@@ -1,0 +1,40 @@
+--- metadata
+[
+  {
+    "type": "preamble",
+    "version": 2
+  },
+  {
+    "type": "trace-class"
+  },
+  {
+    "type": "data-stream-class"
+  },
+  {
+    "type": "event-record-class",
+    "name": "e",
+    "payload-field-class": {
+      "type": "structure",
+      "member-classes": [
+        {
+          "name": "v",
+          "field-class": {
+            "type": "fixed-length-bit-map",
+            "length": 8,
+            "alignment": 8,
+            "byte-order": "little-endian",
+            "flags": {
+              "alpha": [[2, 5]]
+            }
+          }
+        }
+      ]
+    }
+  }
+]
+
+--- stream
+%00001000
+
+--- @output
+e: { v = 0x8 { "alpha" } }

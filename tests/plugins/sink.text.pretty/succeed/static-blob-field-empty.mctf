@@ -1,0 +1,45 @@
+--- metadata
+[
+  {
+    "type": "preamble",
+    "version": 2
+  },
+  {
+    "type": "trace-class"
+  },
+  {
+    "type": "data-stream-class"
+  },
+  {
+    "type": "event-record-class",
+    "name": "e",
+    "payload-field-class": {
+      "type": "structure",
+      "member-classes": [
+        {
+          "name": "b",
+          "field-class": {
+            "type": "static-length-blob",
+            "length": 0
+          }
+        },
+        {
+          "name": "tail",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 8,
+            "alignment": 8,
+            "byte-order": "little-endian",
+            "preferred-display-base": 10
+          }
+        }
+      ]
+    }
+  }
+]
+
+--- stream
+$42
+
+--- @output
+e: { b = { }, tail = 42 }

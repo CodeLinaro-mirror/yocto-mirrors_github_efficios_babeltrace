@@ -1,0 +1,21 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "e";
+    fields := struct {
+        floating_point { exp_dig = 11; mant_dig = 53; byte_order = le; align = 8; } v;
+    };
+};
+
+--- stream
+[-3.25:64le]
+
+--- @output
+e: { v = -3.25 }

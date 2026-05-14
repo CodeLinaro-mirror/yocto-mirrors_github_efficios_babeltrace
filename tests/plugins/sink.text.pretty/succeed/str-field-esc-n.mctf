@@ -1,0 +1,21 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "e";
+    fields := struct {
+        string { encoding = UTF8; } v;
+    };
+};
+
+--- stream
+0a 00
+
+--- @output
+e: { v = "\n" }

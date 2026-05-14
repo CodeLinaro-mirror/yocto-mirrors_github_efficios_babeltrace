@@ -1,0 +1,48 @@
+--- metadata
+[
+  {
+    "type": "preamble",
+    "version": 2
+  },
+  {
+    "type": "trace-class"
+  },
+  {
+    "type": "data-stream-class"
+  },
+  {
+    "type": "event-record-class",
+    "name": "e",
+    "payload-field-class": {
+      "type": "structure",
+      "member-classes": [
+        {
+          "name": "len",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 8,
+            "alignment": 8,
+            "byte-order": "little-endian",
+            "preferred-display-base": 10
+          }
+        },
+        {
+          "name": "b",
+          "field-class": {
+            "type": "dynamic-length-blob",
+            "length-field-location": {
+              "origin": "event-record-payload",
+              "path": ["len"]
+            }
+          }
+        }
+      ]
+    }
+  }
+]
+
+--- stream
+00
+
+--- @output
+e: { len = 0, b = { } }

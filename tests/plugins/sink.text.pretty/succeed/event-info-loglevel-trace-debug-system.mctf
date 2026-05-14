@@ -1,0 +1,25 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "e";
+    loglevel = 7;
+    fields := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = hexadecimal; } v;
+    };
+};
+
+--- stream
+ab
+
+--- @params
+field-loglevel=yes
+
+--- @output
+TRACE_DEBUG_SYSTEM (7) e: { v = 0xAB }

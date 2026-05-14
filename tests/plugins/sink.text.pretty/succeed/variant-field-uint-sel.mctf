@@ -1,0 +1,81 @@
+--- metadata
+[
+  {
+    "type": "preamble",
+    "version": 2
+  },
+  {
+    "type": "trace-class"
+  },
+  {
+    "type": "data-stream-class"
+  },
+  {
+    "type": "event-record-class",
+    "name": "e",
+    "payload-field-class": {
+      "type": "structure",
+      "member-classes": [
+        {
+          "name": "sel",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 8,
+            "alignment": 8,
+            "byte-order": "little-endian",
+            "preferred-display-base": 10
+          }
+        },
+        {
+          "name": "v",
+          "field-class": {
+            "type": "variant",
+            "selector-field-location": {
+              "origin": "event-record-payload",
+              "path": [
+                "sel"
+              ]
+            },
+            "options": [
+              {
+                "name": "a",
+                "field-class": {
+                  "type": "fixed-length-unsigned-integer",
+                  "length": 8,
+                  "alignment": 8,
+                  "byte-order": "little-endian",
+                  "preferred-display-base": 10
+                },
+                "selector-field-ranges": [
+                  [
+                    0,
+                    0
+                  ]
+                ]
+              },
+              {
+                "name": "b",
+                "field-class": {
+                  "type": "null-terminated-string"
+                },
+                "selector-field-ranges": [
+                  [
+                    1,
+                    1
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+]
+
+--- stream
+01
+"hello\0"
+
+--- @output
+e: { sel = 1, v = { "hello" } }

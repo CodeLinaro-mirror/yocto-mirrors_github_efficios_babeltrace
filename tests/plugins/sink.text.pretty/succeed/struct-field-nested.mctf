@@ -1,0 +1,29 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "e";
+    fields := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } a;
+        struct {
+            integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } b;
+            struct {
+                integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } c;
+            } inner2;
+            integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } d;
+        } inner;
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } x;
+    };
+};
+
+--- stream
+$1 $2 $3 $4 $5
+
+--- @output
+e: { a = 1, inner = { b = 2, inner2 = { c = 3 }, d = 4 }, x = 5 }

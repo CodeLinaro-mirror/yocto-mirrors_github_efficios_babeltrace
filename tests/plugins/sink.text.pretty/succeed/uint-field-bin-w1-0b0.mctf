@@ -1,0 +1,22 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "e";
+    fields := struct {
+        integer { size = 1; align = 8; signed = false; byte_order = le; base = binary; } v;
+        integer { size = 7; align = 1; signed = false; byte_order = le; base = decimal; } pad;
+    };
+};
+
+--- stream
+00
+
+--- @output
+e: { v = 0b0, pad = 0 }

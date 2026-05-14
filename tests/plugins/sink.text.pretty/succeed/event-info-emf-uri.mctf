@@ -1,0 +1,25 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "e";
+    model.emf.uri = "http://example.com/event";
+    fields := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = hexadecimal; } v;
+    };
+};
+
+--- stream
+ab
+
+--- @params
+field-emf=yes
+
+--- @output
+http://example.com/event e: { v = 0xAB }

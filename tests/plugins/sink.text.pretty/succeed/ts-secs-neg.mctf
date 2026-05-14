@@ -1,0 +1,57 @@
+--- metadata
+/* CTF 1.8 */
+
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+clock {
+    name = c;
+    freq = 1000000000;
+    absolute = true;
+    offset = 0;
+    offset_s = -2;
+};
+
+stream {
+    event.header := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; } id;
+        integer { size = 64; align = 8; signed = false; byte_order = le; map = clock.c.value; } timestamp;
+    };
+};
+
+event {
+    id = 0;
+    name = "e";
+    fields := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = hexadecimal; } v;
+    };
+};
+
+--- stream
+# event 1: ns = -1.5e9 (tsSec < 0, tsNsec < 0)
+$0                 # `id`
+[500000000:64le]   # `timestamp`
+ab                 # `v`
+
+# event 2: ns = -1e9 (tsSec < 0, tsNsec == 0)
+$0                 # `id`
+[1000000000:64le]  # `timestamp`
+ab                 # `v`
+
+# event 3: ns = -0.5e9 (tsSec == 0, tsNsec < 0)
+$0                 # `id`
+[1500000000:64le]  # `timestamp`
+ab                 # `v`
+
+--- @params
+clock-seconds=yes
+no-delta=yes
+
+--- @output
+[-1.500000000] e: { v = 0xAB }
+[-1.000000000] e: { v = 0xAB }
+[-0.500000000] e: { v = 0xAB }

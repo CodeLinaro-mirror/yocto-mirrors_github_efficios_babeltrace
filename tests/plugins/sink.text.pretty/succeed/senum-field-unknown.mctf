@@ -1,0 +1,24 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "e";
+    fields := struct {
+        enum : integer { size = 8; align = 8; signed = true; byte_order = le; base = decimal; } {
+            NEG = -1,
+            ZERO = 0
+        } v;
+    };
+};
+
+--- stream
+$5
+
+--- @output
+e: { v = ( <unknown> : container = 5 ) }

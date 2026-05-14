@@ -1,0 +1,35 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+stream {
+    packet.context := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } pc;
+    };
+};
+
+event {
+    name = "e";
+    fields := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } v;
+    };
+};
+
+--- stream
+!le
+
+<beg>
+# packet context
+[              1 :  8]  # `pc`
+
+# event.fields
+[              4 :  8]  # `v`
+<end>
+
+--- @output
+e: { pc = 1 }, { v = 4 }

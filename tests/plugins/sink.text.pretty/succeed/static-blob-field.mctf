@@ -1,0 +1,35 @@
+--- metadata
+[
+  {
+    "type": "preamble",
+    "version": 2
+  },
+  {
+    "type": "trace-class"
+  },
+  {
+    "type": "data-stream-class"
+  },
+  {
+    "type": "event-record-class",
+    "name": "e",
+    "payload-field-class": {
+      "type": "structure",
+      "member-classes": [
+        {
+          "name": "b",
+          "field-class": {
+            "type": "static-length-blob",
+            "length": 4
+          }
+        }
+      ]
+    }
+  }
+]
+
+--- stream
+de ad be ef
+
+--- @output
+e: { b = { de ad be ef } }

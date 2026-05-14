@@ -1,0 +1,33 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+stream {
+    event.context := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } c;
+    };
+};
+
+event {
+    name = "e";
+    fields := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } a;
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } arr[3];
+    };
+};
+
+--- stream
+$9
+$42 $1 $2 $3
+
+--- @params
+name-default=hide
+name-payload=yes
+
+--- @output
+e: { 9 }, { a = 42, arr = [ [0] = 1, [1] = 2, [2] = 3 ] }
