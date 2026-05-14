@@ -92,7 +92,13 @@ def _reformat_ctf_2_metadata(content: str):
 
 
 def _reformat_metadata(content: str):
-    content = f"{content.strip()}\n"
+    stripped = content.strip()
+
+    if not stripped:
+        # Preserve a genuinely empty metadata part as an empty file
+        return ""
+
+    content = f"{stripped}\n"
 
     if content.startswith("["):
         # CTF 2: JSON array to JSON text sequence
