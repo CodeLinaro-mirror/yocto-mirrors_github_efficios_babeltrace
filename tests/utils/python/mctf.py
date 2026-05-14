@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2023 EfficiOS Inc.
+# Copyright (C) 2023-2026 EfficiOS Inc.
 #
 # pyright: strict
 
@@ -8,7 +8,7 @@ import os
 import sys
 import typing
 import argparse
-from typing import Any, List, Union
+from typing import Any, Dict, List, Union
 
 import normand
 import moultipart
@@ -122,15 +122,25 @@ def _generate_from_part(
     return normand_vars, normand_labels
 
 
-def generate(input_path: str, base_dir: str, verbose: bool):
+def generate(
+    input_path: str, base_dir: str, verbose: bool
+) -> Dict[str, moultipart.Part]:
     with open(input_path, encoding="utf-8") as input_file:
         variables: normand.VariablesT = {}
         labels: normand.LabelsT = {}
+        non_ctf_parts: Dict[str, moultipart.Part] = {}
 
         for part in moultipart.parse(input_file):
+            if part.header_info.startswith("@"):
+                assert part.header_info not in non_ctf_parts
+                non_ctf_parts[part.header_info] = part
+                continue
+
             variables, labels = _generate_from_part(
                 part, base_dir, verbose, variables, labels
             )
+
+        return non_ctf_parts
 
 
 def _parse_cli_args():
