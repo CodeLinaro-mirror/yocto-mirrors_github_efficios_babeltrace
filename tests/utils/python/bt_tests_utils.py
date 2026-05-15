@@ -110,6 +110,8 @@ def _log_run_cmd(
         "LD_PRELOAD",
         "LIBBABELTRACE2_PLUGIN_PROVIDER_DIR",
         "PYTHONPATH",
+        "BABELTRACE_TERM_COLOR",
+        "NO_COLOR",
     }
 
     # Collect all environment variables to log
@@ -164,6 +166,14 @@ def run(
         exec_path = exe_path(exec_path)
 
     env = os.environ.copy()
+
+    # Strip `NO_COLOR` so that the subprocess (the `babeltrace2` CLI, a
+    # Catch2 test binary, and the rest) doesn't honor it: tests need
+    # deterministic output regardless of the user's terminal preference.
+    #
+    # `os.environ` itself is left intact, therefore pytest's own
+    # terminal writer keeps honoring the user's preference.
+    env.pop("NO_COLOR", None)
 
     if extra_env is not None:
         env.update(extra_env)

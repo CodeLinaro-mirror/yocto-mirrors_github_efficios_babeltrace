@@ -13,15 +13,28 @@ from typing import Any, Dict, List, Union, Callable, Optional, NamedTuple
 
 import pytest
 
+# Strip `NO_COLOR` around the `bt2` import so that libbabeltrace2's
+# initialization doesn't consider it.
+#
+# pytest's terminal writer doesn't exist yet at this point (built later
+# in the built-in pytest_configure() hook), therefore we restore the
+# user's value before returning, allowing pytest itself to honor
+# the preference.
+_user_no_color = os.environ.pop("NO_COLOR", None)
+
 try:
-    import bt2
-    import moultipart
-    import bt_tests_utils as btu
-except ImportError:
-    pytest.exit(
-        "Cannot import `bt2`, `moultipart`, or `bt_tests_utils`: make sure to source `tests/utils/env.sh` before you run `bt-pytest`!",
-        returncode=1,
-    )
+    try:
+        import bt2
+        import moultipart
+        import bt_tests_utils as btu
+    except ImportError:
+        pytest.exit(
+            "Cannot import `bt2`, `moultipart`, or `bt_tests_utils`: make sure to source `tests/utils/env.sh` before you run `bt-pytest`!",
+            returncode=1,
+        )
+finally:
+    if _user_no_color is not None:
+        os.environ["NO_COLOR"] = _user_no_color
 
 _logger = logging.getLogger(__name__)
 
@@ -330,7 +343,7 @@ class _Catch2TestFile(pytest.File):
         result = btu.run(
             build_root_dir,
             test_binary,
-            ["--list-tests", "-v", "quiet", "--order", "decl"],
+            ["--list-tests", "-v", "quiet", "--order", "decl", "--colour-mode", "none"],
             check=True,
         )
         _logger.debug(result.stdout)
