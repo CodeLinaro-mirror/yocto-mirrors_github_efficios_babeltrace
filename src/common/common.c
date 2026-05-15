@@ -437,8 +437,23 @@ bool bt_common_colors_supported(void)
 	supports_colors_set = true;
 
 	/*
-	 * `BABELTRACE_TERM_COLOR` environment variable always overrides
-	 * the automatic color support detection.
+	 * `NO_COLOR` environment variable (see
+	 * <https://no-color.org/>): when set and not empty, force no
+	 * colors, overriding both `BABELTRACE_TERM_COLOR` and the
+	 * automatic color support detection.
+	 */
+	{
+		const char *no_color_env_var = getenv("NO_COLOR");
+
+		if (no_color_env_var && no_color_env_var[0] != '\0') {
+			/* Force no colors */
+			goto end;
+		}
+	}
+
+	/*
+	 * `BABELTRACE_TERM_COLOR` environment variable overrides the
+	 * automatic color support detection.
 	 */
 	term_color_env_var = getenv("BABELTRACE_TERM_COLOR");
 	if (term_color_env_var) {

@@ -1254,7 +1254,8 @@ time, the process and thread IDs, the <<log-levels,log level>>, the
 name and line number, and the <<message,message>>.
 
 When {bt2} supports terminal color codes (depends on the
-`BABELTRACE_TERM_COLOR` environment variable's value and what the
+`BABELTRACE_TERM_COLOR` and https://no-color.org/[`NO_COLOR`]
+environment variables' values and what the
 standard output and error streams are plugged into), _INFO_-level lines
 are blue, _WARNING_-level lines are yellow, and _ERROR_-level and
 _FATAL_-level lines are red.

@@ -116,8 +116,8 @@ param:color[]=(`never` | `auto` | `always`) vtype:[optional string]::
     Always emit terminal color codes.
 --
 +
-The `BABELTRACE_TERM_COLOR` environment variable overrides this
-parameter.
+The `BABELTRACE_TERM_COLOR` and https://no-color.org/[`NO_COLOR`]
+environment variables override this parameter.
 
 param:compact[]=_VAL_ vtype:[optional boolean]::
     If _VAL_ is true, then enable compact mode.

@@ -85,8 +85,8 @@ param:color[]=(`never` | `auto` | `always`) vtype:[optional string]::
     Always emit terminal color codes.
 --
 +
-The `BABELTRACE_TERM_COLOR` environment variable overrides this
-parameter.
+The `BABELTRACE_TERM_COLOR` and https://no-color.org/[`NO_COLOR`]
+environment variables override this parameter.
 
 param:field-default[]=(`show` | `hide`) vtype:[optional string]::
     By default, show or hide all the fields. This sets the default value

@@ -785,7 +785,9 @@ The available values for _WHEN_ are:
 --
 +
 The `auto` and `always` values have no effect if the
-`BABELTRACE_TERM_COLOR` environment variable is set to `NEVER`.
+`BABELTRACE_TERM_COLOR` environment variable is set to `never` or if
+the https://no-color.org/[`NO_COLOR`] environment variable is set
+to a non-empty value.
 
 opt:-f[] _FIELD_[,_FIELD_]...::
 opt:--fields[]=_FIELD_[,_FIELD_]...::

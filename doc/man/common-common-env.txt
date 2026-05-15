@@ -12,26 +12,36 @@ its exit status.
 This environment variable is ignored when the application has the
 `setuid` or the `setgid` access right flag set.
 
-`BABELTRACE_TERM_COLOR`=(`AUTO` | `NEVER` | `ALWAYS`)::
+`BABELTRACE_TERM_COLOR`=(`auto` | `never` | `always`)::
     Force the terminal color support for the man:babeltrace2[1] program
     and the project plugins.
 +
 The available values are:
 +
 --
-`AUTO`::
+`auto`::
     Only emit terminal color codes when the standard output and error
     streams are connected to a color-capable terminal.
 
-`NEVER`::
+`never`::
     Never emit terminal color codes.
 
-`ALWAYS`::
+`always`::
     Always emit terminal color codes.
 --
++
+The `NO_COLOR` environment variable below, when set to a non-empty
+value, overrides this environment variable.
 
 `BABELTRACE_TERM_COLOR_BRIGHT_MEANS_BOLD`=`0`::
     Set to `0` to emit
     https://en.wikipedia.org/wiki/ANSI_escape_code[SGR]
     codes{nbsp}90 to{nbsp}97 for bright colors instead of
     bold (SGR code{nbsp}1) and standard color codes (SGR codes 30 to 37).
+
+`NO_COLOR`::
+    When set to a non-empty value, has the same effect as setting
+    `BABELTRACE_TERM_COLOR` to `never`, overriding
+    `BABELTRACE_TERM_COLOR` itself.
++
+See https://no-color.org/ to learn more.
