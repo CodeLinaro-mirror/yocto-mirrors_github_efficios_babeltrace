@@ -1,0 +1,97 @@
+// SPDX-FileCopyrightText: 2026 Philippe Proulx <pproulx@efficios.com>
+// SPDX-License-Identifier: CC-BY-4.0
+
+= `sink.utils.counter` output tests
+Philippe Proulx
+:toc: left
+
+This directory holds data-driven tests which verify that a
+`sink.utils.counter` component produces the expected textual output for
+a given CTF trace.
+
+Each test file targets a single, specific counting behaviour rather
+than bundling many cases into one shared trace. When a test fails, the
+narrow scope of the file makes the cause of the failure immediately
+obvious: the metadata stream, the data stream, the `sink.utils.counter`
+initialization parameters, and the expected output all describe just the
+one behaviour under test.
+
+Each `.mctf` file represents a single pytest test. `conftest.py`
+collects and runs those files. You can "`run`" a single one if you
+want:
+
+----
+$ bt-pytest one-event.mctf
+----
+
+== File naming
+
+pytest collects every file with the `.mctf` extension in this
+directory.
+
+== File format
+
+Each `.mctf` file is a moultipart file (see `moultipart.py` in the
+source tree) containing the following parts, separated by `---` lines:
+
+. **Metadata stream**, always named `metadata`:
++
+--
+CTF{nbsp}1.8::
+    A complete TSDL metadata stream (the part content goes directly
+    into the materialized `metadata` file).
+
+CTF{nbsp}2::
+    A JSON array of metadata fragments.
++
+`mctf.py` converts it into the corresponding JSON text sequence
+when materializing the `metadata` file.
+--
+
+. **Data streams**, written as
+  https://github.com/efficios/normand[Normand] text.
++
+This is 100% of the data stream(s) to write.
+
+. **Component initialization parameters** (optional), always named `@params`:
++
+A list of `KEY=VAL` lines, one per initialization parameter, passed to
+the `sink.utils.counter` component.
++
+The value `yes` becomes true, the value `no` becomes false, and any
+other value is considered to be a string.
+
+. **Expected output**, always named `@output`:
++
+The text which the `sink.utils.counter` component must write to
+the standard output.
++
+Leading and trailing whitespaces are stripped from both sides before
+the comparison.
+
+== How a test runs
+
+For each collected `.mctf` file, `_CounterMctfItem.runtest()`:
+
+. Materializes the trace into a temporary directory using
+  `mctf.generate()`. This produces:
++
+--
+* One `metadata` file.
+* One or more data stream files.
+--
+
+. Reads the `@params` part (if any) and merges it with the default
+  parameters.
+
+. Reads the `@output` part to obtain the expected textual output.
+
+. Feeds the materialized trace directory into a graph made of
+  `src.ctf.fs` and `sink.utils.counter`, capturing the contents written
+  by the latter to the standard output.
+
+. Asserts that the captured standard output is exactly equal to
+  the `@output` part. If they differ, the test fails.
+
+On a mismatch, the test shows the file path, the expected output, and
+the actual output.

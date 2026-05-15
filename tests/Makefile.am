@@ -313,6 +313,17 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/succeed/variant-field-sint-sel.mctf \
 	plugins/sink.text.pretty/succeed/variant-field-uint-sel.mctf \
 	plugins/sink.text.pretty/test_pretty.py \
+	plugins/sink.utils.counter/succeed/conftest.py \
+	plugins/sink.utils.counter/succeed/disc-events.mctf \
+	plugins/sink.utils.counter/succeed/disc-pkts.mctf \
+	plugins/sink.utils.counter/succeed/hide-zero.mctf \
+	plugins/sink.utils.counter/succeed/multi-pkts.mctf \
+	plugins/sink.utils.counter/succeed/multiple-events.mctf \
+	plugins/sink.utils.counter/succeed/one-event.mctf \
+	plugins/sink.utils.counter/succeed/README.adoc \
+	plugins/sink.utils.counter/succeed/step-multi.mctf \
+	plugins/sink.utils.counter/succeed/step-one.mctf \
+	plugins/sink.utils.counter/succeed/step-zero.mctf \
 	plugins/sink.utils.dummy/test_dummy.py \
 	plugins/src.ctf.fs/empty-event-record.expect \
 	plugins/src.ctf.fs/fail-decoding/conftest.py \

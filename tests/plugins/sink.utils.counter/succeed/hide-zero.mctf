@@ -1,0 +1,29 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "e";
+    fields := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; } v;
+    };
+};
+
+--- stream
+0a 0b
+
+--- @params
+hide-zero=yes
+
+--- @output
+              2 Event messages
+              1 Stream beginning message
+              1 Stream end message
+              1 Packet beginning message
+              1 Packet end message
+              6 messages (TOTAL)
