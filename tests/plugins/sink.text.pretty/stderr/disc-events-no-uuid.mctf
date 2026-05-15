@@ -1,0 +1,42 @@
+--- metadata
+/* CTF 1.8 */
+
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
+
+trace {
+	major = 1;
+	minor = 8;
+	byte_order = le;
+};
+
+stream {
+	packet.context := struct {
+		uint64_t packet_size;
+		uint64_t events_discarded;
+	};
+};
+
+event {
+	name = "ev";
+	fields := struct {
+		uint8_t v;
+	};
+};
+
+--- data
+!le
+
+!macro packet(ev_disc, v)
+  <pkt_beg>
+  [8 * (pkt_end - pkt_beg) : 64]  # `packet_size`
+  [                ev_disc : 64]  # `events_discarded`
+  [                      v :  8]  # `v`
+  <pkt_end>
+!end
+
+m:packet(0, 0xaa)
+m:packet(1, 0xbb)
+
+--- @stderr-re
+WARNING: Tracer discarded 1 event \(unknown time range\) in trace "the-trace" \(no UID\) within stream "[^"]+" \(stream class ID: 0, stream ID: 0\)\.

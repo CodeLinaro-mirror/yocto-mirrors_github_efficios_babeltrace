@@ -1,0 +1,72 @@
+--- metadata
+[
+  {
+    "type": "preamble",
+    "version": 2
+  },
+  {
+    "type": "trace-class",
+    "name": "the-trace",
+    "uid": "the-uid"
+  },
+  {
+    "type": "data-stream-class",
+    "packet-context-field-class": {
+      "type": "structure",
+      "member-classes": [
+        {
+          "name": "packet_size",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 64,
+            "byte-order": "little-endian",
+            "roles": ["packet-total-length"]
+          }
+        },
+        {
+          "name": "packet_seq_num",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 64,
+            "byte-order": "little-endian",
+            "roles": ["packet-sequence-number"]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "type": "event-record-class",
+    "name": "ev",
+    "payload-field-class": {
+      "type": "structure",
+      "member-classes": [
+        {
+          "name": "v",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 8,
+            "byte-order": "little-endian"
+          }
+        }
+      ]
+    }
+  }
+]
+
+--- data
+!le
+
+!macro packet(seq, v)
+  <pkt_beg>
+  [8 * (pkt_end - pkt_beg) : 64]  # `packet_size`
+  [                    seq : 64]  # `packet_seq_num`
+  [                      v :  8]  # `v`
+  <pkt_end>
+!end
+
+m:packet(0, 0xaa)
+m:packet(3, 0xbb)
+
+--- @stderr-re
+WARNING: Tracer discarded 2 packets \(unknown time range\) in trace "the-trace" \(UID: the-uid\) within stream "[^"]+" \(stream class ID: 0, stream ID: 0\)\.

@@ -157,6 +157,25 @@ EXTRA_DIST = \
 	plugins/sink.text.details/default-without-uuid-ctf2-mip1.expect \
 	plugins/sink.text.details/no-packet-context.expect \
 	plugins/sink.text.details/test_succeed_details.py \
+	plugins/sink.text.pretty/stderr/conftest.py \
+	plugins/sink.text.pretty/stderr/disc-events-clk-count-1.mctf \
+	plugins/sink.text.pretty/stderr/disc-events-clk-count-many.mctf \
+	plugins/sink.text.pretty/stderr/disc-events-no-clk.mctf \
+	plugins/sink.text.pretty/stderr/disc-events-no-uid.mctf \
+	plugins/sink.text.pretty/stderr/disc-events-no-uuid.mctf \
+	plugins/sink.text.pretty/stderr/disc-events-utc-date-time.mctf \
+	plugins/sink.text.pretty/stderr/disc-events-utc-time.mctf \
+	plugins/sink.text.pretty/stderr/disc-events-uuid.mctf \
+	plugins/sink.text.pretty/stderr/disc-pkts-clk-count-1.mctf \
+	plugins/sink.text.pretty/stderr/disc-pkts-clk-count-many.mctf \
+	plugins/sink.text.pretty/stderr/disc-pkts-no-clk.mctf \
+	plugins/sink.text.pretty/stderr/disc-pkts-no-uid.mctf \
+	plugins/sink.text.pretty/stderr/disc-pkts-no-uuid.mctf \
+	plugins/sink.text.pretty/stderr/disc-pkts-utc-date-time.mctf \
+	plugins/sink.text.pretty/stderr/disc-pkts-utc-time.mctf \
+	plugins/sink.text.pretty/stderr/disc-pkts-uuid.mctf \
+	plugins/sink.text.pretty/stderr/README.adoc \
+	plugins/sink.text.pretty/stderr/warn-neg-ts.mctf \
 	plugins/sink.text.pretty/succeed/bit-array-field-flags-many-active.mctf \
 	plugins/sink.text.pretty/succeed/bit-array-field-flags-multi-bit-range.mctf \
 	plugins/sink.text.pretty/succeed/bit-array-field-flags-none-active.mctf \

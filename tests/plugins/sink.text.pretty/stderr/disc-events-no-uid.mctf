@@ -1,0 +1,100 @@
+--- metadata
+[
+  {
+    "type": "preamble",
+    "version": 2
+  },
+  {
+    "type": "trace-class",
+    "name": "the-trace"
+  },
+  {
+    "type": "clock-class",
+    "id": "clk",
+    "frequency": 1000000000
+  },
+  {
+    "type": "data-stream-class",
+    "default-clock-class-id": "clk",
+    "packet-context-field-class": {
+      "type": "structure",
+      "member-classes": [
+        {
+          "name": "timestamp_begin",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 64,
+            "byte-order": "little-endian",
+            "roles": ["default-clock-timestamp"]
+          }
+        },
+        {
+          "name": "timestamp_end",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 64,
+            "byte-order": "little-endian",
+            "roles": ["packet-end-default-clock-timestamp"]
+          }
+        },
+        {
+          "name": "packet_size",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 64,
+            "byte-order": "little-endian",
+            "roles": ["packet-total-length"]
+          }
+        },
+        {
+          "name": "events_discarded",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 64,
+            "byte-order": "little-endian",
+            "roles": ["discarded-event-record-counter-snapshot"]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "type": "event-record-class",
+    "name": "ev",
+    "payload-field-class": {
+      "type": "structure",
+      "member-classes": [
+        {
+          "name": "v",
+          "field-class": {
+            "type": "fixed-length-unsigned-integer",
+            "length": 8,
+            "byte-order": "little-endian"
+          }
+        }
+      ]
+    }
+  }
+]
+
+--- data
+!le
+
+!macro packet(ts_begin, ts_end, ev_disc, v)
+  <pkt_beg>
+  [               ts_begin : 64]  # `timestamp_begin`
+  [                 ts_end : 64]  # `timestamp_end`
+  [8 * (pkt_end - pkt_beg) : 64]  # `packet_size`
+  [                ev_disc : 64]  # `events_discarded`
+  [                      v :  8]  # `v`
+  <pkt_end>
+!end
+
+m:packet(10, 20, 0, 0xaa)
+m:packet(30, 40, 2, 0xbb)
+
+--- @params
+clock-cycles=yes
+
+--- @stderr-re
+WARNING: Tracer discarded 2 events between \[00000000000000000020\] and \[00000000000000000040\] in trace "the-trace" \(no UID\) within stream "[^"]+" \(stream class ID: 0, stream ID: 0\)\.

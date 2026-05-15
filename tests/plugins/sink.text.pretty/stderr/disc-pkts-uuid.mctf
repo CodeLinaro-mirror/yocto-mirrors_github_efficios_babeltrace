@@ -1,0 +1,57 @@
+--- metadata
+/* CTF 1.8 */
+
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
+
+trace {
+	major = 1;
+	minor = 8;
+	byte_order = le;
+	uuid = "deadbeef-cafe-babe-1234-1234567890ab";
+};
+
+clock {
+	name = the_clock;
+	freq = 1000000000;
+};
+
+typealias integer { size = 64; align = 8; signed = false; map = clock.the_clock.value; } := uint64_clock_t;
+
+stream {
+	packet.context := struct {
+		uint64_clock_t timestamp_begin;
+		uint64_clock_t timestamp_end;
+		uint64_t       packet_size;
+		uint64_t       packet_seq_num;
+	};
+};
+
+event {
+	name = "ev";
+	fields := struct {
+		uint8_t v;
+	};
+};
+
+--- data
+!le
+
+!macro pkt(ts_begin, ts_end, seq, v)
+  <pkt_beg>
+  [               ts_begin : 64]  # `timestamp_begin`
+  [                 ts_end : 64]  # `timestamp_end`
+  [8 * (pkt_end - pkt_beg) : 64]  # `packet_size`
+  [                    seq : 64]  # `packet_seq_num`
+  [                      v :  8]  # `v`
+  <pkt_end>
+!end
+
+m:pkt(10, 20, 0, 0xaa)
+m:pkt(30, 40, 4, 0xbb)
+
+--- @params
+clock-cycles=yes
+
+--- @stderr-re
+WARNING: Tracer discarded 3 packets between \[00000000000000000020\] and \[00000000000000000030\] in trace "the-trace" \(UID: deadbeef-cafe-babe-1234-1234567890ab\) within stream "[^"]+" \(stream class ID: 0, stream ID: 0\)\.

@@ -1,0 +1,48 @@
+--- metadata
+/* CTF 1.8 */
+
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
+
+trace {
+	major = 1;
+	minor = 8;
+	byte_order = le;
+};
+
+clock {
+	name = the_clock;
+	freq = 1000000000;
+	absolute = true;
+	offset_s = -2;
+};
+
+typealias integer { size = 64; align = 8; signed = false; map = clock.the_clock.value; } := uint64_clock_t;
+
+stream {
+	event.header := struct {
+		uint8_t          id;
+		uint64_clock_t   timestamp;
+	};
+};
+
+event {
+	id = 0;
+	name = "ev";
+	fields := struct {
+		uint8_t v;
+	};
+};
+
+--- data
+!le
+
+[       0 :  8]   # `id`
+[500000000 : 64]  # `timestamp`
+[    0xaa :  8]   # `v`
+
+--- @params
+clock-gmt=yes
+
+--- @stderr-re
+.+?Falling back to seconds from origin format for negative timestamp: ts-s=-1, ts-ns=500000000
