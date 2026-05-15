@@ -82,6 +82,11 @@ struct bt_param_validation_value_descr {
 		return bt_param_validation_value_descr {BT_VALUE_TYPE_SIGNED_INTEGER};
 	}
 
+	static bt_param_validation_value_descr makeUnsignedInteger()
+	{
+		return bt_param_validation_value_descr {BT_VALUE_TYPE_UNSIGNED_INTEGER};
+	}
+
 	static bt_param_validation_value_descr makeBool()
 	{
 		return bt_param_validation_value_descr {BT_VALUE_TYPE_BOOL};

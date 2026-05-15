@@ -8,7 +8,7 @@
 
 #include "cpp-common/bt2/plugin-dev.hpp"
 
-#include "counter/counter.h"
+#include "counter/counter.hpp"
 #include "dummy/dummy.hpp"
 #include "muxer/comp.hpp"
 #include "muxer/msg-iter.hpp"
@@ -30,12 +30,7 @@ BT_PLUGIN_SINK_COMPONENT_CLASS_DESCRIPTION(dummy, "Consume messages and discard 
 BT_PLUGIN_SINK_COMPONENT_CLASS_HELP(dummy, "See the babeltrace2-sink.utils.dummy(7) manual page.");
 
 /* sink.utils.counter */
-BT_PLUGIN_SINK_COMPONENT_CLASS(counter, counter_consume);
-BT_PLUGIN_SINK_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD(counter,
-                                                                 counter_supported_mip_versions);
-BT_PLUGIN_SINK_COMPONENT_CLASS_INITIALIZE_METHOD(counter, counter_init);
-BT_PLUGIN_SINK_COMPONENT_CLASS_FINALIZE_METHOD(counter, counter_finalize);
-BT_PLUGIN_SINK_COMPONENT_CLASS_GRAPH_IS_CONFIGURED_METHOD(counter, counter_graph_is_configured);
+BT_CPP_PLUGIN_SINK_COMPONENT_CLASS(counter, bt2counter::Counter);
 BT_PLUGIN_SINK_COMPONENT_CLASS_DESCRIPTION(counter, "Count messages and print the statistics.");
 BT_PLUGIN_SINK_COMPONENT_CLASS_HELP(counter,
                                     "See the babeltrace2-sink.utils.counter(7) manual page.");

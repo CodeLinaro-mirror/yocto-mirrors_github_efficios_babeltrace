@@ -679,8 +679,8 @@ plugin_LTLIBRARIES = \
 
 # utils plugin
 plugin_utils_sources = \
-	plugins/utils/counter/counter.c \
-	plugins/utils/counter/counter.h \
+	plugins/utils/counter/counter.cpp \
+	plugins/utils/counter/counter.hpp \
 	plugins/utils/dummy/dummy.cpp \
 	plugins/utils/dummy/dummy.hpp \
 	plugins/utils/muxer/comp.cpp \
