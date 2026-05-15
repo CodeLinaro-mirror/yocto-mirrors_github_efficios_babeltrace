@@ -215,6 +215,9 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/succeed/scopes-pkt-and-payload-no-names.mctf \
 	plugins/sink.text.pretty/succeed/scopes-pkt-only.mctf \
 	plugins/sink.text.pretty/succeed/scopes-spec-only.mctf \
+	plugins/sink.text.pretty/succeed/senum-field-bit-flag-neg.mctf \
+	plugins/sink.text.pretty/succeed/senum-field-neg.mctf \
+	plugins/sink.text.pretty/succeed/senum-field-normal.mctf \
 	plugins/sink.text.pretty/succeed/senum-field-unknown.mctf \
 	plugins/sink.text.pretty/succeed/senum-field.mctf \
 	plugins/sink.text.pretty/succeed/sint-field-bin-w5-0b11111.mctf \
@@ -265,6 +268,10 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/succeed/ts-verbose-header.mctf \
 	plugins/sink.text.pretty/succeed/uenum-field-1-label.mctf \
 	plugins/sink.text.pretty/succeed/uenum-field-2-labels.mctf \
+	plugins/sink.text.pretty/succeed/uenum-field-bit-flag.mctf \
+	plugins/sink.text.pretty/succeed/uenum-field-mixed-bits-begin.mctf \
+	plugins/sink.text.pretty/succeed/uenum-field-mixed-bits-end.mctf \
+	plugins/sink.text.pretty/succeed/uenum-field-normal.mctf \
 	plugins/sink.text.pretty/succeed/uenum-field-unknown.mctf \
 	plugins/sink.text.pretty/succeed/uint-field-bin-w1-0b0.mctf \
 	plugins/sink.text.pretty/succeed/uint-field-bin-w1-0b1.mctf \
@@ -286,7 +293,6 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/succeed/uint-field-oct-w7-0177.mctf \
 	plugins/sink.text.pretty/succeed/variant-field-sint-sel.mctf \
 	plugins/sink.text.pretty/succeed/variant-field-uint-sel.mctf \
-	plugins/sink.text.pretty/test_enum.py \
 	plugins/sink.text.pretty/test_pretty.py \
 	plugins/sink.utils.dummy/test_dummy.py \
 	plugins/src.ctf.fs/empty-event-record.expect \

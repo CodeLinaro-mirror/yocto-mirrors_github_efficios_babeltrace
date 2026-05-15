@@ -1,0 +1,38 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "with_enum";
+    fields := struct {
+        enum : integer { size = 8; align = 8; signed = false; byte_order = le; base = decimal; } {
+            bit0 = 1,
+            bit1 = 2,
+            bit2 = 4,
+            bit3 = 8,
+            bit4 = 16,
+            range = 32 ... 44,
+            singleValue = 45
+        } enum_field;
+    };
+};
+
+--- stream
+[0b11111:8]
+$36
+$45
+$46
+
+--- @params
+print-enum-flags=yes
+
+--- @output
+with_enum: { enum_field = ( "bit0" | "bit1" | "bit2" | "bit3" | "bit4" : container = 31 ) }
+with_enum: { enum_field = ( "range" : container = 36 ) }
+with_enum: { enum_field = ( "singleValue" : container = 45 ) }
+with_enum: { enum_field = ( <unknown> : container = 46 ) }

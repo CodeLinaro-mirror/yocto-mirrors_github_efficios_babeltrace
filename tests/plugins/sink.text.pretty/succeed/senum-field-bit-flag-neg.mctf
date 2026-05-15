@@ -1,0 +1,32 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "with_enum";
+    fields := struct {
+        enum : integer { size = 8; align = 8; signed = true; byte_order = le; base = decimal; } {
+            bit0 = 1,
+            bit0bis = 1,
+            bit1 = 2,
+            bit3 = 4,
+            bit4 = 8,
+            bit5 = 16,
+            bit5 = 32
+        } enum_field;
+    };
+};
+
+--- stream
+$-1
+
+--- @params
+print-enum-flags=yes
+
+--- @output
+with_enum: { enum_field = ( <unknown> : container = -1 ) }

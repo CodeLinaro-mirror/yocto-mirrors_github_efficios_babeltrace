@@ -1,0 +1,35 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "with_enum";
+    fields := struct {
+        enum : integer { size = 8; align = 8; signed = true; byte_order = le; base = decimal; } {
+            single = 1,
+            single2 = 2,
+            single3 = 4,
+            range = 4 ... 8,
+            range2 = 15 ... 20
+        } enum_field;
+    };
+};
+
+--- stream
+$1 $7 $4 $21 $12 $0
+
+--- @params
+print-enum-flags=yes
+
+--- @output
+with_enum: { enum_field = ( "single" : container = 1 ) }
+with_enum: { enum_field = ( "range" : container = 7 ) }
+with_enum: { enum_field = ( { "range", "single3" } : container = 4 ) }
+with_enum: { enum_field = ( <unknown> : container = 21 ) }
+with_enum: { enum_field = ( <unknown> : container = 12 ) }
+with_enum: { enum_field = ( <unknown> : container = 0 ) }

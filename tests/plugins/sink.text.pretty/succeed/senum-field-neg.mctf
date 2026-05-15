@@ -1,0 +1,35 @@
+--- metadata
+/* CTF 1.8 */
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+event {
+    name = "with_enum";
+    fields := struct {
+        enum : integer { size = 8; align = 8; signed = true; byte_order = le; base = decimal; } {
+            zero = 0,
+            single = 1,
+            single2 = 2,
+            single3 = 4,
+            range = 4 ... 8,
+            negative = -1,
+            rangeNegative = -6 ... -2
+        } enum_field;
+    };
+};
+
+--- stream
+$-1 $-6 $-7 $0
+
+--- @params
+print-enum-flags=yes
+
+--- @output
+with_enum: { enum_field = ( "negative" : container = -1 ) }
+with_enum: { enum_field = ( "rangeNegative" : container = -6 ) }
+with_enum: { enum_field = ( <unknown> : container = -7 ) }
+with_enum: { enum_field = ( "zero" : container = 0 ) }
