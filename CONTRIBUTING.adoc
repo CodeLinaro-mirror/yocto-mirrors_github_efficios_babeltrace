@@ -1505,10 +1505,6 @@ Subprocess execution::
     `run()` runs a subprocess with proper environment setup
     (`PYTHONPATH` and the rest).
 
-CLI parameter formatting::
-    `cli_params_from_obj()` formats a Python object as a `babeltrace2`
-    CLI `--params` value string.
-
 Graph execution::
     `SinkComponentSpec` (sink component specification) and `convert()`
     (runs a graph to completion with source, filter, and sink component
