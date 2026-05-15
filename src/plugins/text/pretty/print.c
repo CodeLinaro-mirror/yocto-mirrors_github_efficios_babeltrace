@@ -312,6 +312,8 @@ int print_event_header(struct pretty_component *pretty,
 
 			if (print_names) {
 				bt_common_g_string_append(pretty->string, ", ");
+			} else {
+				bt_common_g_string_append(pretty->string, " ");
 			}
 		}
 	}
