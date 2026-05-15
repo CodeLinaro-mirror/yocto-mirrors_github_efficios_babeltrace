@@ -423,12 +423,48 @@ end:
 	return istty;
 }
 
+/*
+ * Reads the `NO_COLOR` (see <https://no-color.org/>) and
+ * `BABELTRACE_TERM_COLOR` environment variables and returns the color
+ * preference they encode:
+ *
+ * `NO_COLOR` is set and not empty:
+ * `BABELTRACE_TERM_COLOR` is `never` (case insensitive):
+ *     #BT_COMMON_COLOR_WHEN_NEVER.
+ *
+ * `BABELTRACE_TERM_COLOR` is `always` (case insensitive):
+ *     #BT_COMMON_COLOR_WHEN_ALWAYS.
+ *
+ * Otherwise:
+ *     #BT_COMMON_COLOR_WHEN_AUTO (no override).
+ */
+static
+enum bt_common_color_when color_env_override(void)
+{
+	const char *no_color_env_var = getenv("NO_COLOR");
+
+	if (no_color_env_var && no_color_env_var[0] != '\0') {
+		return BT_COMMON_COLOR_WHEN_NEVER;
+	}
+
+	const char *term_color_env_var = getenv("BABELTRACE_TERM_COLOR");
+
+	if (term_color_env_var) {
+		if (g_ascii_strcasecmp(term_color_env_var, "always") == 0) {
+			return BT_COMMON_COLOR_WHEN_ALWAYS;
+		} else if (g_ascii_strcasecmp(term_color_env_var, "never") == 0) {
+			return BT_COMMON_COLOR_WHEN_NEVER;
+		}
+	}
+
+	return BT_COMMON_COLOR_WHEN_AUTO;
+}
+
 bool bt_common_colors_supported(void)
 {
 	static bool supports_colors = false;
 	static bool supports_colors_set = false;
 	const char *term_env_var;
-	const char *term_color_env_var;
 
 	if (supports_colors_set) {
 		goto end;
@@ -437,33 +473,17 @@ bool bt_common_colors_supported(void)
 	supports_colors_set = true;
 
 	/*
-	 * `NO_COLOR` environment variable (see
-	 * <https://no-color.org/>): when set and not empty, force no
-	 * colors, overriding both `BABELTRACE_TERM_COLOR` and the
-	 * automatic color support detection.
+	 * The `NO_COLOR` and `BABELTRACE_TERM_COLOR` environment
+	 * variables override the automatic color support detection.
 	 */
-	{
-		const char *no_color_env_var = getenv("NO_COLOR");
-
-		if (no_color_env_var && no_color_env_var[0] != '\0') {
-			/* Force no colors */
-			goto end;
-		}
-	}
-
-	/*
-	 * `BABELTRACE_TERM_COLOR` environment variable overrides the
-	 * automatic color support detection.
-	 */
-	term_color_env_var = getenv("BABELTRACE_TERM_COLOR");
-	if (term_color_env_var) {
-		if (g_ascii_strcasecmp(term_color_env_var, "always") == 0) {
-			/* Force colors */
-			supports_colors = true;
-		} else if (g_ascii_strcasecmp(term_color_env_var, "never") == 0) {
-			/* Force no colors */
-			goto end;
-		}
+	switch (color_env_override()) {
+	case BT_COMMON_COLOR_WHEN_ALWAYS:
+		supports_colors = true;
+		goto end;
+	case BT_COMMON_COLOR_WHEN_NEVER:
+		goto end;
+	default:
+		break;
 	}
 
 	/* We need a compatible, known terminal */
@@ -616,6 +636,14 @@ const char *bt_common_color_bg_cyan(void)
 const char *bt_common_color_bg_light_gray(void)
 {
 	return bt_common_color_code_bg_light_gray;
+}
+
+enum bt_common_color_when bt_common_color_when_from_param(
+		enum bt_common_color_when param_when)
+{
+	const enum bt_common_color_when env_when = color_env_override();
+
+	return env_when == BT_COMMON_COLOR_WHEN_AUTO ? param_when : env_when;
 }
 
 void bt_common_color_get_codes(struct bt_common_color_codes *codes,

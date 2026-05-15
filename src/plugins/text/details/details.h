@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "common/common.h"
+
 /*
  * This structure contains a hash table which maps trace IR stream class
  * and event class addresses to whether or not they have been printed
@@ -80,8 +82,14 @@ struct details_comp {
 		 */
 		bool compact;
 
-		/* Colorize output */
-		bool with_color;
+		/*
+		 * Terminal ANSI color codes to use when writing.
+		 *
+		 * Each entry is an empty string when colors are
+		 * disabled, so appending unconditionally is always
+		 * safe.
+		 */
+		struct bt_common_color_codes color_codes;
 
 		/* Write message's time */
 		bool with_time;

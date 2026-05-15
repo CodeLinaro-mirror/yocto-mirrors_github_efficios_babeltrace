@@ -307,21 +307,31 @@ bt_component_class_initialize_method_status configure_details_comp(
 	}
 
 	/* Colorize output? */
-	details_comp->cfg.with_color = bt_common_colors_supported();
-	value = bt_value_map_borrow_entry_value_const(params, COLOR_PARAM_NAME);
-	if (value) {
-		str = bt_value_string_get(value);
+	{
+		enum bt_common_color_when param_when =
+			BT_COMMON_COLOR_WHEN_AUTO;
 
-		if (strcmp(str, "never") == 0) {
-			details_comp->cfg.with_color = false;
-		} else if (strcmp(str, "auto") == 0) {
-			details_comp->cfg.with_color =
-				bt_common_colors_supported();
-		} else {
-			BT_ASSERT(strcmp(str, "always") == 0);
+		value = bt_value_map_borrow_entry_value_const(params,
+			COLOR_PARAM_NAME);
+		if (value) {
+			str = bt_value_string_get(value);
 
-			details_comp->cfg.with_color = true;
+			if (strcmp(str, "never") == 0) {
+				param_when = BT_COMMON_COLOR_WHEN_NEVER;
+			} else if (strcmp(str, "always") == 0) {
+				param_when = BT_COMMON_COLOR_WHEN_ALWAYS;
+			} else {
+				BT_ASSERT(strcmp(str, "auto") == 0);
+			}
 		}
+
+		/*
+		 * Let the `BABELTRACE_TERM_COLOR` and `NO_COLOR`
+		 * environment variables override the `color`
+		 * parameter, as the manual page promises.
+		 */
+		bt_common_color_get_codes(&details_comp->cfg.color_codes,
+			bt_common_color_when_from_param(param_when));
 	}
 
 	/* Output path? */
@@ -401,7 +411,8 @@ void log_configuration(bt_self_component_sink *comp,
 		BT_COMP_LOGI_STR("  Output: Standard output");
 	}
 
-	BT_COMP_LOGI("  Colorize output: %d", details_comp->cfg.with_color);
+	BT_COMP_LOGI("  Colorize output: %d",
+		details_comp->cfg.color_codes.reset[0] != '\0');
 	BT_COMP_LOGI("  Compact: %d", details_comp->cfg.compact);
 	BT_COMP_LOGI("  With metadata: %d", details_comp->cfg.with_meta);
 	BT_COMP_LOGI("  With time: %d", details_comp->cfg.with_time);

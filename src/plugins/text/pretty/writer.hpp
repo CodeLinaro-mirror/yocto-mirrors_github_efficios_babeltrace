@@ -19,6 +19,7 @@
 
 #include <fmt/format.h>
 
+#include "common/common.h"
 #include "cpp-common/bt2/message.hpp"
 #include "cpp-common/bt2c/c-string-view.hpp"
 #include "cpp-common/bt2c/logging.hpp"
@@ -62,7 +63,14 @@ struct WriterOpts final
     bool writeTraceEnvVpid = false;
     bool writeTraceEnvHostname = false;
     ClkFormat clkFmt = ClkFormat::LocalTime;
-    bool useColors = false;
+
+    /*
+     * Terminal ANSI color codes to use when writing.
+     *
+     * Each entry is an empty string when colors are disabled, therefore
+     * appending unconditionally is always safe.
+     */
+    bt_common_color_codes colorCodes = {};
 };
 
 class Writer final
@@ -501,10 +509,10 @@ private:
     /*
      * Terminal escape sequences used to colorize the output.
      *
-     * Populated by the constructor only when `_mOpts.useColors` is
-     * true; otherwise each entry stays default-constructed (empty).
-     * Callers append the relevant entries unconditionally, since
-     * appending an empty string is a no-op.
+     * Populated by the constructor from `_mOpts.colorCodes`: each entry
+     * is empty when colors are disabled. Callers append the relevant
+     * entries unconditionally, since appending an empty string is
+     * a no-op.
      */
     struct
     {

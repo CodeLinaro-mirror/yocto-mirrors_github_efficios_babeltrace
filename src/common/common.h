@@ -553,6 +553,51 @@ To use terminal text formatting:
 void bt_common_color_get_codes(struct bt_common_color_codes *codes,
 		enum bt_common_color_when when);
 
+/*!
+@brief
+    Applies the \c BABELTRACE_TERM_COLOR and
+    <a href="https://no-color.org/"><code>NO_COLOR</code></a>
+    environment variable overrides on top of
+    \bt_p{param_when} and then returns the resolved value.
+
+Use this when a component (or the CLI) exposes its own
+color parameter/option and the documentation promises that
+the environment variables \em override that parameter.
+
+The resolution rules are, in order:
+
+<dl>
+  <dt>If the \c NO_COLOR environment variable is set and not empty</dt>
+  <dd>#BT_COMMON_COLOR_WHEN_NEVER</dd>
+
+  <dt>
+    If the \c BABELTRACE_TERM_COLOR environment variable
+    is set to \c always (case insensitive)
+  </dt>
+  <dd>#BT_COMMON_COLOR_WHEN_ALWAYS</dd>
+
+  <dt>
+    If the \c BABELTRACE_TERM_COLOR environment variable
+    is set to \c never (case insensitive)
+  </dt>
+  <dd>#BT_COMMON_COLOR_WHEN_NEVER</dd>
+
+  <dt>Otherwise</dt>
+  <dd>\bt_p{param_when}</dd>
+</dl>
+
+Pass the result to bt_common_color_get_codes() to fill
+a corresponding #bt_common_color_codes structure.
+
+@param[in] param_when
+    The value to return when no environment variable overrides it.
+@returns
+    The resolved color support option depending on environment
+    variables and \bt_p{param_when}.
+*/
+enum bt_common_color_when bt_common_color_when_from_param(
+		enum bt_common_color_when param_when);
+
 /*! @} */
 
 /*!

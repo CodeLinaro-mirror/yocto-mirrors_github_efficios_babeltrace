@@ -1233,23 +1233,19 @@ Writer::Writer(const WriterOpts& opts, std::ostream& out, const std::uint64_t mi
       _mMipVersion {mipVersion},
       _mLogger {parentLogger, fmt::format("{}/WRITER", parentLogger.tag())}
 {
-    if (_mOpts.useColors) {
-        _mTermCodes.infoName = bt_common_color_bold();
-        _mTermCodes.fieldName = bt_common_color_fg_cyan();
-        _mTermCodes.rst = bt_common_color_reset();
-        _mTermCodes.strVal = bt_common_color_bold();
-        _mTermCodes.numberVal = bt_common_color_bold();
-        _mTermCodes.enumMappingName = bt_common_color_bold();
-        _mTermCodes.unknown =
-            fmt::format("{}{}", bt_common_color_bold(), bt_common_color_fg_bright_red());
-        _mTermCodes.eventName =
-            fmt::format("{}{}", bt_common_color_bold(), bt_common_color_fg_bright_magenta());
-        _mTermCodes.ts =
-            fmt::format("{}{}", bt_common_color_bold(), bt_common_color_fg_bright_yellow());
-        _mTermCodes.warn = bt_common_color_fg_yellow();
-        _mTermCodes.warnTitle =
-            fmt::format("{}{}", bt_common_color_fg_yellow(), bt_common_color_bold());
-    }
+    const auto& c = _mOpts.colorCodes;
+
+    _mTermCodes.infoName = c.bold;
+    _mTermCodes.fieldName = c.fg_cyan;
+    _mTermCodes.rst = c.reset;
+    _mTermCodes.strVal = c.bold;
+    _mTermCodes.numberVal = c.bold;
+    _mTermCodes.enumMappingName = c.bold;
+    _mTermCodes.unknown = fmt::format("{}{}", c.bold, c.fg_bright_red);
+    _mTermCodes.eventName = fmt::format("{}{}", c.bold, c.fg_bright_magenta);
+    _mTermCodes.ts = fmt::format("{}{}", c.bold, c.fg_bright_yellow);
+    _mTermCodes.warn = c.fg_yellow;
+    _mTermCodes.warnTitle = fmt::format("{}{}", c.fg_yellow, c.bold);
 
     if (_mOpts.writeEnumFieldFlags) {
         /*

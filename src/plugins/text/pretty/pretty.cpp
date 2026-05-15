@@ -150,14 +150,30 @@ WriterOpts writerOptsFromParams(const bt2::ConstMapValue params, const std::ostr
             color = val->asString().value();
         }
 
+        bt_common_color_when paramWhen;
+
         if (color == "never") {
-            opts.useColors = false;
-        } else if (color == "auto") {
-            opts.useColors = &out == &std::cout && bt_common_colors_supported();
+            paramWhen = BT_COMMON_COLOR_WHEN_NEVER;
+        } else if (color == "always") {
+            paramWhen = BT_COMMON_COLOR_WHEN_ALWAYS;
         } else {
-            BT_ASSERT(color == "always");
-            opts.useColors = true;
+            BT_ASSERT(color == "auto");
+
+            /*
+             * For `auto`, only consider the connected terminal when the
+             * output stream is the standard output: if the user is
+             * redirecting the output to a file with the "path"
+             * parameter, it's not a terminal at all.
+             */
+            paramWhen = &out == &std::cout ? BT_COMMON_COLOR_WHEN_AUTO : BT_COMMON_COLOR_WHEN_NEVER;
         }
+
+        /*
+         * Let the `BABELTRACE_TERM_COLOR` and `NO_COLOR` environment
+         * variables override the `color` parameter, as the manual
+         * page promises.
+         */
+        bt_common_color_get_codes(&opts.colorCodes, bt_common_color_when_from_param(paramWhen));
     }
 
     /* Reverse logic here */
