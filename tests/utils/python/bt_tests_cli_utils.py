@@ -28,7 +28,10 @@ def cli_params_from_obj(obj: Any, is_root: bool = True) -> str:
     elif isinstance(obj, bool):
         return "yes" if obj else "no"
     elif isinstance(obj, int):
-        return str(obj)
+        # Prefix non-negative integers with `+` so the CLI parameter
+        # parser builds an unsigned integer value (the bare `N` form
+        # produces a signed integer).
+        return f"+{obj}" if obj >= 0 else str(obj)
     elif isinstance(obj, float):
         return str(obj)
     elif isinstance(obj, str):

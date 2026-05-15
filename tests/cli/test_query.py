@@ -19,7 +19,7 @@ def plugin_dir():
         pytest.param(
             "the-object",
             [btu_cli.CliParams({"a": 2})],
-            "the-object:{a=2}",
+            "the-object:{a=2u}",
             id="single-param",
         ),
         # Check that `-p` parameters are processed in order
@@ -29,7 +29,7 @@ def plugin_dir():
                 btu_cli.CliParams({"a": 2, "ben": "kin"}),
                 btu_cli.CliParams({"voyons": "donc", "a": 3}),
             ],
-            "the-object:{a=3, ben=kin, voyons=donc}",
+            "the-object:{a=3u, ben=kin, voyons=donc}",
             id="multiple-params-processed-in-order",
         ),
     ],
