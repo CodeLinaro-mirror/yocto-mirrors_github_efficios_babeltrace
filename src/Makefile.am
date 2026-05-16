@@ -831,7 +831,6 @@ plugin_text_sources = \
 	plugins/text/dmesg/dmesg.h \
 	plugins/text/pretty/pretty.cpp \
 	plugins/text/pretty/pretty.hpp \
-	plugins/text/pretty/writer.cpp \
 	plugins/text/pretty/writer.hpp \
 	plugins/text/plugin.cpp
 

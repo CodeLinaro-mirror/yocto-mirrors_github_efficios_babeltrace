@@ -8,10 +8,11 @@
 
 #include <fstream>
 #include <iostream>
-#include <memory>
 #include <optional>
 #include <ostream>
 #include <string>
+#include <utility>
+#include <variant>
 
 #include <glib.h>
 
@@ -342,8 +343,25 @@ Comp::Comp(const bt2::SelfSinkComponent selfComp, const bt2::ConstMapValue param
         BT_CPPLOGE_APPEND_CAUSE_AND_RETHROW("Failed to add a single input port.");
     }
 
-    _mWriter = std::make_unique<Writer>(writerOptsFromParams(params, *_mOut), *_mOut,
-                                        this->_graphMipVersion(), _mLogger);
+    auto opts = writerOptsFromParams(params, *_mOut);
+
+    /*
+     * Detect whether colors are enabled to pick the right
+     * `Writer` specialization.
+     *
+     * bt_common_color_get_codes() fills the structure with empty
+     * strings when colors are disabled and with non-empty escape
+     * sequences (for example, `reset` is `\033[0m`) otherwise.
+     */
+    const auto emitTermCodes = opts.colorCodes.reset && opts.colorCodes.reset[0] != '\0';
+
+    if (emitTermCodes) {
+        _mWriter.emplace(std::in_place_type<Writer<true>>, opts, *_mOut, this->_graphMipVersion(),
+                         _mLogger);
+    } else {
+        _mWriter.emplace(std::in_place_type<Writer<false>>, opts, *_mOut, this->_graphMipVersion(),
+                         _mLogger);
+    }
 }
 
 void Comp::_getSupportedMipVersions(bt2::SelfComponentClass, bt2::ConstValue, bt2::LoggingLevel,
@@ -378,12 +396,17 @@ bool Comp::_consume()
         return false;
     }
 
-    for (const auto msg : *msgs) {
-        try {
-            _mWriter->writeMsg(msg);
-        } catch (const bt2c::Error&) {
-            BT_CPPLOGE_APPEND_CAUSE_AND_RETHROW("Failed to write one message.");
+    try {
+        for (const auto msg : *msgs) {
+            /* Select the active writer instance */
+            std::visit(
+                [msg](auto& writer) {
+                    writer.writeMsg(msg);
+                },
+                *_mWriter);
         }
+    } catch (const bt2c::Error&) {
+        BT_CPPLOGE_APPEND_CAUSE_AND_RETHROW("Failed to write one message.");
     }
 
     return true;

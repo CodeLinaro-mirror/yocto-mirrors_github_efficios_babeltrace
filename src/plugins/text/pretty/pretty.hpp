@@ -11,8 +11,9 @@
 
 #include <fstream>
 #include <iostream>
-#include <memory>
+#include <optional>
 #include <ostream>
+#include <variant>
 
 #include "cpp-common/bt2/component-class-dev.hpp"
 #include "cpp-common/bt2/message-iterator.hpp"
@@ -53,8 +54,12 @@ private:
     /* Output stream: either `&_mOutFile` or `&std::cout` */
     std::ostream *_mOut;
 
-    /* Writer; built once during construction */
-    std::unique_ptr<Writer> _mWriter;
+    /*
+     * Writer; emplaced once during construction with either
+     * `Writer<true>` (when terminal color codes are enabled) or
+     * `Writer<false>` (when they are not).
+     */
+    std::optional<std::variant<Writer<true>, Writer<false>>> _mWriter;
 };
 
 } /* namespace bt2pretty */
