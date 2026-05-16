@@ -51,7 +51,7 @@ void Writer::_writeTsCycles(const bt2::ConstClockSnapshot clockSnapshot, const b
 {
     const auto cycles = clockSnapshot.value();
 
-    this->_appendFmtToBuf("{:020}", cycles);
+    this->_appendFmtToBuf(FMT_COMPILE("{:020}"), cycles);
 
     if (updateLast) {
         if (_mLastTs) {
@@ -129,7 +129,7 @@ void Writer::_writeTsWall(const bt2::OptionalBorrowedObject<bt2::ConstClockSnaps
     }
 
     /* Fall back to seconds from origin */
-    this->_appendFmtToBuf("{}{}.{:09}", isNeg ? "-" : "", tsSecAbs, tsNsAbs);
+    this->_appendFmtToBuf(FMT_COMPILE("{}{}.{:09}"), isNeg ? "-" : "", tsSecAbs, tsNsAbs);
 }
 
 bool Writer::_tryWriteTsDateTime(const std::uint64_t tsSecAbs, const std::uint64_t tsNsAbs,
@@ -171,7 +171,8 @@ bool Writer::_tryWriteTsDateTime(const std::uint64_t tsSecAbs, const std::uint64
     }
 
     /* Write time */
-    this->_appendFmtToBuf("{:02}:{:02}:{:02}.{:09}", tm.tm_hour, tm.tm_min, tm.tm_sec, tsNsAbs);
+    this->_appendFmtToBuf(FMT_COMPILE("{:02}:{:02}:{:02}.{:09}"), tm.tm_hour, tm.tm_min, tm.tm_sec,
+                          tsNsAbs);
     return true;
 }
 
@@ -216,14 +217,15 @@ void Writer::_writeEventMsgTsAndDelta(const bt2::ConstEventMessage eventMsg)
 
         if (_mOpts.clkFmt == ClkFormat::Cycles) {
             if (_mTsDelta) {
-                this->_appendFmtToBuf("+{:012}", *_mTsDelta);
+                this->_appendFmtToBuf(FMT_COMPILE("+{:012}"), *_mTsDelta);
             } else {
                 /* NOT a trigraph */
                 this->_appendToBuf("+??????????\?\?");
             }
         } else {
             if (_mTsDelta) {
-                this->_appendFmtToBuf("+{}.{:09}", *_mTsDelta / nsPerS, *_mTsDelta % nsPerS);
+                this->_appendFmtToBuf(FMT_COMPILE("+{}.{:09}"), *_mTsDelta / nsPerS,
+                                      *_mTsDelta % nsPerS);
             } else {
                 this->_appendToBuf("+?.?????????");
             }
@@ -304,7 +306,7 @@ void Writer::_writeEventInfo(const bt2::ConstEventMessage eventMsg)
     if (_mOpts.writeTraceEnvVpid) {
         if (const auto vpidVal = trace.environmentEntry("vpid")) {
             this->_writeEventInfoDomItem(wroteDomItem, "trace:vpid");
-            this->_appendFmtToBuf("({})", vpidVal->asSignedInteger().value());
+            this->_appendFmtToBuf(FMT_COMPILE("({})"), vpidVal->asSignedInteger().value());
         }
     }
 
@@ -364,7 +366,7 @@ void Writer::_writeEventInfo(const bt2::ConstEventMessage eventMsg)
 
             this->_writeEventInfoDomItem(wroteDomItem, "loglevel");
             this->_appendToBuf(logLevelStr);
-            this->_appendFmtToBuf(" ({})", static_cast<int>(*logLevel));
+            this->_appendFmtToBuf(FMT_COMPILE(" ({})"), static_cast<int>(*logLevel));
         }
     }
 
@@ -443,28 +445,29 @@ void Writer::_writeIntField(const bt2::ConstField field)
 
         switch (base) {
         case bt2::DisplayBase::Binary:
-            this->_appendFmtToBuf("{:#0{}b}", maskTo(u, len), static_cast<int>(len) + 2);
+            this->_appendFmtToBuf(FMT_COMPILE("{:#0{}b}"), maskTo(u, len),
+                                  static_cast<int>(len) + 2);
             break;
 
         case bt2::DisplayBase::Octal:
             BT_ASSERT_DBG(len != 0);
 
             /* Round length up to the nearest 3-bit boundary */
-            this->_appendFmtToBuf("0{:o}", maskTo(u, ((len - 1) / 3 + 1) * 3));
+            this->_appendFmtToBuf(FMT_COMPILE("0{:o}"), maskTo(u, ((len - 1) / 3 + 1) * 3));
             break;
 
         case bt2::DisplayBase::Decimal:
             if (isUnsigned) {
-                this->_appendFmtToBuf("{}", u);
+                this->_appendFmtToBuf(FMT_COMPILE("{}"), u);
             } else {
-                this->_appendFmtToBuf("{}", s);
+                this->_appendFmtToBuf(FMT_COMPILE("{}"), s);
             }
 
             break;
 
         case bt2::DisplayBase::Hexadecimal:
             /* Round length up to the nearest nibble */
-            this->_appendFmtToBuf("0x{:X}", maskTo(u, (len + 3) & ~UINT64_C(3)));
+            this->_appendFmtToBuf(FMT_COMPILE("0x{:X}"), maskTo(u, (len + 3) & ~UINT64_C(3)));
             break;
 
         default:
@@ -538,7 +541,7 @@ void Writer::_writeEscapedStr(const bt2c::CStringView str)
 
         default:
             /* Unhandled control sequence: write as hex */
-            this->_appendFmtToBuf("\\x{:02x}", static_cast<unsigned char>(ch));
+            this->_appendFmtToBuf(FMT_COMPILE("\\x{:02x}"), static_cast<unsigned char>(ch));
             break;
         }
     }
@@ -783,7 +786,7 @@ void Writer::_writeBitArrayField(const bt2::ConstField field)
     const auto bitArrayField = field.asBitArray();
 
     this->_withColor(_mTermCodes.numberVal, [&] {
-        this->_appendFmtToBuf("0x{:X}", bitArrayField.valueAsInteger());
+        this->_appendFmtToBuf(FMT_COMPILE("0x{:X}"), bitArrayField.valueAsInteger());
     });
 
     const auto labels = bitArrayField.activeFlagLabels();
@@ -845,7 +848,7 @@ void Writer::_writeArrayFieldElem(const bt2::ConstArrayField field, const std::u
     }
 
     if (writeNames) {
-        this->_appendFmtToBuf("[{}] = ", i);
+        this->_appendFmtToBuf(FMT_COMPILE("[{}] = "), i);
     }
 
     this->_writeField(field[i], writeNames);
@@ -904,7 +907,7 @@ void Writer::_writeBlobField(const bt2::ConstField field)
     this->_appendToBuf("{ ");
 
     for (const auto b : data) {
-        this->_appendFmtToBuf("{:02x} ", b);
+        this->_appendFmtToBuf(FMT_COMPILE("{:02x} "), b);
     }
 
     this->_appendToBuf("}");
@@ -936,14 +939,14 @@ void Writer::_writeField(const bt2::ConstField field, const bool writeNames)
 
     case bt2::FieldClassType::SinglePrecisionReal:
         this->_withColor(_mTermCodes.numberVal, [&] {
-            this->_appendFmtToBuf("{:g}", field.asSinglePrecisionReal().value());
+            this->_appendFmtToBuf(FMT_COMPILE("{:g}"), field.asSinglePrecisionReal().value());
         });
 
         break;
 
     case bt2::FieldClassType::DoublePrecisionReal:
         this->_withColor(_mTermCodes.numberVal, [&] {
-            this->_appendFmtToBuf("{:g}", field.asDoublePrecisionReal().value());
+            this->_appendFmtToBuf(FMT_COMPILE("{:g}"), field.asDoublePrecisionReal().value());
         });
 
         break;
@@ -1100,12 +1103,13 @@ void Writer::_writeDiscardedItemsMsgDetails(
     });
 
     this->_withColor(_mTermCodes.warn, [&] {
-        this->_appendFmtToBuf(": {} ", count ? "Tracer discarded" : "Tracer may have discarded");
+        this->_appendFmtToBuf(FMT_COMPILE(": {} "),
+                              count ? "Tracer discarded" : "Tracer may have discarded");
 
         if (count) {
-            this->_appendFmtToBuf("{} {}{}", *count, elemType, *count == 1 ? "" : "s");
+            this->_appendFmtToBuf(FMT_COMPILE("{} {}{}"), *count, elemType, *count == 1 ? "" : "s");
         } else {
-            this->_appendFmtToBuf("{}s", elemType);
+            this->_appendFmtToBuf(FMT_COMPILE("{}s"), elemType);
         }
 
         this->_appendToBuf(" ");
@@ -1128,24 +1132,25 @@ void Writer::_writeDiscardedItemsMsgDetails(
             this->_appendToBuf("(unknown time range)");
         }
 
-        this->_appendFmtToBuf(" in trace \"{}\" ", traceName.str());
+        this->_appendFmtToBuf(FMT_COMPILE(" in trace \"{}\" "), traceName.str());
 
         if (_mMipVersion == 0) {
             if (const auto uuid = trace.uuid()) {
-                this->_appendFmtToBuf("(UUID: {}) ", uuid->str());
+                this->_appendFmtToBuf(FMT_COMPILE("(UUID: {}) "), uuid->str());
             } else {
                 this->_appendToBuf("(no UUID) ");
             }
         } else {
             if (const auto uid = trace.uid()) {
-                this->_appendFmtToBuf("(UID: {}) ", uid.str());
+                this->_appendFmtToBuf(FMT_COMPILE("(UID: {}) "), uid.str());
             } else {
                 this->_appendToBuf("(no UID) ");
             }
         }
 
-        this->_appendFmtToBuf("within stream \"{}\" (stream class ID: {}, stream ID: {}).",
-                              streamName.str(), stream.cls().id(), stream.id());
+        this->_appendFmtToBuf(
+            FMT_COMPILE("within stream \"{}\" (stream class ID: {}, stream ID: {})."),
+            streamName.str(), stream.cls().id(), stream.id());
     });
 
     this->_appendToBuf("\n");

@@ -17,6 +17,7 @@
 #include <string_view>
 #include <vector>
 
+#include <fmt/compile.h>
 #include <fmt/format.h>
 
 #include "common/common.h"
@@ -418,9 +419,13 @@ private:
     /*
      * Formats `args` according to `fmtStr` and appends the result to
      * the output buffer.
+     *
+     * `fmtStr` may be either a regular `fmt::format_string` or, on hot
+     * paths, an `FMT_COMPILE(...)`-wrapped string so the format spec is
+     * parsed at compile time.
      */
-    template <typename... ArgsT>
-    void _appendFmtToBuf(fmt::format_string<ArgsT...> fmtStr, ArgsT&&...args)
+    template <typename FmtT, typename... ArgsT>
+    void _appendFmtToBuf(const FmtT& fmtStr, ArgsT&&...args)
     {
         fmt::format_to(std::back_inserter(_mBuf), fmtStr, std::forward<ArgsT>(args)...);
     }
