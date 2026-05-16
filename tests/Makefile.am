@@ -673,6 +673,8 @@ EXTRA_DIST = \
 	plugins/src.ctf.fs/metadata-info-crlf-metadata.expect \
 	plugins/src.ctf.fs/metadata-info-lf-metadata.expect \
 	plugins/src.ctf.fs/metadata-info-succeed1.expect \
+	plugins/src.ctf.fs/succeed/clock-offset-goes-back-in-time/chunk1.mctf \
+	plugins/src.ctf.fs/succeed/clock-offset-goes-back-in-time/chunk2.mctf \
 	plugins/src.ctf.fs/succeed/test_succeed_src_ctf.py \
 	plugins/src.ctf.fs/succeed/trace-2packets-barectf-event-before-packet-ctf1-mip0.expect \
 	plugins/src.ctf.fs/succeed/trace-2packets-barectf-event-before-packet-ctf1-mip1.expect \
