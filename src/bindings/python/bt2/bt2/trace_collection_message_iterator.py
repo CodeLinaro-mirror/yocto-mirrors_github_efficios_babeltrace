@@ -6,7 +6,6 @@ import typing
 import numbers
 import weakref
 import datetime
-import itertools
 import threading
 from collections import namedtuple
 
@@ -415,10 +414,7 @@ class TraceCollectionMessageIterator(bt2_message_iterator._MessageIterator):
         self._flt_comp_specs = filter_component_specs
         self._next_suffix = 1
         self._connect_ports = False
-
-        # lists of _ComponentAndSpec
-        self._src_comps_and_specs = []
-        self._flt_comps_and_specs = []
+        self._src_comps_and_specs: typing.List[_ComponentAndSpec] = []
 
         self._build_graph()
 
@@ -489,7 +485,7 @@ class TraceCollectionMessageIterator(bt2_message_iterator._MessageIterator):
         return self._create_trimmer(begin, end, name)
 
     def _create_muxer(self):
-        return self._graph.add_component(_utils_filter_comp_cls("muxer"), "muxer")
+        return self._add_component(_utils_filter_comp_cls("muxer"), "muxer")
 
     def _create_trimmer(self, begin_ns, end_ns, name):
         params = {}
@@ -505,29 +501,39 @@ class TraceCollectionMessageIterator(bt2_message_iterator._MessageIterator):
         if end_ns is not None:
             params["end"] = ns_to_string(end_ns)
 
-        return self._graph.add_component(
-            _utils_filter_comp_cls("trimmer"), name, params
-        )
+        return self._add_component(_utils_filter_comp_cls("trimmer"), name, params)
 
-    def _get_unique_comp_name(self, comp_cls):
-        name = comp_cls.name
-        comps_and_specs = itertools.chain(
-            self._src_comps_and_specs, self._flt_comps_and_specs
-        )
-
-        if name in [comp_and_spec.comp.name for comp_and_spec in comps_and_specs]:
-            name += f"-{self._next_suffix}"
-            self._next_suffix += 1
-
+    # Make `name` unique within the graph by appending a suffix. All
+    # components added to the graph go through this so that an internal
+    # component (muxer, trimmer, proxy sink) can't clash with a user source or
+    # filter component class that happens to have the same name.
+    def _get_unique_comp_name(self, name):
+        name += f"-{self._next_suffix}"
+        self._next_suffix += 1
         return name
 
-    def _create_comp(self, comp_spec):
-        comp_cls = comp_spec.component_class
-        name = self._get_unique_comp_name(comp_cls)
-        comp = self._graph.add_component(
-            comp_cls, name, comp_spec.params, comp_spec.obj, comp_spec.logging_level
+    # Add a component to the graph, giving it a unique name derived from
+    # `name`.
+    def _add_component(
+        self,
+        comp_cls,
+        name,
+        params=None,
+        obj=None,
+        logging_level=bt2_logging.LoggingLevel.NONE,
+    ):
+        return self._graph.add_component(
+            comp_cls, self._get_unique_comp_name(name), params, obj, logging_level
         )
-        return comp
+
+    def _create_comp(self, comp_spec):
+        return self._add_component(
+            comp_spec.component_class,
+            comp_spec.component_class.name,
+            comp_spec.params,
+            comp_spec.obj,
+            comp_spec.logging_level,
+        )
 
     def _get_free_muxer_input_port(self):
         for port in self._muxer_comp.input_ports.values():
@@ -625,13 +631,15 @@ class TraceCollectionMessageIterator(bt2_message_iterator._MessageIterator):
             last_flt_out_port = self._muxer_comp.output_ports["out"]
 
         # create extra filter components (chained)
+        flt_comps_and_specs: typing.List[_ComponentAndSpec] = []
+
         for comp_spec in self._flt_comp_specs:
-            self._flt_comps_and_specs.append(
+            flt_comps_and_specs.append(
                 _ComponentAndSpec(self._create_comp(comp_spec), comp_spec)
             )
 
         # connect the extra filter chain
-        for comp_and_spec in self._flt_comps_and_specs:
+        for comp_and_spec in flt_comps_and_specs:
             in_port = list(comp_and_spec.comp.input_ports.values())[0]
             out_port = list(comp_and_spec.comp.output_ports.values())[0]
             self._graph.connect_ports(last_flt_out_port, in_port)
@@ -670,7 +678,7 @@ class TraceCollectionMessageIterator(bt2_message_iterator._MessageIterator):
 
         # Add the proxy sink, passing our message list to share consumed
         # messages with this trace collection message iterator.
-        sink = self._graph.add_component(
+        sink = self._add_component(
             _TraceCollectionMessageIteratorProxySink, "proxy-sink", obj=self._msg_list
         )
         sink_in_port = sink.input_ports["in"]

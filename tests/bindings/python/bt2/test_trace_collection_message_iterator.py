@@ -415,6 +415,22 @@ def test_auto_src_comp_non_existent(sequence_trace_dir):
         )
 
 
+def test_source_named_like_proxy_sink():
+    class MyIter(bt2._UserMessageIterator):
+        def __next__(self):
+            raise bt2.Stop
+
+    class MySource(
+        bt2._UserSourceComponent,
+        name="proxy-sink",
+        message_iterator_class=MyIter,
+    ):
+        def __init__(self, config, params, obj):
+            self._add_output_port("out")
+
+    bt2.TraceCollectionMessageIterator([bt2.ComponentSpec(MySource)])
+
+
 @pytest.fixture(scope="session")
 def ascd_grouping_dir(common_data_dir):
     return common_data_dir / "auto-src-comp-discovery/grouping"
