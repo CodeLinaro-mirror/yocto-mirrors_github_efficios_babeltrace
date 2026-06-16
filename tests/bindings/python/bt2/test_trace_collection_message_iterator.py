@@ -452,6 +452,54 @@ def test_ascd_grouping(ascd_grouping_env, ascd_grouping_dir):
 
 
 @pytest.fixture(scope="session")
+def ascd_plugin_set_dir(common_data_dir):
+    return common_data_dir / "auto-src-comp-discovery/plugin-set"
+
+
+def test_scsfascs_from_plugin_set(ascd_plugin_set_dir):
+    # Test calling
+    # bt2.source_component_specs_from_auto_source_component_specs() with
+    # a plugin set containing a plugin that can't be found via the
+    # standard plugin search paths.
+    plugin_set = bt2.find_plugins_in_path(
+        str(ascd_plugin_set_dir / "bt_plugin_test.py")
+    )
+
+    assert plugin_set is not None
+    assert len(plugin_set) == 1
+
+    comp_specs = bt2.source_component_specs_from_auto_source_component_specs(
+        [bt2.AutoSourceComponentSpec("radis")],
+        plugin_set=plugin_set,
+    )
+
+    assert len(comp_specs) == 1
+    assert comp_specs[0].component_class.name == "TestSource"
+
+
+def test_tcmi_ascd_from_plugin_set(ascd_plugin_set_dir):
+    # Test `bt2.TraceCollectionMessageIterator` with a plugin set
+    # containing a plugin that can't be found via the standard plugin
+    # search paths.
+    plugin_set = bt2.find_plugins_in_path(
+        str(ascd_plugin_set_dir / "bt_plugin_test.py")
+    )
+
+    assert plugin_set is not None
+
+    msgs = list(
+        bt2.TraceCollectionMessageIterator(
+            [bt2.AutoSourceComponentSpec("radis")],
+            plugin_set=plugin_set,
+        )
+    )
+
+    assert len(msgs) == 2
+    assert type(msgs[0]) is bt2._StreamBeginningMessageConst
+    assert type(msgs[1]) is bt2._StreamEndMessageConst
+
+
+@pytest.fixture(scope="session")
 def ascd_params_log_level_dir(common_data_dir):
     return common_data_dir / "auto-src-comp-discovery/params-log-level"
 

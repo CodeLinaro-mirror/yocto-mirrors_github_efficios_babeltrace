@@ -150,6 +150,19 @@ class AutoSourceComponentSpec(_BaseComponentSpec):
         return self._input
 
 
+# Find the source component class named `class_name` of the plugin named
+# `plugin_name` in `plugin_set`, or `None` if not found.
+def _src_comp_cls_from_plugin_set(plugin_set, plugin_name, class_name):
+    for plugin in plugin_set:
+        if plugin.name != plugin_name:
+            continue
+
+        if class_name in plugin.source_component_classes:
+            return plugin.source_component_classes[class_name]
+
+    return None
+
+
 # Transform a list of `AutoSourceComponentSpec` into a list of
 # `ComponentSpec` using the automatic source component
 # discovery mechanism.
@@ -233,14 +246,14 @@ def source_component_specs_from_auto_source_component_specs(
 
         params["inputs"] = comp_inputs
 
+        comp_cls = _src_comp_cls_from_plugin_set(plugin_set, plugin_name, class_name)
+
+        # The automatic source component discovery mechanism returned this
+        # plugin/class name from `plugin_set`, so it's expected to be found.
+        assert comp_cls is not None
+
         comp_specs.append(
-            ComponentSpec.from_named_plugin_and_component_class(
-                plugin_name,
-                class_name,
-                params=params,
-                obj=obj,
-                logging_level=logging_level,
-            )
+            ComponentSpec(comp_cls, params=params, obj=obj, logging_level=logging_level)
         )
 
     if len(used_input_indices) != len(inputs):
