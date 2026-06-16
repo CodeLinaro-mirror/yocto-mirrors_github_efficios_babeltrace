@@ -620,30 +620,20 @@ class TraceCollectionMessageIterator(bt2_message_iterator._MessageIterator):
         self._graph = bt2_graph.Graph(self._get_greatest_operative_mip_version())
         self._add_port_added_listener()
         self._muxer_comp = self._create_muxer()
+        last_flt_out_port = self._muxer_comp.output_ports["out"]
 
         if self._begin_ns is not None or self._end_ns is not None:
             trimmer_comp = self._create_trimmer(self._begin_ns, self._end_ns, "trimmer")
-            self._graph.connect_ports(
-                self._muxer_comp.output_ports["out"], trimmer_comp.input_ports["in"]
-            )
+            self._graph.connect_ports(last_flt_out_port, trimmer_comp.input_ports["in"])
             last_flt_out_port = trimmer_comp.output_ports["out"]
-        else:
-            last_flt_out_port = self._muxer_comp.output_ports["out"]
 
-        # create extra filter components (chained)
-        flt_comps_and_specs: typing.List[_ComponentAndSpec] = []
-
-        for comp_spec in self._flt_comp_specs:
-            flt_comps_and_specs.append(
-                _ComponentAndSpec(self._create_comp(comp_spec), comp_spec)
+        # Create and connect extra filter components (chained)
+        for spec in self._flt_comp_specs:
+            comp = self._create_comp(spec)
+            self._graph.connect_ports(
+                last_flt_out_port, list(comp.input_ports.values())[0]
             )
-
-        # connect the extra filter chain
-        for comp_and_spec in flt_comps_and_specs:
-            in_port = list(comp_and_spec.comp.input_ports.values())[0]
-            out_port = list(comp_and_spec.comp.output_ports.values())[0]
-            self._graph.connect_ports(last_flt_out_port, in_port)
-            last_flt_out_port = out_port
+            last_flt_out_port = list(comp.output_ports.values())[0]
 
         # Here we create the components, self._graph_port_added() is
         # called when they add ports, but the callback returns early
