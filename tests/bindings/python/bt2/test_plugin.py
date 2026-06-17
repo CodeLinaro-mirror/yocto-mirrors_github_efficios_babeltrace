@@ -56,19 +56,21 @@ class TestFind:
 
     def test_find_plugin_none(self):
         plugin = bt2.find_plugin(
-            "this-does-not-exist-246703df-cb85-46d5-8406-5e8dc4a88b41"
+            "this-does-not-exist-246703df-cb85-46d5-8406-5e8dc4a88b41",
+            find_in_sys_dir=False,
+            find_in_user_dir=False,
         )
         assert plugin is None
 
     def test_find_plugin_existing(self):
-        plugin = bt2.find_plugin("ctf")
+        plugin = bt2.find_plugin("ctf", find_in_sys_dir=False, find_in_user_dir=False)
         assert plugin is not None
 
 
 class TestProps:
     @pytest.fixture(scope="class")
     def ctf_plugin(self):
-        return bt2.find_plugin("ctf")
+        return btu.plugin_by_name("ctf")
 
     def test_name(self, ctf_plugin):
         assert ctf_plugin.name == "ctf"
@@ -115,7 +117,7 @@ class TestProps:
         assert plugins["lttng-live"].name == "lttng-live"
 
     def test_filter_comp_classes_len(self):
-        plugin = bt2.find_plugin("utils", find_in_user_dir=False, find_in_sys_dir=False)
+        plugin = btu.plugin_by_name("utils")
         assert len(plugin.filter_component_classes) == 2
 
     def test_sink_comp_classes_len(self, ctf_plugin):

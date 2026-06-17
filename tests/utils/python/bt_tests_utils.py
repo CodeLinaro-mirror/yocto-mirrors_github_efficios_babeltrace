@@ -116,7 +116,7 @@ def plugin_set() -> bt2._PluginSet:
 
     if _plugin_set is None:
         _logger.info("Loading standard plugins with bt2.find_plugins()")
-        _plugin_set = bt2.find_plugins()
+        _plugin_set = bt2.find_plugins(find_in_user_dir=False, find_in_sys_dir=False)
 
         if _plugin_set is None:
             raise RuntimeError("cannot find any plugin")

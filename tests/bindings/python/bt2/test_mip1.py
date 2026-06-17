@@ -3,6 +3,7 @@
 
 import bt2
 import pytest
+import bt_tests_utils as btu
 
 
 # Assert that `obj` is of type `expected_type` and return it.
@@ -37,7 +38,8 @@ def payload_field():
                 field = msg.event.payload_field
 
     graph = bt2.Graph(1)
-    trace_ir = bt2.find_plugin("trace-ir-test")
+    trace_ir = btu.plugin_by_name("trace-ir-test")
+
     assert trace_ir is not None
     all_fields = trace_ir.source_component_classes["AllFields"]
     assert all_fields is not None
