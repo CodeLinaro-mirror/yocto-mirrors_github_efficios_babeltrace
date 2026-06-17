@@ -2,6 +2,7 @@
 #
 # Copyright (c) 2017 Philippe Proulx <pproulx@efficios.com>
 
+import os
 import typing
 import numbers
 import weakref
@@ -35,6 +36,35 @@ _cached_utils_plugin = None
 _cached_utils_plugin_lock = threading.Lock()
 
 
+def _should_find_plugins_in_std_dirs():
+    disable_std_plugin_dirs = os.environ.get("BABELTRACE_DISABLE_STD_PLUGIN_DIRS")
+
+    return disable_std_plugin_dirs is None or disable_std_plugin_dirs != "1"
+
+
+# bt2.find_plugins() wrapper that honors the
+# `BABELTRACE_DISABLE_STD_PLUGIN_DIRS` env var.
+def _find_plugins():
+    should_find_plugins_in_std_dirs = _should_find_plugins_in_std_dirs()
+
+    return bt2_plugin.find_plugins(
+        find_in_user_dir=should_find_plugins_in_std_dirs,
+        find_in_sys_dir=should_find_plugins_in_std_dirs,
+    )
+
+
+# bt2.find_plugin() wrapper that honors the
+# `BABELTRACE_DISABLE_STD_PLUGIN_DIRS` env var.
+def _find_plugin(name):
+    should_find_plugins_in_std_dirs = _should_find_plugins_in_std_dirs()
+
+    return bt2_plugin.find_plugin(
+        name,
+        find_in_user_dir=should_find_plugins_in_std_dirs,
+        find_in_sys_dir=should_find_plugins_in_std_dirs,
+    )
+
+
 # Returns the cached `utils` plugin, loading it on first use.
 #
 # Thread-safe.
@@ -46,7 +76,7 @@ def _utils_plugin():
             # Another thread may have loaded the plugin while we were
             # waiting for the lock: check again.
             if _cached_utils_plugin is None:
-                plugin = bt2_plugin.find_plugin("utils")
+                plugin = _find_plugin("utils")
 
                 if plugin is None:
                     raise RuntimeError('cannot find "utils" plugin')
@@ -159,7 +189,7 @@ class ComponentSpec(_BaseComponentSpec):
         bt2_utils._check_str(plugin_name)
 
         if plugin_set is None:
-            plugin_set = bt2_plugin.find_plugins()
+            plugin_set = _find_plugins()
         else:
             bt2_utils._check_type(plugin_set, bt2_plugin._PluginSet)
 
@@ -221,6 +251,10 @@ def _src_comp_cls_from_plugin_set(plugin_set, plugin_name, class_name):
 # Transform a list of `AutoSourceComponentSpec` into a list of
 # `ComponentSpec` using the automatic source component
 # discovery mechanism.
+#
+# If `plugin_set` is specified, perform the automatic source component
+# discovery mechanism using the plugins in `plugin_set`. Otherwise, look for
+# plugins using bt2.find_plugins().
 def source_component_specs_from_auto_source_component_specs(
     auto_source_comp_specs: typing.Sequence["AutoSourceComponentSpec"],
     plugin_set: typing.Optional[bt2_plugin._PluginSet] = None,
@@ -231,7 +265,7 @@ def source_component_specs_from_auto_source_component_specs(
     inputs = bt2_value.ArrayValue([spec.input for spec in auto_source_comp_specs])
 
     if plugin_set is None:
-        plugin_set = bt2_plugin.find_plugins()
+        plugin_set = _find_plugins()
     else:
         bt2_utils._check_type(plugin_set, bt2_plugin._PluginSet)
 
