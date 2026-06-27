@@ -13,7 +13,7 @@ pytestmark = pytest.mark.needs_lttng_utils_plugin
 
 @pytest.fixture(scope="module")
 def debug_info_comp_cls():
-    return bt2.find_plugin("lttng-utils").filter_component_classes["debug-info"]
+    return btu.plugin_by_name("lttng-utils").filter_component_classes["debug-info"]
 
 
 def _run_convert_with_details(
@@ -120,7 +120,7 @@ def test_compare_ctf_src_trace(
 def test_compare_complete_src_trace(mip_version, details_comp_cls, debug_info_comp_cls):
     _compare_with_without_debug_info(
         bt2.ComponentSpec(
-            bt2.find_plugin("trace-ir-test").source_component_classes["AllFields"]
+            btu.plugin_by_name("trace-ir-test").source_component_classes["AllFields"]
         ),
         mip_version,
         details_comp_cls,

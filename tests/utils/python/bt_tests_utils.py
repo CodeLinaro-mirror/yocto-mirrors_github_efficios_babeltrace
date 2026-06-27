@@ -91,6 +91,42 @@ def exe_path(path: pathlib.Path) -> pathlib.Path:
     return path
 
 
+# Cached set of standard and test utils (from `tests/utils/python`) plugins,
+# loaded lazily and only once by plugin_set().
+_plugin_set: Optional[bt2._PluginSet] = None
+
+
+# Returns the cached set of standard and test utils plugins, loading it lazily
+# (and only once) with bt2.find_plugins() on the first call.
+#
+# Pass the result to any `bt2.TraceCollectionMessageIterator` or other
+# TCMI interface accepting a `plugin_set` parameter to avoid reloading
+# the standard plugins on each call.
+def plugin_set() -> bt2._PluginSet:
+    global _plugin_set
+
+    if _plugin_set is None:
+        _logger.info("Loading standard plugins with bt2.find_plugins()")
+        _plugin_set = bt2.find_plugins()
+
+        if _plugin_set is None:
+            raise RuntimeError("cannot find any plugin")
+
+    return _plugin_set
+
+
+# Returns the standard plugin named `name`, or `None` if there's no
+# such plugin.
+#
+# Unlike bt2.find_plugin(), this function loads the standard plugins
+# lazily (and only once) through plugin_set(), getting `name` from the
+# cached set instead of reloading the plugins on each call.
+def plugin_by_name(name: str) -> Optional[bt2._Plugin]:
+    for plugin in plugin_set():
+        if plugin.name == name:
+            return plugin
+
+
 # Logs a command to be run.
 def _log_run_cmd(
     env: Dict[str, str],
@@ -484,7 +520,8 @@ def convert(
             spec
             for spec in src_component_specs
             if type(spec) is bt2.AutoSourceComponentSpec
-        ]
+        ],
+        plugin_set(),
     )
 
     # Validate filter component specs and convert to list
@@ -538,7 +575,7 @@ def convert(
     graph = bt2.Graph(mip_version)
 
     # Create muxer
-    plugin = bt2.find_plugin("utils")
+    plugin = plugin_by_name("utils")
 
     if plugin is None:
         raise RuntimeError(
@@ -649,7 +686,7 @@ def convert_sink_text_details_test(
         details_params = {}
 
     # Find the `text` plugin and get `details` sink component class
-    plugin = bt2.find_plugin("text")
+    plugin = plugin_by_name("text")
 
     if plugin is None:
         raise RuntimeError("cannot find `text` plugin")
@@ -734,6 +771,8 @@ def build_dir_of_source_file(
 # `kwargs`, collects all the event messages until the end, and returns
 # the list.
 def tcmi_events(*args: Any, **kwargs: Any) -> List[Any]:
+    assert "plugin_set" not in kwargs
+    kwargs["plugin_set"] = plugin_set()
     msgs = typing.cast(
         Iterable[bt2._MessageConst],
         bt2.TraceCollectionMessageIterator(*args, **kwargs),

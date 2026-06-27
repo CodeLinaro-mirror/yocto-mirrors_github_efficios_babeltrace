@@ -22,12 +22,12 @@ class _FailMctfItem(btu_mctf.MCtfTestItem):
         trace_dir: pathlib.Path,
         non_ctf_parts: Dict[str, moultipart.Part],
     ) -> None:
-        src_ctf_comp_cls: bt2._SourceComponentClassConst = bt2.find_plugin(
+        src_ctf_comp_cls: bt2._SourceComponentClassConst = btu.plugin_by_name(
             "ctf"
         ).source_component_classes[  # pyright: ignore[reportOptionalMemberAccess]
             "fs"
         ]
-        dummy_comp_cls: bt2._SinkComponentClassConst = bt2.find_plugin(
+        dummy_comp_cls: bt2._SinkComponentClassConst = btu.plugin_by_name(
             "utils"
         ).sink_component_classes[  # pyright: ignore[reportOptionalMemberAccess]
             "dummy"

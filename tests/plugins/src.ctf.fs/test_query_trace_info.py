@@ -5,13 +5,14 @@ import re
 
 import bt2
 import pytest
+import bt_tests_utils as btu
 
 _QUERY_OBJECT = "babeltrace.trace-infos"
 
 
 @pytest.fixture(scope="module")
 def ctf_fs_comp_cls():
-    return bt2.find_plugin("ctf").source_component_classes["fs"]
+    return btu.plugin_by_name("ctf").source_component_classes["fs"]
 
 
 def test_non_map_params(ctf_fs_comp_cls):

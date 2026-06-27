@@ -5,13 +5,12 @@
 
 import bt2
 import pytest
+import bt_tests_utils as btu
 
 
 @pytest.fixture(scope="module")
 def live_comp_cls() -> bt2._SourceComponentClassConst:
-    import bt2
-
-    return bt2.find_plugin(
+    return btu.plugin_by_name(
         "ctf"
     ).source_component_classes[  # pyright: ignore[reportOptionalMemberAccess]
         "lttng-live"

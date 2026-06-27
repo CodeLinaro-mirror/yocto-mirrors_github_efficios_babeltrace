@@ -20,7 +20,7 @@ class _PrettyMctfItem(btu_mctf.MCtfTestItem):
 
     @staticmethod
     def _src_ctf_comp_cls() -> bt2._SourceComponentClassConst:
-        return bt2.find_plugin(
+        return btu.plugin_by_name(
             "ctf"
         ).source_component_classes[  # pyright: ignore[reportOptionalMemberAccess]
             "fs"
@@ -28,7 +28,7 @@ class _PrettyMctfItem(btu_mctf.MCtfTestItem):
 
     @staticmethod
     def _pretty_comp_cls() -> bt2._SinkComponentClassConst:
-        return bt2.find_plugin(
+        return btu.plugin_by_name(
             "text"
         ).sink_component_classes[  # pyright: ignore[reportOptionalMemberAccess]
             "pretty"

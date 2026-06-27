@@ -319,7 +319,7 @@ def test_compare_to_ctf_fs(
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = pathlib.Path(temp_dir) / "output.txt"
 
-        text_plugin = bt2.find_plugin("text")
+        text_plugin = btu.plugin_by_name("text")
         sink_spec = btu.SinkComponentSpec(
             text_plugin.sink_component_classes["details"],
             {"path": str(output_path), "color": "never", **details_params},
@@ -415,7 +415,7 @@ def test_invalid_metadata(live_comp_cls, ctf_traces_dir, test_data_dir):
                 "session-not-found-action": "end",
             },
         )
-        text_plugin = bt2.find_plugin("text")
+        text_plugin = btu.plugin_by_name("text")
         sink_spec = btu.SinkComponentSpec(
             text_plugin.sink_component_classes["details"], {"color": "never"}
         )

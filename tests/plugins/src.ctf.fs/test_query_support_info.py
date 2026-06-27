@@ -3,11 +3,12 @@
 
 import bt2
 import pytest
+import bt_tests_utils as btu
 
 
 @pytest.fixture(scope="module")
 def ctf_fs_comp_cls():
-    return bt2.find_plugin("ctf").source_component_classes["fs"]
+    return btu.plugin_by_name("ctf").source_component_classes["fs"]
 
 
 _CTF_VERSIONS = [pytest.param(1, id="ctf-1.8"), pytest.param(2, id="ctf-2")]
