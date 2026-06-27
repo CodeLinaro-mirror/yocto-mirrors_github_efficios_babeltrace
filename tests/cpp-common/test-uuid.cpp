@@ -9,6 +9,7 @@
 #include "cpp-common/bt2c/uuid.hpp"
 
 #include "catch2/catch_test_macros.hpp"
+#include "common.hpp"
 
 namespace {
 
@@ -25,6 +26,12 @@ protected:
 };
 
 } /* namespace */
+
+/*
+ * Catch2 renders some `std::uint8_t` values as raw bytes, which makes the
+ * output non-UTF-8. This can be unexpected to consumers of test output.
+ * Some test cases use `intFromByte()` to convert the values to int to avoid this problem.
+ */
 
 TEST_CASE_METHOD(UuidFixture, "fmt::to_string() works with `bt2c::Uuid`")
 {
@@ -53,42 +60,42 @@ TEST_CASE_METHOD(UuidFixture, "bt2c::UuidView::str() returns expected string")
 
 TEST_CASE_METHOD(UuidFixture, "Subscript operator of `bt2c::Uuid` returns expected bytes")
 {
-    CHECK(_mUuid[0] == 0xc2);
-    CHECK(_mUuid[1] == 0x28);
-    CHECK(_mUuid[2] == 0x1e);
-    CHECK(_mUuid[3] == 0x4a);
-    CHECK(_mUuid[4] == 0x69);
-    CHECK(_mUuid[5] == 0x9b);
-    CHECK(_mUuid[6] == 0x4b);
-    CHECK(_mUuid[7] == 0x78);
-    CHECK(_mUuid[8] == 0x90);
-    CHECK(_mUuid[9] == 0x3f);
-    CHECK(_mUuid[10] == 0x2f);
-    CHECK(_mUuid[11] == 0x84);
-    CHECK(_mUuid[12] == 0x07);
-    CHECK(_mUuid[13] == 0xfe);
-    CHECK(_mUuid[14] == 0x2b);
-    CHECK(_mUuid[15] == 0x77);
+    CHECK(intFromByte(_mUuid[0]) == 0xc2);
+    CHECK(intFromByte(_mUuid[1]) == 0x28);
+    CHECK(intFromByte(_mUuid[2]) == 0x1e);
+    CHECK(intFromByte(_mUuid[3]) == 0x4a);
+    CHECK(intFromByte(_mUuid[4]) == 0x69);
+    CHECK(intFromByte(_mUuid[5]) == 0x9b);
+    CHECK(intFromByte(_mUuid[6]) == 0x4b);
+    CHECK(intFromByte(_mUuid[7]) == 0x78);
+    CHECK(intFromByte(_mUuid[8]) == 0x90);
+    CHECK(intFromByte(_mUuid[9]) == 0x3f);
+    CHECK(intFromByte(_mUuid[10]) == 0x2f);
+    CHECK(intFromByte(_mUuid[11]) == 0x84);
+    CHECK(intFromByte(_mUuid[12]) == 0x07);
+    CHECK(intFromByte(_mUuid[13]) == 0xfe);
+    CHECK(intFromByte(_mUuid[14]) == 0x2b);
+    CHECK(intFromByte(_mUuid[15]) == 0x77);
 }
 
 TEST_CASE_METHOD(UuidFixture, "Subscript operator of `bt2c::UuidView` returns expected bytes")
 {
-    CHECK(_mUuidView[0] == 0xc2);
-    CHECK(_mUuidView[1] == 0x28);
-    CHECK(_mUuidView[2] == 0x1e);
-    CHECK(_mUuidView[3] == 0x4a);
-    CHECK(_mUuidView[4] == 0x69);
-    CHECK(_mUuidView[5] == 0x9b);
-    CHECK(_mUuidView[6] == 0x4b);
-    CHECK(_mUuidView[7] == 0x78);
-    CHECK(_mUuidView[8] == 0x90);
-    CHECK(_mUuidView[9] == 0x3f);
-    CHECK(_mUuidView[10] == 0x2f);
-    CHECK(_mUuidView[11] == 0x84);
-    CHECK(_mUuidView[12] == 0x07);
-    CHECK(_mUuidView[13] == 0xfe);
-    CHECK(_mUuidView[14] == 0x2b);
-    CHECK(_mUuidView[15] == 0x77);
+    CHECK(intFromByte(_mUuidView[0]) == 0xc2);
+    CHECK(intFromByte(_mUuidView[1]) == 0x28);
+    CHECK(intFromByte(_mUuidView[2]) == 0x1e);
+    CHECK(intFromByte(_mUuidView[3]) == 0x4a);
+    CHECK(intFromByte(_mUuidView[4]) == 0x69);
+    CHECK(intFromByte(_mUuidView[5]) == 0x9b);
+    CHECK(intFromByte(_mUuidView[6]) == 0x4b);
+    CHECK(intFromByte(_mUuidView[7]) == 0x78);
+    CHECK(intFromByte(_mUuidView[8]) == 0x90);
+    CHECK(intFromByte(_mUuidView[9]) == 0x3f);
+    CHECK(intFromByte(_mUuidView[10]) == 0x2f);
+    CHECK(intFromByte(_mUuidView[11]) == 0x84);
+    CHECK(intFromByte(_mUuidView[12]) == 0x07);
+    CHECK(intFromByte(_mUuidView[13]) == 0xfe);
+    CHECK(intFromByte(_mUuidView[14]) == 0x2b);
+    CHECK(intFromByte(_mUuidView[15]) == 0x77);
 }
 
 TEST_CASE("bt2c::Uuid::size() returns 16")
@@ -158,10 +165,10 @@ TEST_CASE_METHOD(UuidFixture, "`bt2c::Uuid` is iterable")
     auto it = _mUuid.begin();
 
     REQUIRE(it != _mUuid.end());
-    CHECK(*it == 0xc2);
+    CHECK(intFromByte(*it) == 0xc2);
     ++it;
     REQUIRE(it != _mUuid.end());
-    CHECK(*it == 0x28);
+    CHECK(intFromByte(*it) == 0x28);
 }
 
 TEST_CASE_METHOD(UuidFixture, "`bt2c::UuidView` is iterable")
@@ -169,24 +176,24 @@ TEST_CASE_METHOD(UuidFixture, "`bt2c::UuidView` is iterable")
     auto it = _mUuidView.begin();
 
     REQUIRE(it != _mUuidView.end());
-    CHECK(*it == 0xc2);
+    CHECK(intFromByte(*it) == 0xc2);
     ++it;
     REQUIRE(it != _mUuidView.end());
-    CHECK(*it == 0x28);
+    CHECK(intFromByte(*it) == 0x28);
 }
 
 TEST_CASE_METHOD(UuidFixture, "bt2c::Uuid::data() returns non-null pointer")
 {
     REQUIRE(_mUuid.data());
-    CHECK(_mUuid.data()[0] == 0xc2);
-    CHECK(_mUuid.data()[15] == 0x77);
+    CHECK(intFromByte(_mUuid.data()[0]) == 0xc2);
+    CHECK(intFromByte(_mUuid.data()[15]) == 0x77);
 }
 
 TEST_CASE_METHOD(UuidFixture, "bt2c::UuidView::data() returns non-null pointer")
 {
     REQUIRE(_mUuidView.data());
-    CHECK(_mUuidView.data()[0] == 0xc2);
-    CHECK(_mUuidView.data()[15] == 0x77);
+    CHECK(intFromByte(_mUuidView.data()[0]) == 0xc2);
+    CHECK(intFromByte(_mUuidView.data()[15]) == 0x77);
 }
 
 TEST_CASE("bt2c::Uuid::isValidUuidStr() with valid string")

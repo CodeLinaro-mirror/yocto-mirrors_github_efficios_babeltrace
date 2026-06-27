@@ -17,7 +17,6 @@ import textwrap
 import itertools
 import subprocess
 from typing import (
-    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -27,9 +26,6 @@ from typing import (
     Iterable,
     Optional,
 )
-
-if TYPE_CHECKING:
-    from typing import Literal
 
 import bt2
 
@@ -140,33 +136,6 @@ def _log_run_cmd(
     _logger.info(f"Running: {' '.join(cmd_parts)}")
 
 
-@typing.overload
-def run(
-    build_root_dir: pathlib.Path,
-    exec_path: pathlib.Path,
-    args: List[str],
-    check: bool = ...,
-    text: "Literal[True]" = ...,
-    timeout: Optional[float] = ...,
-    windows_safe: bool = ...,
-    extra_env: Optional[Dict[str, str]] = ...,
-) -> "subprocess.CompletedProcess[str]": ...
-
-
-@typing.overload
-def run(
-    build_root_dir: pathlib.Path,
-    exec_path: pathlib.Path,
-    args: List[str],
-    check: bool = ...,
-    *,
-    text: "Literal[False]",
-    timeout: Optional[float] = ...,
-    windows_safe: bool = ...,
-    extra_env: Optional[Dict[str, str]] = ...,
-) -> "subprocess.CompletedProcess[bytes]": ...
-
-
 # Like subprocess.run(), but always captures the standard streams.
 #
 # `exec_path` is the path to the executable to use: don't include it in
@@ -179,13 +148,12 @@ def run(
 # This function adds the `extra_env` environment dictionary to the
 # current environment before running the subprocess.
 #
-# `check`, `text`, and `timeout` are subprocess.run() parameters.
+# `check` and `timeout` are subprocess.run() parameters.
 def run(
     build_root_dir: pathlib.Path,
     exec_path: pathlib.Path,
     args: List[str],
     check: bool = False,
-    text: bool = True,
     timeout: Optional[float] = None,
     windows_safe: bool = True,
     extra_env: Optional[Dict[str, str]] = None,
@@ -208,21 +176,17 @@ def run(
             stderr=subprocess.PIPE,
             env=env,
             timeout=timeout,
-            universal_newlines=text,
-            encoding="utf-8" if text else None,
+            encoding="utf-8",
         )
     except subprocess.TimeoutExpired as exc:
         if exc.stderr is not None:
-            sys.stderr.buffer.write(exc.stderr)
+            sys.stderr.write(exc.stderr.decode("utf-8"))
 
         raise
 
     # Write captured standard error so that pytest includes it in the
     # test report on failure.
-    if text:
-        sys.stderr.write(res.stderr)
-    else:
-        sys.stderr.buffer.write(res.stderr)
+    sys.stderr.write(res.stderr)
 
     if check:
         res.check_returncode()

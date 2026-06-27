@@ -248,10 +248,9 @@ class _Catch2TestItem(pytest.Item):
             self._build_root_dir,
             self._test_binary,
             [self._escaped_catch2_test_name, "-s", "--colour-mode", "none"],
-            text=False,
         )
 
-        sys.stdout.buffer.write(result.stdout)
+        sys.stdout.write(result.stdout)
 
         if result.returncode != 0:
             pytest.fail(f"Catch2 test failed: `{self._catch2_test_name}`")

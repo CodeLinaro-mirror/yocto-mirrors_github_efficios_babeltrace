@@ -8,8 +8,10 @@
 #define BABELTRACE_TESTS_UTILS_COMMON_HPP
 
 #include <cstdint>
+#include <ostream>
 
 #include "cpp-common/bt2/mip.hpp"
+#include "cpp-common/bt2c/uuid.hpp"
 
 template <typename FuncT>
 void forEachMipVersion(FuncT&& func)
@@ -18,5 +20,40 @@ void forEachMipVersion(FuncT&& func)
         func(v);
     }
 }
+
+/* Returns byte `byte` as an `int`. */
+
+inline int intFromByte(const std::uint8_t byte) noexcept
+{
+    return byte;
+}
+
+namespace bt2c {
+
+/*
+ * Formatter for `bt2c::UuidView`.
+ *
+ * This is picked up by Catch2 to format a `bt2c::UuidView`.
+ */
+
+inline std::ostream& operator<<(std::ostream& os, const UuidView uuid)
+{
+    os << "UuidView {" << uuid.str() << '}';
+    return os;
+}
+
+/*
+ * Formatter for `bt2c::Uuid`.
+ *
+ * This is picked up by Catch2 to format a `bt2c::Uuid`.
+ */
+
+inline std::ostream& operator<<(std::ostream& os, const Uuid& uuid)
+{
+    os << "Uuid {" << uuid.str() << '}';
+    return os;
+}
+
+} /* namespace bt2c */
 
 #endif /* BABELTRACE_TESTS_UTILS_COMMON_HPP */
