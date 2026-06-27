@@ -113,8 +113,22 @@ class ComponentSpec(_BaseComponentSpec):
         params: bt2_component._ComponentParams = None,
         obj: object = None,
         logging_level: bt2_logging.LoggingLevel = bt2_logging.LoggingLevel.NONE,
+        plugin_set: typing.Optional[bt2_plugin._PluginSet] = None,
     ):
-        plugin = bt2_plugin.find_plugin(plugin_name)
+        bt2_utils._check_str(plugin_name)
+
+        if plugin_set is None:
+            plugin_set = bt2_plugin.find_plugins()
+        else:
+            bt2_utils._check_type(plugin_set, bt2_plugin._PluginSet)
+
+        plugin = None
+
+        if plugin_set is not None:
+            for candidate in plugin_set:
+                if candidate.name == plugin_name:
+                    plugin = candidate
+                    break
 
         if plugin is None:
             raise ValueError(f"no such plugin: {plugin_name}")

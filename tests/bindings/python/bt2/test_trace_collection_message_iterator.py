@@ -477,6 +477,40 @@ def test_scsfascs_from_plugin_set(ascd_plugin_set_dir):
     assert comp_specs[0].component_class.name == "TestSource"
 
 
+def test_comp_spec_create_from_name_with_plugin_set(ascd_plugin_set_dir):
+    # Test calling
+    # bt2.ComponentSpec.from_named_plugin_and_component_class() with a
+    # plugin set containing a plugin that can't be found via the
+    # standard plugin search paths.
+    plugin_set = bt2.find_plugins_in_path(
+        str(ascd_plugin_set_dir / "bt_plugin_test.py")
+    )
+
+    assert plugin_set is not None
+    assert len(plugin_set) == 1
+
+    spec = bt2.ComponentSpec.from_named_plugin_and_component_class(
+        "test", "TestSource", plugin_set=plugin_set
+    )
+
+    assert spec.component_class.name == "TestSource"
+
+
+def test_comp_spec_create_from_name_with_plugin_set_non_existent_plugin(
+    ascd_plugin_set_dir,
+):
+    plugin_set = bt2.find_plugins_in_path(
+        str(ascd_plugin_set_dir / "bt_plugin_test.py")
+    )
+
+    assert plugin_set is not None
+
+    with pytest.raises(ValueError, match="no such plugin: this_plugin_does_not_exist"):
+        bt2.ComponentSpec.from_named_plugin_and_component_class(
+            "this_plugin_does_not_exist", "TestSource", plugin_set=plugin_set
+        )
+
+
 def test_tcmi_ascd_from_plugin_set(ascd_plugin_set_dir):
     # Test `bt2.TraceCollectionMessageIterator` with a plugin set
     # containing a plugin that can't be found via the standard plugin
