@@ -7,6 +7,7 @@ import numbers
 import weakref
 import datetime
 import itertools
+import threading
 from collections import namedtuple
 
 from bt2 import mip as bt2_mip
@@ -26,6 +27,47 @@ from bt2 import component_descriptor as bt2_component_descriptor
 
 # a pair of component and ComponentSpec
 _ComponentAndSpec = namedtuple("_ComponentAndSpec", ["comp", "spec"])
+
+# Lazily-loaded, cached `utils` plugin (needed for its `muxer` and
+# `trimmer` filter component classes).
+#
+# Protected by `_cached_utils_plugin_lock`.
+_cached_utils_plugin = None
+_cached_utils_plugin_lock = threading.Lock()
+
+
+# Returns the cached `utils` plugin, loading it on first use.
+#
+# Thread-safe.
+def _utils_plugin():
+    global _cached_utils_plugin
+
+    if _cached_utils_plugin is None:
+        with _cached_utils_plugin_lock:
+            # Another thread may have loaded the plugin while we were
+            # waiting for the lock: check again.
+            if _cached_utils_plugin is None:
+                plugin = bt2_plugin.find_plugin("utils")
+
+                if plugin is None:
+                    raise RuntimeError('cannot find "utils" plugin')
+
+                _cached_utils_plugin = plugin
+
+    return _cached_utils_plugin
+
+
+# Returns the filter component class named `name` from the cached
+# `utils` plugin.
+def _utils_filter_comp_cls(name):
+    plugin = _utils_plugin()
+
+    if name not in plugin.filter_component_classes:
+        raise RuntimeError(
+            f'cannot find "{name}" filter component class in "utils" plugin'
+        )
+
+    return plugin.filter_component_classes[name]
 
 
 class _BaseComponentSpec:
@@ -447,30 +489,9 @@ class TraceCollectionMessageIterator(bt2_message_iterator._MessageIterator):
         return self._create_trimmer(begin, end, name)
 
     def _create_muxer(self):
-        plugin = bt2_plugin.find_plugin("utils")
-
-        if plugin is None:
-            raise RuntimeError('cannot find "utils" plugin (needed for the muxer)')
-
-        if "muxer" not in plugin.filter_component_classes:
-            raise RuntimeError(
-                'cannot find "muxer" filter component class in "utils" plugin'
-            )
-
-        comp_cls = plugin.filter_component_classes["muxer"]
-        return self._graph.add_component(comp_cls, "muxer")
+        return self._graph.add_component(_utils_filter_comp_cls("muxer"), "muxer")
 
     def _create_trimmer(self, begin_ns, end_ns, name):
-        plugin = bt2_plugin.find_plugin("utils")
-
-        if plugin is None:
-            raise RuntimeError('cannot find "utils" plugin (needed for the trimmer)')
-
-        if "trimmer" not in plugin.filter_component_classes:
-            raise RuntimeError(
-                'cannot find "trimmer" filter component class in "utils" plugin'
-            )
-
         params = {}
 
         def ns_to_string(ns):
@@ -484,8 +505,9 @@ class TraceCollectionMessageIterator(bt2_message_iterator._MessageIterator):
         if end_ns is not None:
             params["end"] = ns_to_string(end_ns)
 
-        comp_cls = plugin.filter_component_classes["trimmer"]
-        return self._graph.add_component(comp_cls, name, params)
+        return self._graph.add_component(
+            _utils_filter_comp_cls("trimmer"), name, params
+        )
 
     def _get_unique_comp_name(self, comp_cls):
         name = comp_cls.name
@@ -576,10 +598,9 @@ class TraceCollectionMessageIterator(bt2_message_iterator._MessageIterator):
 
         if self._stream_intersection_mode:
             # we also need at least one `flt.utils.trimmer` component
-            comp_spec = ComponentSpec.from_named_plugin_and_component_class(
-                "utils", "trimmer"
+            append_comp_specs_descriptors(
+                descriptors, [ComponentSpec(_utils_filter_comp_cls("trimmer"))]
             )
-            append_comp_specs_descriptors(descriptors, [comp_spec])
 
         mip_version = bt2_mip.get_greatest_operative_mip_version(descriptors)
 
