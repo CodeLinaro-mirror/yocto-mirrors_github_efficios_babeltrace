@@ -6,6 +6,7 @@
 import os
 import sys
 import enum
+import json
 import time
 import shlex
 import typing
@@ -193,6 +194,56 @@ def run(
 
     _logger.info(f"  Exit status: {res.returncode}")
     return res
+
+
+# Parses `params`, a string of `NAME=VAL` lines, into a component
+# initialization parameter dictionary suitable for convert() and
+# similar functions.
+#
+# If `params` starts with `{`, then this function decodes it as a JSON
+# object and returns the result as is.
+#
+# Otherwise, each non-empty line must have the form `NAME=VAL`, where
+# `VAL` is one of:
+#
+# `yes` or `no`:
+#     A boolean.
+#
+# A string which parses as an integer with int():
+#     An integer.
+#
+# Anything else:
+#     A plain string.
+def params_from_part(params: str) -> Dict[str, Any]:
+    params = params.strip()
+
+    if params.startswith("{"):
+        return typing.cast(Dict[str, Any], json.loads(params))
+
+    result: Dict[str, Any] = {}
+
+    for line in params.splitlines():
+        line = line.strip()
+
+        if not line or line.startswith("#"):
+            continue
+
+        name, sep, val = line.partition("=")
+        assert sep == "="
+        name = name.strip()
+        val = val.strip()
+
+        if val == "yes":
+            result[name] = True
+        elif val == "no":
+            result[name] = False
+        else:
+            try:
+                result[name] = int(val)
+            except ValueError:
+                result[name] = val
+
+    return result
 
 
 # Any component type
