@@ -1566,6 +1566,61 @@ In general, prefer `btu.convert()` and
 `btu.convert_sink_text_details_test()` over `btu_cli.run_cli()` and
 `btu_cli.run_cli_sink_text_details_test()`.
 
+=== `bt_tests_mctf_utils` module
+
+`tests/utils/python/bt_tests_mctf_utils.py` is a reusable pytest
+scaffold for `conftest.py` files which collect `.mctf` files and produce
+one test item per file.
+
+Any such `conftest.py` may import `bt_tests_mctf_utils`; our
+convention is to import it as `btu_mctf`:
+
+[source,python]
+----
+import bt_tests_mctf_utils as btu_mctf
+----
+
+The module contains:
+
+Failure exception classes::
+    `MCtfTestError` is the base class; `MCtfMismatchError` signals an
+    expected/actual output mismatch, and `MCtfNoErrorError` signals
+    that the graph completed without raising an expected error.
++
+A subclass of `MCtfTestItem` raises one of these from `_check()` to
+signal a test failure. `format_output()` produces the standard 📄/✅/❌
+failure description shown in the pytest report.
+
+`MCtfTestItem`::
+    Abstract `pytest.Item` subclass for an `.mctf` file:
++
+--
+* Materializes the trace into a temporary directory using
+  `mctf.generate()`.
+
+* Validates the `.mctf` non-CTF parts (those whose header starts with
+  `@`) against the `_allowed_non_ctf_parts` and
+  `_required_non_ctf_parts` class attributes.
+
+* Calls the abstract `_check()`
+  method of the subclass to run the actual assertion.
+
+* Renders any `MCtfTestError` exception raised from `_check()` through
+  its `format_output()`.
+--
+
+`collect_mctf_file()`::
+    Helper to return from a `pytest_collect_file()` hook.
++
+Given the `MCtfTestItem` subclass to instantiate per `.mctf` file (and
+an optional log label), it returns an internal `pytest.File` collector
+(or `None` if the file isn't an `.mctf` file).
+
+A typical `conftest.py` using this scaffold is about 50 lines: an
+`MCtfTestItem` subclass setting `_allowed_non_ctf_parts`,
+`_required_non_ctf_parts`, and a `_check()` method, plus a one-liner
+`pytest_collect_file()` hook calling `collect_mctf_file()`.
+
 === Write tests
 
 Follow standard pytest best practices, for example (for Python tests):
