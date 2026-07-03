@@ -3,7 +3,6 @@
 # Copyright (c) 2017 Philippe Proulx <pproulx@efficios.com>
 
 import typing
-import collections.abc
 
 from bt2 import utils as bt2_utils
 from bt2 import value as bt2_value
@@ -27,7 +26,7 @@ def _bt2_trace_class():
 class _StreamClassConst(
     bt2_object._SharedObject,
     bt2_user_attrs._WithUserAttrsConst,
-    collections.abc.Mapping,
+    typing.Mapping[int, bt2_event_class._EventClassConst],
 ):
     @staticmethod
     def _get_ref(ptr):

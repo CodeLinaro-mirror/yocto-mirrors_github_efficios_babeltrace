@@ -521,7 +521,9 @@ class _StructureFieldClassMember(
         native_bt.field_class_structure_member_set_user_attributes(obj_ptr, value_ptr)
 
 
-class _StructureFieldClassConst(_FieldClassConst, collections.abc.Mapping):
+class _StructureFieldClassConst(
+    _FieldClassConst, typing.Mapping[str, _StructureFieldClassMemberConst]
+):
     _NAME = "Const structure"
     _borrow_member_ptr_by_index = staticmethod(
         native_bt.field_class_structure_borrow_member_by_index_const
@@ -913,7 +915,10 @@ class _VariantFieldClassWithUnsignedIntegerSelectorFieldOption(
     pass
 
 
-class _VariantFieldClassConst(_FieldClassConst, collections.abc.Mapping):
+class _VariantFieldClassConst(
+    _FieldClassConst,
+    typing.Mapping[typing.Union[str, int], _VariantFieldClassOptionConst],
+):
     _NAME = "Const variant"
     _borrow_option_ptr_by_name = staticmethod(
         native_bt.field_class_variant_borrow_option_by_name_const

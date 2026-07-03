@@ -4,7 +4,6 @@
 
 import enum
 import typing
-import collections
 
 from bt2 import object as bt2_object
 from bt2 import native_bt
@@ -38,7 +37,7 @@ class _CurrentOptionContentFieldPathItem(_FieldPathItem):
     pass
 
 
-class _FieldPathConst(bt2_object._SharedObject, collections.abc.Iterable):
+class _FieldPathConst(bt2_object._SharedObject, typing.Iterable[_FieldPathItem]):
     @staticmethod
     def _get_ref(ptr):
         native_bt.field_path_get_ref(ptr)

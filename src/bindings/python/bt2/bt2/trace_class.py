@@ -8,7 +8,6 @@ import uuid as uuidp
 import typing
 import warnings
 import functools
-import collections.abc
 
 from bt2 import error as bt2_error
 from bt2 import trace as bt2_trace
@@ -34,7 +33,7 @@ def _trace_class_destruction_listener_from_native(
 class _TraceClassConst(
     bt2_object._SharedObject,
     bt2_user_attrs._WithUserAttrsConst,
-    collections.abc.Mapping,
+    typing.Mapping[int, bt2_stream_class._StreamClassConst],
 ):
     @staticmethod
     def _get_ref(ptr):

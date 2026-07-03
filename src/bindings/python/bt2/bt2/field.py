@@ -671,7 +671,7 @@ class _ContainerField(_ContainerFieldConst, _Field):
     pass
 
 
-class _StructureFieldConst(_ContainerFieldConst, collections.abc.Mapping):
+class _StructureFieldConst(_ContainerFieldConst, typing.Mapping[str, _FieldConst]):
     _NAME = "Const structure"
     _borrow_member_field_ptr_by_index = staticmethod(
         native_bt.field_structure_borrow_member_field_by_index_const
@@ -974,7 +974,7 @@ class _VariantFieldWithSignedIntegerSelectorField(
         return self._cls
 
 
-class _ArrayFieldConst(_ContainerFieldConst, _FieldConst, collections.abc.Sequence):
+class _ArrayFieldConst(_ContainerFieldConst, _FieldConst, typing.Sequence[_FieldConst]):
     _borrow_element_field_ptr_by_index = staticmethod(
         native_bt.field_array_borrow_element_field_by_index_const
     )

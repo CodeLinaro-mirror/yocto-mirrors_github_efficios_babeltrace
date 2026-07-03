@@ -3,7 +3,6 @@
 # Copyright (c) 2017 Philippe Proulx <pproulx@efficios.com>
 
 import typing
-import collections.abc
 
 from bt2 import port as bt2_port
 from bt2 import error as bt2_error
@@ -20,7 +19,7 @@ if typing.TYPE_CHECKING:
     from bt2 import component as bt2_component
 
 
-class _MessageIterator(collections.abc.Iterator):
+class _MessageIterator(typing.Iterator[bt2_message._MessageConst]):
     def __next__(self) -> bt2_message._MessageConst:
         raise NotImplementedError
 

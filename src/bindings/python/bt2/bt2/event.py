@@ -3,7 +3,6 @@
 # Copyright (c) 2016-2017 Philippe Proulx <pproulx@efficios.com>
 
 import typing
-import collections.abc
 
 from bt2 import field as bt2_field
 from bt2 import utils as bt2_utils
@@ -14,7 +13,7 @@ from bt2 import native_bt
 from bt2 import event_class as bt2_event_class
 
 
-class _EventConst(bt2_object._UniqueObject, collections.abc.Mapping):
+class _EventConst(bt2_object._UniqueObject, typing.Mapping[str, bt2_field._FieldConst]):
     _borrow_class_ptr = staticmethod(native_bt.event_borrow_class_const)
     _borrow_packet_ptr = staticmethod(native_bt.event_borrow_packet_const)
     _borrow_stream_ptr = staticmethod(native_bt.event_borrow_stream_const)

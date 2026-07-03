@@ -395,7 +395,7 @@ class RealValue(_RealValueConst, _NumericValue):
 
 
 @functools.total_ordering
-class _StringValueConst(collections.abc.Sequence, _Value):
+class _StringValueConst(typing.Sequence[str], _Value):
     _NAME = "Const string"
 
     @classmethod
@@ -474,7 +474,9 @@ class _Container(_ContainerConst):
         raise NotImplementedError
 
 
-class _ArrayValueConst(_ContainerConst, collections.abc.Sequence, _ValueConst):
+class _ArrayValueConst(
+    _ContainerConst, typing.Sequence[typing.Optional[_ValueConst]], _ValueConst
+):
     _NAME = "Const array"
     _borrow_element_by_index = staticmethod(
         native_bt.value_array_borrow_element_by_index_const
@@ -574,7 +576,7 @@ class ArrayValue(_ArrayValueConst, _Container, collections.abc.MutableSequence, 
         raise NotImplementedError
 
 
-class _MapValueKeyIterator(collections.abc.Iterator):
+class _MapValueKeyIterator(typing.Iterator[str]):
     def __init__(self, map_obj):
         self._map_obj = map_obj
         self._at = 0
@@ -594,7 +596,9 @@ class _MapValueKeyIterator(collections.abc.Iterator):
         return str(key)
 
 
-class _MapValueConst(_ContainerConst, collections.abc.Mapping, _ValueConst):
+class _MapValueConst(
+    _ContainerConst, typing.Mapping[str, typing.Optional[_ValueConst]], _ValueConst
+):
     _NAME = "Const map"
     _borrow_entry_value_ptr = staticmethod(native_bt.value_map_borrow_entry_value_const)
 

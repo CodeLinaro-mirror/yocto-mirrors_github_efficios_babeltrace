@@ -4,7 +4,6 @@
 
 import typing
 import os.path
-import collections.abc
 
 from bt2 import utils as bt2_utils
 from bt2 import object as bt2_object
@@ -39,7 +38,7 @@ class _PluginVersion:
         return f"{self._major}.{self._minor}.{self._patch}{self._extra if self._extra is not None else ''}"
 
 
-class _PluginComponentClassesIterator(collections.abc.Iterator):
+class _PluginComponentClassesIterator(typing.Iterator[str]):
     def __init__(self, plugin_comp_cls):
         self._plugin_comp_cls = plugin_comp_cls
         self._at = 0
@@ -207,7 +206,7 @@ class _Plugin(bt2_object._SharedObject):
         return _PluginSinkComponentClasses(self)
 
 
-class _PluginSet(bt2_object._SharedObject, collections.abc.Sequence):
+class _PluginSet(bt2_object._SharedObject, typing.Sequence[_Plugin]):
     @staticmethod
     def _put_ref(ptr):
         native_bt.plugin_set_put_ref(ptr)
