@@ -120,7 +120,13 @@ from bt2.value import (
     _SignedIntegerValueConst,
     _UnsignedIntegerValueConst,
 )
-from bt2.plugin import _PluginSet, find_plugin, find_plugins, find_plugins_in_path
+from bt2.plugin import (
+    _Plugin,
+    _PluginSet,
+    find_plugin,
+    find_plugins,
+    find_plugins_in_path,
+)
 from bt2.stream import _Stream, _StreamConst
 from bt2.logging import (
     LoggingLevel,
