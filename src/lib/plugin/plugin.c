@@ -346,7 +346,7 @@ bt_plugin_set_add_plugin(struct bt_plugin_set *plugin_set,
 		"plugin-set-addr=%p, %![plugin-]+l",
 		plugin_set, plugin);
 
-	bt_object_get_ref(plugin);
+	bt_plugin_get_ref(plugin);
 	g_ptr_array_add(plugin_set->plugins, plugin);
 	bt_plugin_freeze(plugin);
 	BT_LIB_LOGD("Added plugin to plugin set: "
@@ -417,7 +417,7 @@ struct bt_plugin_set *create_plugin_set(void)
 	goto end;
 
 error:
-	BT_OBJECT_PUT_REF_AND_RESET(plugin_set);
+	BT_PLUGIN_SET_PUT_REF_AND_RESET(plugin_set);
 
 end:
 	return plugin_set;
@@ -484,7 +484,7 @@ enum bt_plugin_find_all_from_static_status bt_plugin_find_all_from_static(
 	}
 
 end:
-	BT_OBJECT_PUT_REF_AND_RESET(plugin_set);
+	BT_PLUGIN_SET_PUT_REF_AND_RESET(plugin_set);
 	return status;
 }
 
@@ -578,7 +578,7 @@ end:
 		BT_LOGI("Found no plugins in file: path=\"%s\"", path);
 	}
 
-	BT_OBJECT_PUT_REF_AND_RESET(plugin_set);
+	BT_PLUGIN_SET_PUT_REF_AND_RESET(plugin_set);
 	return status;
 }
 
@@ -704,7 +704,7 @@ enum bt_plugin_find_all_status bt_plugin_find_all(bt_bool find_in_std_env_var,
 	for (dir_i = 0; dir_i < dirs->len; dir_i++) {
 		GString *dir = dirs->pdata[dir_i];
 
-		BT_OBJECT_PUT_REF_AND_RESET(plugin_set);
+		BT_PLUGIN_SET_PUT_REF_AND_RESET(plugin_set);
 
 		/*
 		 * Skip this if the directory does not exist because
@@ -748,7 +748,7 @@ enum bt_plugin_find_all_status bt_plugin_find_all(bt_bool find_in_std_env_var,
 	}
 
 	if (find_in_static) {
-		BT_OBJECT_PUT_REF_AND_RESET(plugin_set);
+		BT_PLUGIN_SET_PUT_REF_AND_RESET(plugin_set);
 		status = bt_plugin_find_all_from_static(fail_on_load_error,
 			&plugin_set);
 		if (status < 0) {
@@ -780,14 +780,14 @@ enum bt_plugin_find_all_status bt_plugin_find_all(bt_bool find_in_std_env_var,
 
 end:
 	free(home_plugin_dir);
-	bt_object_put_ref(plugin_set);
+	bt_plugin_set_put_ref(plugin_set);
 
 	if (dirs) {
 		g_ptr_array_free(dirs, TRUE);
 	}
 
 	if (status < 0) {
-		BT_OBJECT_PUT_REF_AND_RESET(*plugin_set_out);
+		BT_PLUGIN_SET_PUT_REF_AND_RESET(*plugin_set_out);
 	} else {
 		BT_ASSERT(*plugin_set_out);
 
@@ -798,7 +798,7 @@ end:
 		} else {
 			BT_LOGI_STR("No plugins found in standard directories and built-in plugins.");
 			status = BT_FUNC_STATUS_NOT_FOUND;
-			BT_OBJECT_PUT_REF_AND_RESET(*plugin_set_out);
+			BT_PLUGIN_SET_PUT_REF_AND_RESET(*plugin_set_out);
 		}
 	}
 
@@ -838,7 +838,7 @@ enum bt_plugin_find_status bt_plugin_find(const char *plugin_name,
 
 		if (strcmp(plugin->info.name->str, plugin_name) == 0) {
 			*plugin_out = plugin;
-			bt_object_get_ref_no_null_check(*plugin_out);
+			bt_plugin_get_ref(*plugin_out);
 			goto end;
 		}
 	}
@@ -915,7 +915,7 @@ int nftw_append_all_from_dir(const char *file,
 						append_all_from_dir_info.plugin_set,
 						plugin);
 				if (append_all_from_dir_info.status != BT_FUNC_STATUS_OK) {
-					bt_object_put_ref(plugins_from_file);
+					bt_plugin_set_put_ref(plugins_from_file);
 					BT_LIB_LOGE_APPEND_CAUSE(
 						"Cannot add plugin to plugin set.");
 					ret = -1;
@@ -923,7 +923,7 @@ int nftw_append_all_from_dir(const char *file,
 				}
 			}
 
-			bt_object_put_ref(plugins_from_file);
+			bt_plugin_set_put_ref(plugins_from_file);
 			goto end;
 		} else if (append_all_from_dir_info.status < 0) {
 			/* bt_plugin_find_all_from_file() logs errors */
@@ -1072,7 +1072,7 @@ enum bt_plugin_find_all_from_dir_status bt_plugin_find_all_from_dir(
 
 error:
 	BT_ASSERT(status != BT_FUNC_STATUS_OK);
-	BT_OBJECT_PUT_REF_AND_RESET(*plugin_set_out);
+	BT_PLUGIN_SET_PUT_REF_AND_RESET(*plugin_set_out);
 
 end:
 	return status;
@@ -1281,7 +1281,7 @@ struct bt_plugin *bt_plugin_create(const char *name)
 	goto end;
 
 error:
-	BT_OBJECT_PUT_REF_AND_RESET(plugin);
+	BT_PLUGIN_PUT_REF_AND_RESET(plugin);
 
 end:
 	return plugin;
@@ -1443,7 +1443,7 @@ bt_plugin_add_component_class(
 	g_string_assign(comp_class->plugin_name, plugin->info.name->str);
 
 	/* Add new component class */
-	bt_object_get_ref(comp_class);
+	bt_component_class_get_ref(comp_class);
 	g_ptr_array_add(comp_classes, comp_class);
 
 	bt_component_class_freeze(comp_class);
