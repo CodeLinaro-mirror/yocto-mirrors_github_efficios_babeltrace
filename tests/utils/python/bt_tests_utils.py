@@ -441,8 +441,6 @@ def _get_free_muxer_input_port(
         if not port.is_connected:
             return port
 
-    return
-
 
 # Logs and connects ports.
 def _connect_ports(
