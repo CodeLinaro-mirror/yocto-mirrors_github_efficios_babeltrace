@@ -569,22 +569,22 @@ NAME: CC-TYPE.CC-NAME
 if no \bt_plugin provides the class of \bt_p{self_component}, with:
 
 <dl>
-  <dt>\c NAME</dt>
+  <dt><code>NAME</code></dt>
   <dd>Name of \bt_p{self_component}.</dd>
 
-  <dt>\c CC-TYPE</dt>
+  <dt><code>CC-TYPE</code></dt>
   <dd>
     Type of the \ref api-comp-cls "class" of \bt_p{self_component}
     (\c src, \c flt, or \c sink).
   </dd>
 
-  <dt>\c PLUGIN-NAME</dt>
+  <dt><code>PLUGIN-NAME</code></dt>
   <dd>
     Name of the plugin which provides the class of
     \bt_p{self_component}.
   </dd>
 
-  <dt>\c CC-NAME</dt>
+  <dt><code>CC-NAME</code></dt>
   <dd>Name of the class of \bt_p{self_component}.</dd>
 </dl>
 
@@ -663,28 +663,28 @@ if no \bt_plugin provides the component class of
 \bt_p{self_message_iterator}, with:
 
 <dl>
-  <dt>\c COMP-NAME</dt>
+  <dt><code>COMP-NAME</code></dt>
   <dd>Name of the \bt_comp of \bt_p{self_message_iterator}.</dd>
 
-  <dt>\c OUT-PORT-NAME</dt>
+  <dt><code>OUT-PORT-NAME</code></dt>
   <dd>
     Name of the \bt_oport from which \bt_p{self_message_iterator}.
     was created.
   </dd>
 
-  <dt>\c CC-TYPE</dt>
+  <dt><code>CC-TYPE</code></dt>
   <dd>
     Type of the \bt_comp_cls of \bt_p{self_message_iterator}
     (\c src, \c flt, or \c sink).
   </dd>
 
-  <dt>\c PLUGIN-NAME</dt>
+  <dt><code>PLUGIN-NAME</code></dt>
   <dd>
     Name of the plugin which provides the component class of
     \bt_p{self_message_iterator}.
   </dd>
 
-  <dt>\c CC-NAME</dt>
+  <dt><code>CC-NAME</code></dt>
   <dd>Name of the component class of \bt_p{self_message_iterator}.</dd>
 </dl>
 
@@ -766,17 +766,17 @@ CC-TYPE.CC-NAME
 if no \bt_plugin provides \bt_p{self_component_class}, with:
 
 <dl>
-  <dt>\c CC-TYPE</dt>
+  <dt><code>CC-TYPE</code></dt>
   <dd>
     Type of \bt_p{self_component_class} (\c src, \c flt, or \c sink).
   </dd>
 
-  <dt>\c PLUGIN-NAME</dt>
+  <dt><code>PLUGIN-NAME</code></dt>
   <dd>
     Name of the plugin which provides \bt_p{self_component_class}.
   </dd>
 
-  <dt>\c CC-NAME</dt>
+  <dt><code>CC-NAME</code></dt>
   <dd>Name of \bt_p{self_component_class}.</dd>
 </dl>
 
