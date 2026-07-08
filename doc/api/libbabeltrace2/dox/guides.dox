@@ -665,8 +665,11 @@ The field location API is:
   <dt>Get the root scope of a field location</dt>
   <dd>bt_field_location_get_root_scope()</dd>
 
-  <dt>Get an item by index from a field location</dt>
+  <dt>Get the number of items in a field location</dt>
   <dd>bt_field_location_get_item_count()</dd>
+
+  <dt>Get an item by index from a field location</dt>
+  <dd>bt_field_location_get_item_by_index()</dd>
 
   <dt>Reference count</dt>
   <dd>
@@ -693,11 +696,11 @@ The new field class creation functions to use are:
     <td>
       bt_field_class_array_dynamic_create() with the
       \bt_p{length_field_class} parameter set to \c NULL
-    <td>bt_field_class_blob_dynamic_without_length_field_location_create()
+    <td>bt_field_class_array_dynamic_without_length_field_location_create()
   <tr>
     <td>
       bt_field_class_array_dynamic_create() with the
-      \bt_p{length_field_class} parameter not set to an \bt_uint_fc
+      \bt_p{length_field_class} parameter set to an \bt_uint_fc
     <td>bt_field_class_array_dynamic_with_length_field_location_create()
   <tr>
     <td>bt_field_class_option_without_selector_create()
