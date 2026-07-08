@@ -1143,6 +1143,12 @@ extern bt_stream *bt_message_stream_beginning_borrow_stream(
     (\c const version).
 
 See bt_message_stream_beginning_borrow_stream().
+
+@param[in] message
+    See bt_message_stream_beginning_borrow_stream().
+
+@returns
+    See bt_message_stream_beginning_borrow_stream().
 */
 extern const bt_stream *bt_message_stream_beginning_borrow_stream_const(
 		const bt_message *message) __BT_NOEXCEPT;
@@ -1319,6 +1325,12 @@ extern bt_stream *bt_message_stream_end_borrow_stream(
     (\c const version).
 
 See bt_message_stream_end_borrow_stream().
+
+@param[in] message
+    See bt_message_stream_end_borrow_stream().
+
+@returns
+    See bt_message_stream_end_borrow_stream().
 */
 extern const bt_stream *bt_message_stream_end_borrow_stream_const(
 		const bt_message *message) __BT_NOEXCEPT;
@@ -1797,6 +1809,12 @@ extern bt_event *bt_message_event_borrow_event(bt_message *message)
     (\c const version).
 
 See bt_message_event_borrow_event().
+
+@param[in] message
+    See bt_message_event_borrow_event().
+
+@returns
+    See bt_message_event_borrow_event().
 */
 extern const bt_event *bt_message_event_borrow_event_const(
 		const bt_message *message) __BT_NOEXCEPT;
@@ -2020,6 +2038,12 @@ extern bt_packet *bt_message_packet_beginning_borrow_packet(
     (\c const version).
 
 See bt_message_packet_beginning_borrow_packet().
+
+@param[in] message
+    See bt_message_packet_beginning_borrow_packet().
+
+@returns
+    See bt_message_packet_beginning_borrow_packet().
 */
 extern const bt_packet *bt_message_packet_beginning_borrow_packet_const(
 		const bt_message *message) __BT_NOEXCEPT;
@@ -2243,6 +2267,12 @@ extern bt_packet *bt_message_packet_end_borrow_packet(
     (\c const version).
 
 See bt_message_packet_end_borrow_packet().
+
+@param[in] message
+    See bt_message_packet_end_borrow_packet().
+
+@returns
+    See bt_message_packet_end_borrow_packet().
 */
 extern const bt_packet *bt_message_packet_end_borrow_packet_const(
 		const bt_message *message) __BT_NOEXCEPT;
@@ -2477,6 +2507,12 @@ extern bt_stream *bt_message_discarded_events_borrow_stream(
     (\c const version).
 
 See bt_message_discarded_events_borrow_stream().
+
+@param[in] message
+    See bt_message_discarded_events_borrow_stream().
+
+@returns
+    See bt_message_discarded_events_borrow_stream().
 */
 extern const bt_stream *
 bt_message_discarded_events_borrow_stream_const(const bt_message *message)
@@ -2798,6 +2834,12 @@ extern bt_stream *bt_message_discarded_packets_borrow_stream(
     (\c const version).
 
 See bt_message_discarded_packets_borrow_stream().
+
+@param[in] message
+    See bt_message_discarded_packets_borrow_stream().
+
+@returns
+    See bt_message_discarded_packets_borrow_stream().
 */
 extern const bt_stream *
 bt_message_discarded_packets_borrow_stream_const(const bt_message *message)

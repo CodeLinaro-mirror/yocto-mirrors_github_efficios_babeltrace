@@ -599,6 +599,22 @@ typedef enum bt_graph_add_component_status {
 @brief
     Alias of bt_graph_add_source_component_with_initialize_method_data()
     with the \bt_p{initialize_method_data} parameter set to \c NULL.
+
+@param[in] graph
+    See bt_graph_add_source_component_with_initialize_method_data().
+@param[in] component_class
+    See bt_graph_add_source_component_with_initialize_method_data().
+@param[in] name
+    See bt_graph_add_source_component_with_initialize_method_data().
+@param[in] params
+    See bt_graph_add_source_component_with_initialize_method_data().
+@param[in] logging_level
+    See bt_graph_add_source_component_with_initialize_method_data().
+@param[out] component
+    See bt_graph_add_source_component_with_initialize_method_data().
+
+@returns
+    See bt_graph_add_source_component_with_initialize_method_data().
 */
 extern bt_graph_add_component_status
 bt_graph_add_source_component(bt_graph *graph,
@@ -699,6 +715,22 @@ bt_graph_add_source_component_with_initialize_method_data(
 @brief
     Alias of bt_graph_add_filter_component_with_initialize_method_data()
     with the \bt_p{initialize_method_data} parameter set to \c NULL.
+
+@param[in] graph
+    See bt_graph_add_filter_component_with_initialize_method_data().
+@param[in] component_class
+    See bt_graph_add_filter_component_with_initialize_method_data().
+@param[in] name
+    See bt_graph_add_filter_component_with_initialize_method_data().
+@param[in] params
+    See bt_graph_add_filter_component_with_initialize_method_data().
+@param[in] logging_level
+    See bt_graph_add_filter_component_with_initialize_method_data().
+@param[out] component
+    See bt_graph_add_filter_component_with_initialize_method_data().
+
+@returns
+    See bt_graph_add_filter_component_with_initialize_method_data().
 */
 extern bt_graph_add_component_status
 bt_graph_add_filter_component(bt_graph *graph,
@@ -799,6 +831,22 @@ bt_graph_add_filter_component_with_initialize_method_data(
 @brief
     Alias of bt_graph_add_sink_component_with_initialize_method_data()
     with the \bt_p{initialize_method_data} parameter set to \c NULL.
+
+@param[in] graph
+    See bt_graph_add_sink_component_with_initialize_method_data().
+@param[in] component_class
+    See bt_graph_add_sink_component_with_initialize_method_data().
+@param[in] name
+    See bt_graph_add_sink_component_with_initialize_method_data().
+@param[in] params
+    See bt_graph_add_sink_component_with_initialize_method_data().
+@param[in] logging_level
+    See bt_graph_add_sink_component_with_initialize_method_data().
+@param[out] component
+    See bt_graph_add_sink_component_with_initialize_method_data().
+
+@returns
+    See bt_graph_add_sink_component_with_initialize_method_data().
 */
 extern bt_graph_add_component_status
 bt_graph_add_sink_component(

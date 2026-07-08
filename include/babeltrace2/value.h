@@ -1422,6 +1422,14 @@ extern bt_value *bt_value_array_borrow_element_by_index(bt_value *value,
     \bt_p{value} (\c const version).
 
 See bt_value_array_borrow_element_by_index().
+
+@param[in] value
+    See bt_value_array_borrow_element_by_index().
+@param[in] index
+    See bt_value_array_borrow_element_by_index().
+
+@returns
+    See bt_value_array_borrow_element_by_index().
 */
 extern const bt_value *bt_value_array_borrow_element_by_index_const(
 		const bt_value *value, uint64_t index) __BT_NOEXCEPT;
@@ -1852,6 +1860,14 @@ extern bt_value *bt_value_map_borrow_entry_value(
     value \bt_p{value} (\c const version).
 
 See bt_value_map_borrow_entry_value().
+
+@param[in] value
+    See bt_value_map_borrow_entry_value().
+@param[in] key
+    See bt_value_map_borrow_entry_value().
+
+@returns
+    See bt_value_map_borrow_entry_value().
 */
 extern const bt_value *bt_value_map_borrow_entry_value_const(
 		const bt_value *value, const char *key) __BT_NOEXCEPT;
@@ -2117,6 +2133,16 @@ typedef enum bt_value_map_foreach_entry_const_status {
     \bt_p{user_func} for each entry (\c const version).
 
 See bt_value_map_foreach_entry().
+
+@param[in] value
+    See bt_value_map_foreach_entry().
+@param[in] user_func
+    See bt_value_map_foreach_entry().
+@param[in] user_data
+    See bt_value_map_foreach_entry().
+
+@returns
+    See bt_value_map_foreach_entry().
 
 @sa bt_value_map_borrow_entry_value_const() &mdash;
     Borrows the value of a specific map value entry.

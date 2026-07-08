@@ -181,6 +181,12 @@ extern bt_stream *bt_packet_borrow_stream(bt_packet *packet) __BT_NOEXCEPT;
     \bt_p{packet} (\c const version).
 
 See bt_packet_borrow_stream().
+
+@param[in] packet
+    See bt_packet_borrow_stream().
+
+@returns
+    See bt_packet_borrow_stream().
 */
 extern const bt_stream *bt_packet_borrow_stream_const(
 		const bt_packet *packet) __BT_NOEXCEPT;
@@ -219,6 +225,12 @@ bt_field *bt_packet_borrow_context_field(bt_packet *packet) __BT_NOEXCEPT;
     (\c const version).
 
 See bt_packet_borrow_context_field().
+
+@param[in] packet
+    See bt_packet_borrow_context_field().
+
+@returns
+    See bt_packet_borrow_context_field().
 */
 extern
 const bt_field *bt_packet_borrow_context_field_const(

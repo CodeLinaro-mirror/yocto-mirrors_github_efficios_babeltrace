@@ -140,6 +140,16 @@ A query executor has the following property:
 @brief
     Alias of bt_query_executor_create_with_method_data()
     with the \bt_p{method_data} parameter set to \c NULL.
+
+@param[in] component_class
+    See bt_query_executor_create_with_method_data().
+@param[in] object_name
+    See bt_query_executor_create_with_method_data().
+@param[in] params
+    See bt_query_executor_create_with_method_data().
+
+@returns
+    See bt_query_executor_create_with_method_data().
 */
 extern
 bt_query_executor *bt_query_executor_create(

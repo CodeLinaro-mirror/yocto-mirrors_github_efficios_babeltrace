@@ -132,6 +132,16 @@ typedef enum bt_component_descriptor_set_add_descriptor_status {
     Alias of
     bt_component_descriptor_set_add_descriptor_with_initialize_method_data()
     with the \bt_p{initialize_method_data} parameter set to \c NULL.
+
+@param[in] component_descriptor_set
+    See bt_component_descriptor_set_add_descriptor_with_initialize_method_data().
+@param[in] component_class
+    See bt_component_descriptor_set_add_descriptor_with_initialize_method_data().
+@param[in] params
+    See bt_component_descriptor_set_add_descriptor_with_initialize_method_data().
+
+@returns
+    See bt_component_descriptor_set_add_descriptor_with_initialize_method_data().
 */
 extern bt_component_descriptor_set_add_descriptor_status
 bt_component_descriptor_set_add_descriptor(

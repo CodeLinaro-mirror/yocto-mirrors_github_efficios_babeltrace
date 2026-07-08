@@ -344,6 +344,12 @@ extern bt_stream_class *bt_stream_borrow_class(bt_stream *stream) __BT_NOEXCEPT;
     \bt_p{stream} (\c const version).
 
 See bt_stream_borrow_class().
+
+@param[in] stream
+    See bt_stream_borrow_class().
+
+@returns
+    See bt_stream_borrow_class().
 */
 extern const bt_stream_class *bt_stream_borrow_class_const(
 		const bt_stream *stream) __BT_NOEXCEPT;
@@ -378,6 +384,12 @@ extern bt_trace *bt_stream_borrow_trace(bt_stream *stream) __BT_NOEXCEPT;
     (\c const version).
 
 See bt_stream_borrow_trace().
+
+@param[in] stream
+    See bt_stream_borrow_trace().
+
+@returns
+    See bt_stream_borrow_trace().
 */
 extern const bt_trace *bt_stream_borrow_trace_const(
 		const bt_stream *stream) __BT_NOEXCEPT;
@@ -547,6 +559,12 @@ extern bt_value *bt_stream_borrow_user_attributes(bt_stream *stream)
     (\c const version).
 
 See bt_stream_borrow_user_attributes().
+
+@param[in] stream
+    See bt_stream_borrow_user_attributes().
+
+@returns
+    See bt_stream_borrow_user_attributes().
 */
 extern const bt_value *bt_stream_borrow_user_attributes_const(
 		const bt_stream *stream) __BT_NOEXCEPT;

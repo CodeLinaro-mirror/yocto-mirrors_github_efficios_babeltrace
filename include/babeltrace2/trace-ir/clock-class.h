@@ -1530,6 +1530,12 @@ extern bt_value *bt_clock_class_borrow_user_attributes(
     (\c const version).
 
 See bt_clock_class_borrow_user_attributes().
+
+@param[in] clock_class
+    See bt_clock_class_borrow_user_attributes().
+
+@returns
+    See bt_clock_class_borrow_user_attributes().
 */
 extern const bt_value *bt_clock_class_borrow_user_attributes_const(
 		const bt_clock_class *clock_class) __BT_NOEXCEPT;

@@ -177,6 +177,12 @@ extern bt_event_class *bt_event_borrow_class(bt_event *event) __BT_NOEXCEPT;
     (\c const version).
 
 See bt_event_borrow_class().
+
+@param[in] event
+    See bt_event_borrow_class().
+
+@returns
+    See bt_event_borrow_class().
 */
 extern const bt_event_class *bt_event_borrow_class_const(
 		const bt_event *event) __BT_NOEXCEPT;
@@ -213,6 +219,12 @@ extern bt_stream *bt_event_borrow_stream(bt_event *event) __BT_NOEXCEPT;
     \bt_p{event} (\c const version).
 
 See bt_event_borrow_stream().
+
+@param[in] event
+    See bt_event_borrow_stream().
+
+@returns
+    See bt_event_borrow_stream().
 */
 extern const bt_stream *bt_event_borrow_stream_const(
 		const bt_event *event) __BT_NOEXCEPT;
@@ -253,6 +265,12 @@ extern bt_packet *bt_event_borrow_packet(bt_event *event) __BT_NOEXCEPT;
     \bt_p{event} (\c const version).
 
 See bt_event_borrow_packet().
+
+@param[in] event
+    See bt_event_borrow_packet().
+
+@returns
+    See bt_event_borrow_packet().
 */
 extern const bt_packet *bt_event_borrow_packet_const(
 		const bt_event *event) __BT_NOEXCEPT;
@@ -290,6 +308,12 @@ extern bt_field *bt_event_borrow_payload_field(bt_event *event) __BT_NOEXCEPT;
     (\c const version).
 
 See bt_event_borrow_payload_field().
+
+@param[in] event
+    See bt_event_borrow_payload_field().
+
+@returns
+    See bt_event_borrow_payload_field().
 */
 extern const bt_field *bt_event_borrow_payload_field_const(
 		const bt_event *event) __BT_NOEXCEPT;
@@ -321,6 +345,12 @@ bt_event_borrow_specific_context_field(bt_event *event) __BT_NOEXCEPT;
     (\c const version).
 
 See bt_event_borrow_specific_context_field().
+
+@param[in] event
+    See bt_event_borrow_specific_context_field().
+
+@returns
+    See bt_event_borrow_specific_context_field().
 */
 extern const bt_field *bt_event_borrow_specific_context_field_const(
 		const bt_event *event) __BT_NOEXCEPT;
@@ -352,6 +382,12 @@ bt_event_borrow_common_context_field(bt_event *event) __BT_NOEXCEPT;
     (\c const version).
 
 See bt_event_borrow_common_context_field().
+
+@param[in] event
+    See bt_event_borrow_common_context_field().
+
+@returns
+    See bt_event_borrow_common_context_field().
 */
 extern const bt_field *bt_event_borrow_common_context_field_const(
 		const bt_event *event) __BT_NOEXCEPT;

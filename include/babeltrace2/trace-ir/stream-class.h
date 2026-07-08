@@ -734,6 +734,12 @@ extern bt_trace_class *bt_stream_class_borrow_trace_class(
     \bt_p{stream_class} (\c const version).
 
 See bt_stream_class_borrow_trace_class().
+
+@param[in] stream_class
+    See bt_stream_class_borrow_trace_class().
+
+@returns
+    See bt_stream_class_borrow_trace_class().
 */
 extern const bt_trace_class *bt_stream_class_borrow_trace_class_const(
 		const bt_stream_class *stream_class) __BT_NOEXCEPT;
@@ -802,6 +808,14 @@ bt_stream_class_borrow_event_class_by_index(
     stream class \bt_p{stream_class} (\c const version).
 
 See bt_stream_class_borrow_event_class_by_index().
+
+@param[in] stream_class
+    See bt_stream_class_borrow_event_class_by_index().
+@param[in] index
+    See bt_stream_class_borrow_event_class_by_index().
+
+@returns
+    See bt_stream_class_borrow_event_class_by_index().
 */
 extern const bt_event_class *
 bt_stream_class_borrow_event_class_by_index_const(
@@ -847,6 +861,14 @@ bt_stream_class_borrow_event_class_by_id(
     stream class \bt_p{stream_class} (\c const version).
 
 See bt_stream_class_borrow_event_class_by_id().
+
+@param[in] stream_class
+    See bt_stream_class_borrow_event_class_by_id().
+@param[in] id
+    See bt_stream_class_borrow_event_class_by_id().
+
+@returns
+    See bt_stream_class_borrow_event_class_by_id().
 */
 extern const bt_event_class *
 bt_stream_class_borrow_event_class_by_id_const(
@@ -1192,6 +1214,12 @@ extern bt_clock_class *bt_stream_class_borrow_default_clock_class(
     \bt_p{stream_class} (\c const version).
 
 See bt_stream_class_borrow_default_clock_class().
+
+@param[in] stream_class
+    See bt_stream_class_borrow_default_clock_class().
+
+@returns
+    See bt_stream_class_borrow_default_clock_class().
 */
 extern const bt_clock_class *
 bt_stream_class_borrow_default_clock_class_const(
@@ -1307,6 +1335,12 @@ bt_stream_class_borrow_packet_context_field_class(
     \bt_p{stream_class} (\c const version).
 
 See bt_stream_class_borrow_packet_context_field_class().
+
+@param[in] stream_class
+    See bt_stream_class_borrow_packet_context_field_class().
+
+@returns
+    See bt_stream_class_borrow_packet_context_field_class().
 */
 extern const bt_field_class *
 bt_stream_class_borrow_packet_context_field_class_const(
@@ -1394,6 +1428,12 @@ bt_stream_class_borrow_event_common_context_field_class(
     \bt_p{stream_class} (\c const version()).
 
 See bt_stream_class_borrow_event_common_context_field_class().
+
+@param[in] stream_class
+    See bt_stream_class_borrow_event_common_context_field_class().
+
+@returns
+    See bt_stream_class_borrow_event_common_context_field_class().
 */
 extern const bt_field_class *
 bt_stream_class_borrow_event_common_context_field_class_const(
@@ -1913,6 +1953,12 @@ extern bt_value *bt_stream_class_borrow_user_attributes(
     (\c const version).
 
 See bt_stream_class_borrow_user_attributes().
+
+@param[in] stream_class
+    See bt_stream_class_borrow_user_attributes().
+
+@returns
+    See bt_stream_class_borrow_user_attributes().
 */
 extern const bt_value *bt_stream_class_borrow_user_attributes_const(
 		const bt_stream_class *stream_class) __BT_NOEXCEPT;

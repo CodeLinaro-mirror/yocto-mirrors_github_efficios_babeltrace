@@ -407,6 +407,12 @@ extern bt_stream_class *bt_event_class_borrow_stream_class(
     \bt_p{event_class} (\c const version).
 
 See bt_event_class_borrow_stream_class().
+
+@param[in] event_class
+    See bt_event_class_borrow_stream_class().
+
+@returns
+    See bt_event_class_borrow_stream_class().
 */
 extern const bt_stream_class *bt_event_class_borrow_stream_class_const(
 		const bt_event_class *event_class) __BT_NOEXCEPT;
@@ -992,6 +998,12 @@ extern bt_field_class *bt_event_class_borrow_payload_field_class(
     (\c const version).
 
 See bt_event_class_borrow_payload_field_class().
+
+@param[in] event_class
+    See bt_event_class_borrow_payload_field_class().
+
+@returns
+    See bt_event_class_borrow_payload_field_class().
 */
 extern const bt_field_class *bt_event_class_borrow_payload_field_class_const(
 		const bt_event_class *event_class) __BT_NOEXCEPT;
@@ -1075,6 +1087,12 @@ bt_event_class_borrow_specific_context_field_class(
     \bt_p{event_class} (\c const version).
 
 See bt_event_class_borrow_specific_context_field_class().
+
+@param[in] event_class
+    See bt_event_class_borrow_specific_context_field_class().
+
+@returns
+    See bt_event_class_borrow_specific_context_field_class().
 */
 extern const bt_field_class *
 bt_event_class_borrow_specific_context_field_class_const(
@@ -1145,6 +1163,12 @@ extern bt_value *bt_event_class_borrow_user_attributes(
     (\c const version).
 
 See bt_event_class_borrow_user_attributes().
+
+@param[in] event_class
+    See bt_event_class_borrow_user_attributes().
+
+@returns
+    See bt_event_class_borrow_user_attributes().
 */
 extern const bt_value *bt_event_class_borrow_user_attributes_const(
 		const bt_event_class *event_class) __BT_NOEXCEPT;

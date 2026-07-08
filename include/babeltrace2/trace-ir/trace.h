@@ -263,6 +263,12 @@ extern bt_trace_class *bt_trace_borrow_class(bt_trace *trace) __BT_NOEXCEPT;
     \bt_p{trace} (\c const version).
 
 See bt_trace_borrow_class().
+
+@param[in] trace
+    See bt_trace_borrow_class().
+
+@returns
+    See bt_trace_borrow_class().
 */
 extern const bt_trace_class *bt_trace_borrow_class_const(
 		const bt_trace *trace) __BT_NOEXCEPT;
@@ -329,6 +335,14 @@ extern bt_stream *bt_trace_borrow_stream_by_index(bt_trace *trace,
     trace \bt_p{trace} (\c const version).
 
 See bt_trace_borrow_stream_by_index().
+
+@param[in] trace
+    See bt_trace_borrow_stream_by_index().
+@param[in] index
+    See bt_trace_borrow_stream_by_index().
+
+@returns
+    See bt_trace_borrow_stream_by_index().
 */
 extern const bt_stream *bt_trace_borrow_stream_by_index_const(
 		const bt_trace *trace, uint64_t index) __BT_NOEXCEPT;
@@ -371,6 +385,14 @@ extern bt_stream *bt_trace_borrow_stream_by_id(bt_trace *trace,
     trace \bt_p{trace} (\c const version).
 
 See bt_trace_borrow_stream_by_id().
+
+@param[in] trace
+    See bt_trace_borrow_stream_by_id().
+@param[in] id
+    See bt_trace_borrow_stream_by_id().
+
+@returns
+    See bt_trace_borrow_stream_by_id().
 */
 extern const bt_stream *bt_trace_borrow_stream_by_id_const(
 		const bt_trace *trace, uint64_t id) __BT_NOEXCEPT;
@@ -934,6 +956,12 @@ extern bt_value *bt_trace_borrow_user_attributes(bt_trace *trace) __BT_NOEXCEPT;
     (\c const version).
 
 See bt_trace_borrow_user_attributes().
+
+@param[in] trace
+    See bt_trace_borrow_user_attributes().
+
+@returns
+    See bt_trace_borrow_user_attributes().
 */
 extern const bt_value *bt_trace_borrow_user_attributes_const(
 		const bt_trace *trace) __BT_NOEXCEPT;

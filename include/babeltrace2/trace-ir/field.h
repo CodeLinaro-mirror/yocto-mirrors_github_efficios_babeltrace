@@ -525,6 +525,12 @@ extern bt_field_class *bt_field_borrow_class(bt_field *field) __BT_NOEXCEPT;
     (\c const version).
 
 See bt_field_borrow_class().
+
+@param[in] field
+    See bt_field_borrow_class().
+
+@returns
+    See bt_field_borrow_class().
 */
 extern const bt_field_class *bt_field_borrow_class_const(
 		const bt_field *field) __BT_NOEXCEPT;
@@ -1380,6 +1386,14 @@ extern bt_field *bt_field_array_borrow_element_field_by_index(
     \bt_p{field} (\c const version).
 
 See bt_field_array_borrow_element_field_by_index().
+
+@param[in] field
+    See bt_field_array_borrow_element_field_by_index().
+@param[in] index
+    See bt_field_array_borrow_element_field_by_index().
+
+@returns
+    See bt_field_array_borrow_element_field_by_index().
 */
 extern const bt_field *
 bt_field_array_borrow_element_field_by_index_const(
@@ -1471,6 +1485,14 @@ extern bt_field *bt_field_structure_borrow_member_field_by_index(
     \bt_struct_field \bt_p{field} (\c const version).
 
 See bt_field_structure_borrow_member_field_by_index().
+
+@param[in] field
+    See bt_field_structure_borrow_member_field_by_index().
+@param[in] index
+    See bt_field_structure_borrow_member_field_by_index().
+
+@returns
+    See bt_field_structure_borrow_member_field_by_index().
 */
 extern const bt_field *
 bt_field_structure_borrow_member_field_by_index_const(
@@ -1515,6 +1537,14 @@ extern bt_field *bt_field_structure_borrow_member_field_by_name(
     \bt_struct_field \bt_p{field} (\c const version).
 
 See bt_field_structure_borrow_member_field_by_name().
+
+@param[in] field
+    See bt_field_structure_borrow_member_field_by_name().
+@param[in] name
+    See bt_field_structure_borrow_member_field_by_name().
+
+@returns
+    See bt_field_structure_borrow_member_field_by_name().
 */
 extern const bt_field *
 bt_field_structure_borrow_member_field_by_name_const(
@@ -1580,6 +1610,12 @@ extern bt_field *bt_field_option_borrow_field(bt_field *field) __BT_NOEXCEPT;
     (\c const version).
 
 See bt_field_option_borrow_field().
+
+@param[in] field
+    See bt_field_option_borrow_field().
+
+@returns
+    See bt_field_option_borrow_field().
 */
 extern const bt_field *
 bt_field_option_borrow_field_const(const bt_field *field) __BT_NOEXCEPT;
@@ -1666,6 +1702,12 @@ extern bt_field *bt_field_variant_borrow_selected_option_field(
     \bt_p{field} (\c const version).
 
 See bt_field_variant_borrow_selected_option_field().
+
+@param[in] field
+    See bt_field_variant_borrow_selected_option_field().
+
+@returns
+    See bt_field_variant_borrow_selected_option_field().
 */
 extern const bt_field *
 bt_field_variant_borrow_selected_option_field_const(

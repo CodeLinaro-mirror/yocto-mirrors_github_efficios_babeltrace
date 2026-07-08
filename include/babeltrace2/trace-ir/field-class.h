@@ -2090,6 +2090,12 @@ extern bt_value *bt_field_class_borrow_user_attributes(
     (\c const version).
 
 See bt_field_class_borrow_user_attributes().
+
+@param[in] field_class
+    See bt_field_class_borrow_user_attributes().
+
+@returns
+    See bt_field_class_borrow_user_attributes().
 */
 extern const bt_value *bt_field_class_borrow_user_attributes_const(
 		const bt_field_class *field_class) __BT_NOEXCEPT;
@@ -3981,6 +3987,12 @@ extern bt_field_class *bt_field_class_array_borrow_element_field_class(
     \bt_p{field_class} (\c const version).
 
 See bt_field_class_array_borrow_element_field_class().
+
+@param[in] field_class
+    See bt_field_class_array_borrow_element_field_class().
+
+@returns
+    See bt_field_class_array_borrow_element_field_class().
 */
 extern const bt_field_class *
 bt_field_class_array_borrow_element_field_class_const(
@@ -4495,6 +4507,14 @@ bt_field_class_structure_borrow_member_by_index(
     \bt_struct_fc \bt_p{field_class} (\c const version).
 
 See bt_field_class_structure_borrow_member_by_index().
+
+@param[in] field_class
+    See bt_field_class_structure_borrow_member_by_index().
+@param[in] index
+    See bt_field_class_structure_borrow_member_by_index().
+
+@returns
+    See bt_field_class_structure_borrow_member_by_index().
 */
 extern const bt_field_class_structure_member *
 bt_field_class_structure_borrow_member_by_index_const(
@@ -4544,6 +4564,14 @@ bt_field_class_structure_borrow_member_by_name(
     \bt_struct_fc \bt_p{field_class} (\c const version).
 
 See bt_field_class_structure_borrow_member_by_name().
+
+@param[in] field_class
+    See bt_field_class_structure_borrow_member_by_name().
+@param[in] name
+    See bt_field_class_structure_borrow_member_by_name().
+
+@returns
+    See bt_field_class_structure_borrow_member_by_name().
 */
 extern const bt_field_class_structure_member *
 bt_field_class_structure_borrow_member_by_name_const(
@@ -4613,6 +4641,12 @@ bt_field_class_structure_member_borrow_field_class(
     \bt_p{member} (\c const version).
 
 See bt_field_class_structure_member_borrow_field_class().
+
+@param[in] member
+    See bt_field_class_structure_member_borrow_field_class().
+
+@returns
+    See bt_field_class_structure_member_borrow_field_class().
 */
 extern const bt_field_class *
 bt_field_class_structure_member_borrow_field_class_const(
@@ -4687,6 +4721,12 @@ bt_field_class_structure_member_borrow_user_attributes(
     \bt_p{member} (\c const version).
 
 See bt_field_class_structure_member_borrow_user_attributes().
+
+@param[in] member
+    See bt_field_class_structure_member_borrow_user_attributes().
+
+@returns
+    See bt_field_class_structure_member_borrow_user_attributes().
 */
 extern const bt_value *
 bt_field_class_structure_member_borrow_user_attributes_const(
@@ -4727,6 +4767,12 @@ extern bt_field_class *bt_field_class_option_borrow_field_class(
     \bt_p{field_class} (\c const version).
 
 See bt_field_class_option_borrow_field_class().
+
+@param[in] field_class
+    See bt_field_class_option_borrow_field_class().
+
+@returns
+    See bt_field_class_option_borrow_field_class().
 */
 extern const bt_field_class *
 bt_field_class_option_borrow_field_class_const(
@@ -5659,6 +5705,14 @@ bt_field_class_variant_borrow_option_by_index(
     \bt_var_fc \bt_p{field_class} (\c const version).
 
 See bt_field_class_variant_borrow_option_by_index().
+
+@param[in] field_class
+    See bt_field_class_variant_borrow_option_by_index().
+@param[in] index
+    See bt_field_class_variant_borrow_option_by_index().
+
+@returns
+    See bt_field_class_variant_borrow_option_by_index().
 */
 extern const bt_field_class_variant_option *
 bt_field_class_variant_borrow_option_by_index_const(
@@ -5708,6 +5762,14 @@ bt_field_class_variant_borrow_option_by_name(
     \bt_var_fc \bt_p{field_class} (\c const version).
 
 See bt_field_class_variant_borrow_option_by_name().
+
+@param[in] field_class
+    See bt_field_class_variant_borrow_option_by_name().
+@param[in] name
+    See bt_field_class_variant_borrow_option_by_name().
+
+@returns
+    See bt_field_class_variant_borrow_option_by_name().
 */
 extern const bt_field_class_variant_option *
 bt_field_class_variant_borrow_option_by_name_const(
@@ -5786,6 +5848,12 @@ extern bt_field_class *bt_field_class_variant_option_borrow_field_class(
     \bt_p{option} (\c const version).
 
 See bt_field_class_variant_option_borrow_field_class().
+
+@param[in] option
+    See bt_field_class_variant_option_borrow_field_class().
+
+@returns
+    See bt_field_class_variant_option_borrow_field_class().
 */
 extern const bt_field_class *
 bt_field_class_variant_option_borrow_field_class_const(
@@ -5864,6 +5932,12 @@ extern bt_value *bt_field_class_variant_option_borrow_user_attributes(
     (\c const version).
 
 See bt_field_class_variant_option_borrow_user_attributes().
+
+@param[in] option
+    See bt_field_class_variant_option_borrow_user_attributes().
+
+@returns
+    See bt_field_class_variant_option_borrow_user_attributes().
 */
 extern const bt_value *bt_field_class_variant_option_borrow_user_attributes_const(
 		const bt_field_class_variant_option *option) __BT_NOEXCEPT;
