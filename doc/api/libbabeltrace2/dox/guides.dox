@@ -72,16 +72,16 @@ as the minimal logging level:
     Configure the build in developer mode and with the \em TRACE
     minimal logging level:
 
-@code{.unparsed}
-$ BABELTRACE_DEV_MODE=1 BABELTRACE_MINIMAL_LOG_LEVEL=TRACE ./configure
-@endcode
+    @code{.unparsed}
+    $ BABELTRACE_DEV_MODE=1 BABELTRACE_MINIMAL_LOG_LEVEL=TRACE ./configure
+    @endcode
   <li>
     Build and install the project:
 
-@code{.unparsed}
-$ make
-# make install
-@endcode
+    @code{.unparsed}
+    $ make
+    # make install
+    @endcode
 </ol>
 
 \bt_name developer mode build configuration command line examples:
