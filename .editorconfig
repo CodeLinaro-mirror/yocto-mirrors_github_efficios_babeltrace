@@ -13,7 +13,7 @@ indent_size = 8
 indent_style = tab
 tab_width = 8
 
-[*.{py,py.in,hpp,cpp,json,sh,sh.in}]
+[*.{py,py.in,hpp,cpp,json,sh,sh.in,txt,adoc}]
 indent_style = space
 indent_size = 4
 
@@ -21,6 +21,6 @@ indent_size = 4
 indent_style = tab
 indent_size = 8
 
-[*.mctf]
+[*.{mctf,dox}]
 indent_style = space
 indent_size = 2
