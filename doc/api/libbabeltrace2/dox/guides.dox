@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2019-2024 Philippe Proulx <pproulx@efficios.com>
+// SPDX-FileCopyrightText: 2019-2026 Philippe Proulx <pproulx@efficios.com>
 //
 // SPDX-License-Identifier: CC-BY-SA-4.0
 
@@ -21,9 +21,6 @@ The available guides are:
 - \subpage guide-comp-link-plugin-provider-so
 - \subpage guide-comp-link-app
 - \subpage guide-mip-0-to-mip-1
-
-@if meow
-
 - \subpage guide-create-graph
 - \subpage guide-write-min-src-comp-cls
 - \subpage guide-write-min-flt-comp-cls
@@ -38,8 +35,6 @@ The available guides are:
 - \subpage guide-intr-graph
 - \subpage guide-intr-query
 - \subpage guide-graph-listeners
-
-@endif
 
 @page guide-build-bt2-dev Build Babeltrace 2 for development
 
@@ -104,7 +99,8 @@ $ BABELTRACE_DEV_MODE=1 BABELTRACE_MINIMAL_LOG_LEVEL=TRACE ./configure \
 
 @page guide-comp-link-plugin-so Compile and link a Babeltrace 2 shared object plugin
 
-To compile and link a \bt_name shared object plugin:
+To compile and link a
+\link guide-create-plugin \bt_name shared object plugin\endlink:
 
 <ol>
   <li>
@@ -750,63 +746,1604 @@ The following functions aren't available with MIP&nbsp;1:
 - bt_field_class_option_with_selector_field_borrow_selector_field_path_const()
 - bt_field_class_variant_with_selector_field_borrow_selector_field_path_const()
 
-@if meow
+@page guide-create-graph Create a trace processing graph from existing component classes and run it
 
-@page guide-create-graph Create a graph from existing component classes and run it
+This guide shows how to build a \bt_graph from existing \bt_p_comp_cls,
+connect the \bt_p_port of its \bt_p_comp, and run it to accomplish a
+trace processing task.
 
-TODO!
+A component class can come from a \bt_plugin, in which case you first
+need to find and load it (see \ref api-plugin), or be one you
+\ref api-comp-cls-dev "create dynamically" within your application, for
+example following the \ref guide-write-min-src-comp-cls "minimal" or
+\ref guide-write-full-src-comp-cls "complete" component class guides.
+
+As an example, this guide builds a graph which reads a
+<a href="https://diamon.org/ctf/">CTF</a> trace from the file system
+with the <code>source.ctf.fs</code> \bt_src_comp_cls of the \c ctf
+\bt_plugin (see \bt_man{babeltrace2-source.ctf.fs,7}) and pretty-prints
+its messages with the <code>sink.text.pretty</code> \bt_sink_comp_cls
+of the \c text plugin (see \bt_man{babeltrace2-sink.text.pretty,7}).
+
+@note
+    @parblock
+    To keep this example simple, it directly connects the first
+    \bt_oport of the <code>source.ctf.fs</code> component, which
+    corresponds to a single CTF data stream, to the single \bt_iport
+    of the <code>sink.text.pretty</code> component.
+
+    A CTF trace often contains more than one data stream, in which
+    case the <code>source.ctf.fs</code> component creates one
+    \bt_oport per stream. To merge and sort the messages of more
+    than one \bt_oport before they reach a single \bt_sink_comp,
+    connect them to the input ports of a
+    <code>filter.utils.muxer</code> \bt_flt_comp instead
+    (see \bt_man{babeltrace2-filter.utils.muxer,7}),
+    and then connect its single output port to the sink component.
+    @endparblock
+
+@note
+    To keep the following code snippets focused, they don't check the
+    return status codes of API functions, but you \em must check them in
+    production code.
+
+To create a trace processing graph, add components to it, connect
+their ports, and run it:
+
+<ol>
+  <li>
+    Find and load the plugins which provide the \bt_p_comp_cls you
+    want to add to the graph (see \ref api-plugin), and then borrow
+    those component classes by name with
+    bt_plugin_borrow_source_component_class_by_name_const() and
+    bt_plugin_borrow_sink_component_class_by_name_const().
+
+    @code
+    const bt_plugin *ctf_plugin;
+
+    bt_plugin_find("ctf", BT_TRUE, BT_TRUE, BT_TRUE, BT_TRUE, BT_TRUE, &ctf_plugin);
+
+    const bt_plugin *text_plugin;
+
+    bt_plugin_find("text", BT_TRUE, BT_TRUE, BT_TRUE, BT_TRUE, BT_TRUE, &text_plugin);
+
+    const bt_component_class_source * const source_comp_class =
+        bt_plugin_borrow_source_component_class_by_name_const(ctf_plugin, "fs");
+    const bt_component_class_sink * const sink_comp_class =
+        bt_plugin_borrow_sink_component_class_by_name_const(text_plugin, "pretty");
+    @endcode
+  <li>
+    Create a default (empty) trace processing graph with
+    bt_graph_create().
+
+    You must pass the effective \bt_mip (MIP) version with which the
+    graph operates. Compute it from the component classes you intend
+    to add to the graph with
+    bt_get_greatest_operative_mip_version(). See
+    \ref guide-mip-0-to-mip-1 to learn about supporting multiple MIP
+    versions. As an example, this guide assumes that MIP&nbsp;1 is the
+    operative version:
+
+    @code
+    bt_graph * const graph = bt_graph_create(1);
+    @endcode
+  <li>
+    \ref api-graph-lc-add "Add" one or more components to the graph.
+
+    Instantiate a \bt_comp_cls with bt_graph_add_source_component(),
+    bt_graph_add_filter_component(), or bt_graph_add_sink_component(),
+    depending on its type, or with the corresponding
+    <code>*_with_initialize_method_data()</code> variant if you need to
+    pass custom data to the
+    \ref api-comp-cls-dev-meth-init "initialization method" of the
+    component class.
+
+    Each function needs the graph, the component class to instantiate,
+    a unique component name within the graph, initialization
+    parameters, and an initial logging level. On success, it sets an
+    output parameter to the created \bt_comp.
+
+    The <code>source.ctf.fs</code> component class expects, as
+    initialization parameters, a map value with an <code>inputs</code>
+    entry: an array of paths to physical CTF trace directories to
+    read. The <code>sink.text.pretty</code> component class doesn't
+    need any initialization parameter.
+
+    @code
+    bt_value * const source_params = bt_value_map_create();
+    bt_value *inputs;
+
+    bt_value_map_insert_empty_array_entry(source_params, "inputs", &inputs);
+    bt_value_array_append_string_element(inputs, "/path/to/my-ctf-trace");
+
+    const bt_component_source *source_comp;
+
+    bt_graph_add_source_component(graph, source_comp_class, "the-source", source_params,
+                                  BT_LOGGING_LEVEL_WARNING, &source_comp);
+
+    bt_value_put_ref(source_params);
+
+    const bt_component_sink *sink_comp;
+
+    bt_graph_add_sink_component(graph, sink_comp_class, "the-sink", NULL,
+                                BT_LOGGING_LEVEL_WARNING, &sink_comp);
+    @endcode
+
+    Once you added the component classes you need to the graph, you
+    can discard the plugins: the graph keeps their component classes
+    valid, independently of the plugin from which you borrowed them.
+    You need to add the component classes to the graph \em before you
+    discard the plugins, as nothing else keeps a component class alive
+    on its own.
+
+    @code
+    bt_plugin_put_ref(ctf_plugin);
+    bt_plugin_put_ref(text_plugin);
+    @endcode
+
+    To add a very basic \bt_sink_comp without having to write and
+    \ref guide-create-plugin "package" a whole sink component class,
+    use bt_graph_add_simple_sink_component() instead: see
+    \ref api-graph-lc-add-ss "Add a simple sink component".
+  <li>
+    \ref api-graph-lc-connect "Connect" the ports of the added
+    components.
+
+    Borrow an \bt_oport or an \bt_iport of a component by index or by
+    name, for example with
+    bt_component_source_borrow_output_port_by_index_const() or
+    bt_component_sink_borrow_input_port_by_name_const(), and then
+    connect an output port to an input port with
+    bt_graph_connect_ports().
+
+    For this example, connect the first \bt_oport, at index&nbsp;0, of
+    the <code>source.ctf.fs</code> component directly to the single
+    \bt_iport of the <code>sink.text.pretty</code> component:
+
+    @code
+    bt_graph_connect_ports(graph,
+                           bt_component_source_borrow_output_port_by_index_const(source_comp, 0),
+                           bt_component_sink_borrow_input_port_by_index_const(sink_comp, 0),
+                           NULL);
+    @endcode
+
+    You can repeat steps&nbsp;3 and&nbsp;4, in any order, until the
+    graph has the topology you need.
+
+    Connecting a port can make its
+    component add new ports in reaction, for example within its
+    \ref api-comp-cls-dev-meth-iport-connected "\"input port connected\""
+    or \ref api-comp-cls-dev-meth-oport-connected "output port
+    connected" method: see \ref api-graph-listeners "Listeners" to
+    learn how to react to such topology changes yourself, for example
+    to connect those new ports automatically
+    (\ref guide-graph-listeners).
+  <li>
+    \ref api-graph-lc-run "Run" the graph with bt_graph_run().
+
+    @code
+    const bt_graph_run_status status = bt_graph_run(graph);
+    @endcode
+
+    bt_graph_run() doesn't return until all the \bt_p_sink_comp of the
+    graph are done, one of them returns an error, or the graph is
+    interrupted (see \ref guide-intr-graph).
+
+    If bt_graph_run() returns #BT_GRAPH_RUN_STATUS_AGAIN, then one of
+    the sink components needs you to try again later: call
+    bt_graph_run() again, usually after waiting for some time.
+
+    To only make a single sink component consume and process a few
+    messages before controlling the thread again, for example to
+    integrate the graph within an existing event loop, use
+    bt_graph_run_once() instead.
+  <li>
+    Clean up.
+
+    At this point, the graph is the only \ref api-fund-shared-object
+    "shared object" reference you still own: the component classes
+    and the  components you borrowed above aren't owned
+    references, and you already discarded the plugin and
+    initialization parameter references.
+
+    Once you're done with the
+    graph, put its reference with bt_graph_put_ref():
+
+    @code
+    bt_graph_put_ref(graph);
+    @endcode
+</ol>
+
+@note
+    If \em any of the functions above returns an error status code
+    (ending with <code>ERROR</code>), then the trace processing graph
+    becomes <strong>faulty</strong>: you cannot use it anymore, except
+    to put its reference with bt_graph_put_ref().
 
 @page guide-write-min-src-comp-cls Write a minimal source component class
 
-TODO!
+This guide shows how to write the smallest possible \bt_src_comp_cls:
+one which compiles, which you can instantiate and connect within a
+\bt_graph (see \ref guide-create-graph), but which doesn't produce any
+\bt_p_msg.
+
+See \ref guide-write-full-src-comp-cls to learn how to implement all
+the optional methods of a source component class on top of this
+minimal skeleton.
+
+@note
+    To keep the following code snippets focused, they don't check the
+    return status codes of API functions, but you \em must check them in
+    production code.
+
+To write a minimal source component class:
+
+<ol>
+  <li>
+    Implement the mandatory
+    \link api-msg-iter-cls-meth-next "next"\endlink method of its
+    \bt_msg_iter_cls.
+
+    A source component class doesn't produce \bt_p_msg itself: it's
+    a \bt_msg_iter, instantiated from its \bt_msg_iter_cls for one
+    of the \bt_p_oport of a component instance, which does.
+
+    The minimal "next" method doesn't fill the received message array
+    at all and immediately indicates the end of the message iterator
+    sequence:
+
+    @code
+    static bt_message_iterator_class_next_method_status
+    my_src_iter_next(bt_self_message_iterator * const self_msg_iter,
+                     const bt_message_array_const messages,
+                     const uint64_t capacity, uint64_t * const count)
+    {
+        return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
+    }
+    @endcode
+  <li>
+    Create the \bt_msg_iter_cls with bt_message_iterator_class_create(),
+    passing the "next" method above.
+
+    @code
+    bt_message_iterator_class * const msg_iter_class =
+        bt_message_iterator_class_create(my_src_iter_next);
+    @endcode
+  <li>
+    Create the source component class with
+    bt_component_class_source_create(), passing a name and the message
+    iterator class above.
+
+    @code
+    bt_component_class_source * const comp_class =
+        bt_component_class_source_create("my-source", msg_iter_class);
+    @endcode
+  <li>
+    Implement an \ref api-comp-cls-dev-meth-init "initialization method"
+    which adds a single \bt_oport to the component.
+
+    Without at least one output port, no \bt_comp instance of this
+    component class could ever be
+    \ref api-graph-lc-connect "connected" within a trace processing
+    graph, which makes it useless: the initialization method is
+    therefore the only non-optional part of this guide beyond the
+    "next" method above.
+
+    @code
+    static bt_component_class_initialize_method_status
+    my_src_init(bt_self_component_source * const self_comp,
+                bt_self_component_source_configuration * const config,
+                const bt_value * const params, void * const init_method_data)
+    {
+        bt_self_component_source_add_output_port(self_comp, "out", NULL, NULL);
+        return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
+    }
+    @endcode
+
+    Set it with bt_component_class_source_set_initialize_method(), or
+    with the BT_PLUGIN_SOURCE_COMPONENT_CLASS_INITIALIZE_METHOD() macro
+    in a plugin definition file:
+
+    @code
+    bt_component_class_source_set_initialize_method(comp_class, my_src_init);
+    @endcode
+</ol>
+
+You can now \ref guide-create-plugin "package" \bt_p{comp_class}
+within a \bt_plugin, or add it directly to a trace processing graph
+if you're creating it dynamically within your application (see
+\ref guide-create-graph).
 
 @page guide-write-min-flt-comp-cls Write a minimal filter component class
 
-TODO!
+This guide shows how to write the smallest possible \bt_flt_comp_cls:
+one which compiles, which you can instantiate and connect within a
+\bt_graph (see \ref guide-create-graph), but which doesn't produce any
+\bt_p_msg.
+
+This guide is very similar to \ref guide-write-min-src-comp-cls
+"Write a minimal source component class": the only differences are the
+component class creation function to call and the fact that a
+\bt_flt_comp needs both an \bt_iport and a \bt_oport to be useful.
+
+See \ref guide-write-full-flt-comp-cls to learn how to implement all
+the optional methods of a filter component class on top of this
+minimal skeleton.
+
+@note
+    To keep the following code snippets focused, they don't check the
+    return status codes of API functions, but you \em must check them in
+    production code.
+
+To write a minimal filter component class:
+
+<ol>
+  <li>
+    Implement the mandatory
+    \link api-msg-iter-cls-meth-next "next"\endlink method of its
+    \bt_msg_iter_cls.
+
+    The minimal "next" method doesn't fill the received message array
+    at all and immediately indicates the end of the message iterator
+    sequence, without even creating an upstream message iterator to
+    filter from:
+
+    @code
+    static bt_message_iterator_class_next_method_status
+    my_flt_iter_next(bt_self_message_iterator * const self_msg_iter,
+                     const bt_message_array_const messages,
+                     const uint64_t capacity, uint64_t * const count)
+    {
+        return BT_MESSAGE_ITERATOR_CLASS_NEXT_METHOD_STATUS_END;
+    }
+    @endcode
+  <li>
+    Create the \bt_msg_iter_cls with bt_message_iterator_class_create(),
+    passing the "next" method above.
+
+    @code
+    bt_message_iterator_class * const msg_iter_class =
+        bt_message_iterator_class_create(my_flt_iter_next);
+    @endcode
+  <li>
+    Create the filter component class with
+    bt_component_class_filter_create(), passing a name and the message
+    iterator class above.
+
+    @code
+    bt_component_class_filter * const comp_class =
+        bt_component_class_filter_create("my-filter", msg_iter_class);
+    @endcode
+  <li>
+    Implement an \ref api-comp-cls-dev-meth-init "initialization method"
+    which adds a single \bt_iport and a single \bt_oport to the
+    component.
+
+    Without at least one input port and one output port, no \bt_comp
+    instance of this component class could ever be
+    \ref api-graph-lc-connect "connected" within a trace processing
+    graph, which makes it useless.
+
+    @code
+    static bt_component_class_initialize_method_status
+    my_flt_init(bt_self_component_filter * const self_comp,
+                bt_self_component_filter_configuration * const config,
+                const bt_value * const params, void * const init_method_data)
+    {
+        bt_self_component_filter_add_input_port(self_comp, "in", NULL, NULL);
+        bt_self_component_filter_add_output_port(self_comp, "out", NULL, NULL);
+        return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
+    }
+    @endcode
+
+    Set it with bt_component_class_filter_set_initialize_method(), or
+    with the BT_PLUGIN_FILTER_COMPONENT_CLASS_INITIALIZE_METHOD() macro
+    in a plugin definition file:
+
+    @code
+    bt_component_class_filter_set_initialize_method(comp_class, my_flt_init);
+    @endcode
+</ol>
+
+You can now \ref guide-create-plugin "package" \bt_p{component_class}
+within a \bt_plugin, or add it directly to a trace processing graph
+if you're creating it dynamically within your application (see
+\ref guide-create-graph).
 
 @page guide-write-min-sink-comp-cls Write a minimal sink component class
 
-TODO!
+This guide shows how to write the smallest possible \bt_sink_comp_cls:
+one which compiles, and which you can instantiate and connect within a
+\bt_graph (see \ref guide-create-graph), but which doesn't consume or
+process any \bt_p_msg.
+
+See \ref guide-write-simple-sink-comp-cls to learn how to make a
+minimal sink component class like this one actually consume messages,
+and \ref guide-write-full-sink-comp-cls to learn how to implement all
+the optional methods of a sink component class.
+
+@note
+    To keep the following code snippets focused, they don't check the
+    return status codes of API functions, but you \em must check them in
+    production code.
+
+To write a minimal sink component class:
+
+<ol>
+  <li>
+    Implement the mandatory
+    \ref api-comp-cls-dev-meth-consume "consuming" method.
+
+    The minimal consuming method doesn't get or process any message: it
+    immediately indicates that the component is done:
+
+    @code
+    static bt_component_class_sink_consume_method_status
+    my_sink_consume(bt_self_component_sink * const self_comp)
+    {
+        return BT_COMPONENT_CLASS_SINK_CONSUME_METHOD_STATUS_END;
+    }
+    @endcode
+  <li>
+    Create the sink component class with
+    bt_component_class_sink_create(), passing a name and the consuming
+    method above.
+
+    @code
+    bt_component_class_sink * const comp_class =
+        bt_component_class_sink_create("my-sink", my_sink_consume);
+    @endcode
+  <li>
+    Implement an \ref api-comp-cls-dev-meth-init "initialization method"
+    which adds a single \bt_iport to the component.
+
+    Without at least one input port, no \bt_comp instance of this
+    component class could ever be
+    \ref api-graph-lc-connect "connected" within a trace processing
+    graph, which makes it useless.
+
+    @code
+    static bt_component_class_initialize_method_status
+    my_sink_init(bt_self_component_sink * const self_comp,
+                 bt_self_component_sink_configuration * const config,
+                 const bt_value * const params, void * const init_method_data)
+    {
+        bt_self_component_sink_add_input_port(self_comp, "in", NULL, NULL);
+        return BT_COMPONENT_CLASS_INITIALIZE_METHOD_STATUS_OK;
+    }
+    @endcode
+
+    Set it with bt_component_class_sink_set_initialize_method(), or
+    with the BT_PLUGIN_SINK_COMPONENT_CLASS_INITIALIZE_METHOD() macro
+    in a plugin definition file:
+
+    @code
+    bt_component_class_sink_set_initialize_method(component_class, my_sink_init);
+    @endcode
+</ol>
+
+You can now \ref guide-create-plugin "package" \bt_p{component_class}
+within a \bt_plugin, or add it directly to a trace processing graph
+if you're creating it dynamically within your application (see
+\ref guide-create-graph).
 
 @page guide-write-simple-sink-comp-cls Write a simple sink component class
 
-TODO!
+This guide shows how to make a \ref guide-write-min-sink-comp-cls
+"minimal sink component class" actually consume and process
+\bt_p_msg, which is the whole point of writing a \bt_sink_comp_cls.
+
+For a complete, working example based on the steps below, see
+\ref example-simple-sink-cmp-cls.
+
+@note
+    To keep the following code snippets focused, they don't check the
+    return status codes of API functions, but you \em must check them in
+    production code.
+
+Starting from a minimal sink component class which has a single
+\bt_iport named <code>in</code> (see
+\ref guide-write-min-sink-comp-cls):
+
+<ol>
+  <li>
+    Implement a \ref api-comp-cls-dev-meth-graph-configured
+    "\"graph is configured\"" method which creates a \bt_msg_iter on
+    the input port of the component.
+
+    This method is called once, \em after the
+    \ref api-comp-cls-dev-meth-init "initialization method", and it's
+    the earliest point at which you can create a message iterator: at
+    initialization time, the ports of other components aren't
+    necessarily connected yet.
+
+    Borrow the input port with
+    bt_self_component_sink_borrow_input_port_by_index() or
+    bt_self_component_sink_borrow_input_port_by_name(), then create the
+    message iterator with
+    bt_message_iterator_create_from_sink_component().
+
+    Keep the created \bt_msg_iter somewhere you can find it again from
+    the consuming method below, for example in a private structure that
+    you set as the user data of the \bt_comp with
+    bt_self_component_set_data().
+
+    @code
+    static bt_component_class_sink_graph_is_configured_method_status
+    my_sink_graph_is_configured(bt_self_component_sink * const self_comp)
+    {
+        struct my_sink_data * const data = bt_self_component_get_data(
+            bt_self_component_sink_as_self_component(self_comp));
+
+        bt_message_iterator_create_from_sink_component(self_comp,
+            bt_self_component_sink_borrow_input_port_by_index(self_comp, 0),
+            &data->msg_iter);
+
+        return BT_COMPONENT_CLASS_SINK_GRAPH_IS_CONFIGURED_METHOD_STATUS_OK;
+    }
+    @endcode
+
+    Set it with bt_component_class_sink_set_graph_is_configured_method(),
+    or with the BT_PLUGIN_SINK_COMPONENT_CLASS_GRAPH_IS_CONFIGURED_METHOD()
+    macro in a \ref guide-create-plugin "plugin definition file".
+  <li>
+    Rewrite the \ref api-comp-cls-dev-meth-consume "consuming" method to
+    get a batch of messages from the message iterator with
+    bt_message_iterator_next() and process each of them.
+
+    @code
+    static bt_component_class_sink_consume_method_status
+    my_sink_consume(bt_self_component_sink * const self_comp)
+    {
+        struct my_sink_data * const data = bt_self_component_get_data(
+            bt_self_component_sink_as_self_component(self_comp));
+        bt_message_array_const messages;
+        uint64_t msg_count;
+        bt_component_class_sink_consume_method_status status =
+            BT_COMPONENT_CLASS_SINK_CONSUME_METHOD_STATUS_OK;
+        const bt_message_iterator_next_status next_status =
+            bt_message_iterator_next(data->msg_iter, &messages, &msg_count);
+
+        if (next_status != BT_MESSAGE_ITERATOR_NEXT_STATUS_OK) {
+            /* Map the message iterator status to a consuming status */
+            status = (int) next_status;
+            goto end;
+        }
+
+        for (uint64_t i = 0; i < msg_count; i++) {
+            /* Do something with `messages[i]` here */
+            bt_message_put_ref(messages[i]);
+        }
+
+    end:
+        return status;
+    }
+    @endcode
+
+    Mind the following message iterator statuses:
+
+    <dl>
+      <dt>#BT_MESSAGE_ITERATOR_NEXT_STATUS_END</dt>
+      <dd>
+        Put the message iterator reference with
+        bt_message_iterator_put_ref() and return
+        #BT_COMPONENT_CLASS_SINK_CONSUME_METHOD_STATUS_END.
+      </dd>
+
+      <dt>#BT_MESSAGE_ITERATOR_NEXT_STATUS_AGAIN</dt>
+      <dd>
+        Return #BT_COMPONENT_CLASS_SINK_CONSUME_METHOD_STATUS_AGAIN.
+      </dd>
+    </dl>
+  <li>
+    Implement a \ref api-comp-cls-dev-meth-fini "finalization" method
+    which frees the private data of the component, putting the
+    reference of the message iterator first, if it's not already put
+    (that is, if the consuming method above didn't reach the end of the
+    message iterator sequence).
+
+    Set it with bt_component_class_sink_set_finalize_method(), or with
+    the BT_PLUGIN_SINK_COMPONENT_CLASS_FINALIZE_METHOD() macro in a
+    plugin definition file.
+</ol>
 
 @page guide-create-plugin Create a Babeltrace 2 plugin
 
-TODO!
+This guide shows how to package one or more \bt_p_comp_cls, for
+example ones you wrote by following the
+\ref guide-write-min-src-comp-cls "component class writing guides",
+as a \bt_name \ref api-plugin-so-dev "shared object plugin".
+
+For a complete, working example based on the steps below, see
+\ref example-simple-plugin-def-file.
+
+To create a shared object plugin, write a
+<em>plugin definition C file</em>:
+
+<ol>
+  <li>
+    Start the file with:
+
+    @code
+    BT_PLUGIN_MODULE();
+    @endcode
+  <li>
+    Define the plugin itself with BT_PLUGIN(), passing its name:
+
+    @code
+    BT_PLUGIN(my_plugin);
+    @endcode
+
+    The name of a plugin doesn't need to be a valid C identifier if you
+    use BT_PLUGIN_WITH_ID() instead: see
+    \link api-plugin-so-dev-custom-plugin-id "Custom plugin ID"\endlink
+    to learn more.
+  <li>
+    \bt_dt_opt Set plugin properties with BT_PLUGIN_AUTHOR(),
+    BT_PLUGIN_DESCRIPTION(), BT_PLUGIN_LICENSE(), and
+    BT_PLUGIN_VERSION():
+
+    @code
+    BT_PLUGIN_DESCRIPTION("Reads and writes the Tamebsz format.");
+    BT_PLUGIN_AUTHOR("Klek de Poitrine");
+    BT_PLUGIN_LICENSE("MIT");
+    @endcode
+  <li>
+    \bt_dt_opt Set the initialization and finalization functions of the
+    plugin with BT_PLUGIN_INITIALIZE_FUNC() and
+    BT_PLUGIN_FINALIZE_FUNC().
+
+    The library calls the initialization function when it loads the
+    shared object (see \ref api-plugin-loading), and the finalization
+    function when the resulting \bt_plugin object is destroyed.
+  <li>
+    Add each component class of the plugin with
+    BT_PLUGIN_SOURCE_COMPONENT_CLASS(),
+    BT_PLUGIN_FILTER_COMPONENT_CLASS(), or
+    BT_PLUGIN_SINK_COMPONENT_CLASS(), depending on its type, passing
+    the name of the component class and its mandatory method (a
+    \bt_msg_iter_cls "next" method for a source or filter component
+    class, or a consuming method for a sink component class):
+
+    @code
+    BT_PLUGIN_SOURCE_COMPONENT_CLASS(input, my_src_iter_next);
+    BT_PLUGIN_SINK_COMPONENT_CLASS(output, my_sink_consume);
+    @endcode
+  <li>
+    \bt_dt_opt For each component class of step&nbsp;5, set its other
+    properties and optional methods with the
+    <code>BT_PLUGIN_SOURCE_COMPONENT_CLASS_*()</code>,
+    <code>BT_PLUGIN_FILTER_COMPONENT_CLASS_*()</code>, and
+    <code>BT_PLUGIN_SINK_COMPONENT_CLASS_*()</code> macros, for example:
+
+    @code
+    BT_PLUGIN_SOURCE_COMPONENT_CLASS_DESCRIPTION(input, "Read a Tamebsz file.");
+    BT_PLUGIN_SOURCE_COMPONENT_CLASS_INITIALIZE_METHOD(input, my_src_initialize);
+    BT_PLUGIN_SOURCE_COMPONENT_CLASS_FINALIZE_METHOD(input, my_src_finalize);
+    BT_PLUGIN_SINK_COMPONENT_CLASS_INITIALIZE_METHOD(output, my_sink_initialize);
+    BT_PLUGIN_SINK_COMPONENT_CLASS_GRAPH_IS_CONFIGURED_METHOD(output,
+                                                              my_sink_graph_is_configured);
+    BT_PLUGIN_SINK_COMPONENT_CLASS_FINALIZE_METHOD(output, my_sink_finalize);
+    @endcode
+
+    See \ref api-plugin-so-dev for the complete list of available
+    macros, one per optional
+    \ref api-comp-cls-dev-methods "component class method" and
+    \ref api-msg-iter-cls-methods "message iterator class method".
+</ol>
+
+The component class methods themselves (<code>my_src_iter_next</code>,
+<code>my_src_initialize</code>, <code>my_sink_consume</code>, and so on
+above) can be defined in the same C file or in other C files of your
+project: the <code>BT_PLUGIN_*()</code> macros only need their
+declarations, found, for example, in a common header file.
+
+Once your plugin definition C file (and any other C file it depends
+on) is ready, \ref guide-comp-link-plugin-so "compile and link it" as a
+shared object plugin.
 
 @page guide-write-full-src-comp-cls Write a complete source component class
 
-TODO!
+This guide lists all the optional methods you can add to a
+\ref guide-write-min-src-comp-cls "minimal source component class" to
+make it robust and complete, ready for production use.
+
+@section guide-write-full-src-comp-cls-comp-cls-methods Component class methods
+
+On top of the mandatory \bt_msg_iter_cls
+\link api-msg-iter-cls-meth-next "next"\endlink method and the
+\ref api-comp-cls-dev-meth-init "initialization method" of a
+\ref guide-write-min-src-comp-cls "minimal source component class",
+consider implementing:
+
+<dl>
+  <dt>\ref api-comp-cls-dev-meth-fini "Finalize"</dt>
+  <dd>
+    Destroy, free, or otherwise finalize any user data you attached to
+    the component with bt_self_component_set_data() in the
+    initialization method.
+
+    Set it with bt_component_class_source_set_finalize_method(), or
+    with the BT_PLUGIN_SOURCE_COMPONENT_CLASS_FINALIZE_METHOD() macro
+    in a
+    \ref guide-create-plugin "plugin definition file".
+  </dd>
+
+  <dt>\ref api-comp-cls-dev-meth-mip "Get supported MIP versions"</dt>
+  <dd>
+    Implement this \ref api-comp-cls-dev-class-meth "class method" if
+    your component class supports \bt_mip (MIP)&nbsp;1: without it,
+    the library assumes that any instance of your component class only
+    supports MIP&nbsp;version&nbsp;0.
+
+    See \ref guide-mip-0-to-mip-1 to learn how to support both MIP
+    versions.
+
+    Set it with
+    bt_component_class_source_set_get_supported_mip_versions_method(),
+    or with the
+    BT_PLUGIN_SOURCE_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD()
+    macro in a plugin definition file.
+  </dd>
+
+  <dt>\ref api-comp-cls-dev-meth-oport-connected "Output port connected"</dt>
+  <dd>
+    React to one of the \bt_p_oport of the component becoming
+    connected, for example to add more output ports depending on the
+    \bt_comp at the other end of the new \bt_conn (see
+    \ref guide-graph-listeners for another way to react to topology
+    changes from outside the component).
+
+    Set it with
+    bt_component_class_source_set_output_port_connected_method(), or
+    with the BT_PLUGIN_SOURCE_COMPONENT_CLASS_OUTPUT_PORT_CONNECTED_METHOD()
+    macro in a plugin definition file.
+  </dd>
+
+  <dt>\ref api-comp-cls-dev-meth-query "Query"</dt>
+  <dd>
+    Let users of your component class, before or without instantiating
+    it, ask arbitrary questions about it, for example to list the
+    compatible traces that a given path contains.
+
+    See \ref guide-query to learn how to implement and call this
+    \ref api-comp-cls-dev-class-meth "class method".
+
+    Set it with bt_component_class_source_set_query_method(), or with
+    the BT_PLUGIN_SOURCE_COMPONENT_CLASS_QUERY_METHOD() macro in a
+    plugin definition file.
+  </dd>
+</dl>
+
+@section guide-write-full-src-comp-cls-msg-iter-cls-methods Message iterator class methods
+
+On top of the mandatory
+\link api-msg-iter-cls-meth-next "next"\endlink method, consider
+implementing:
+
+<dl>
+  <dt>\ref api-msg-iter-cls-meth-init "Initialize"</dt>
+  <dd>
+    Perform any setup your \bt_msg_iter needs before its "next" method
+    is called for the first time, and attach user data to it with
+    bt_self_message_iterator_set_data().
+
+    Set it with bt_message_iterator_class_set_initialize_method(), or
+    with the
+    BT_PLUGIN_SOURCE_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD()
+    macro in a
+    \ref guide-create-plugin "plugin definition file".
+  </dd>
+
+  <dt>\ref api-msg-iter-cls-meth-fini "Finalize"</dt>
+  <dd>
+    Destroy, free, or otherwise finalize any user data you attached to
+    the message iterator in its initialization method.
+
+    Set it with bt_message_iterator_class_set_finalize_method(), or
+    with the
+    BT_PLUGIN_SOURCE_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_FINALIZE_METHOD()
+    macro in a plugin definition file.
+  </dd>
+
+  <dt>
+    \ref api-msg-iter-cls-meth-can-seek-beg "Can seek beginning?"
+  </dt>
+  <dt>
+    \ref api-msg-iter-cls-meth-seek-beg "Seek beginning"
+  </dt>
+  <dt>
+    \ref api-msg-iter-cls-meth-can-seek-ns "Can seek ns from origin?"
+  </dt>
+  <dt>
+    \ref api-msg-iter-cls-meth-seek-ns "Seek ns from origin"
+  </dt>
+  <dd>
+    Make your message iterator able to seek its beginning or a specific
+    point in time.
+
+    See \ref guide-seek-msg-iter to learn how to implement those
+    methods.
+
+    Set them with
+    bt_message_iterator_class_set_seek_beginning_methods() and
+    bt_message_iterator_class_set_seek_ns_from_origin_methods(), or
+    with the
+    BT_PLUGIN_SOURCE_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_SEEK_BEGINNING_METHODS()
+    and
+    BT_PLUGIN_SOURCE_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_SEEK_NS_FROM_ORIGIN_METHODS()
+    macros in a plugin definition file.
+  </dd>
+</dl>
+
+Whether you implement all, some, or none of the methods above depends
+entirely on the trace processing task your source component class
+needs to accomplish. See the existing \bt_name \bt_p_plugin
+for real-world examples of source component classes.
 
 @page guide-write-full-flt-comp-cls Write a complete filter component class
 
-TODO!
+This guide lists all the optional methods you can add to a
+\ref guide-write-min-flt-comp-cls "minimal filter component class" to
+make it robust and complete, ready for production use.
+
+This guide is very similar to
+\ref guide-write-full-src-comp-cls "Write a complete source component class":
+the only differences are
+the component class type and the fact that a filter component class
+can react to both its \bt_p_iport and its \bt_p_oport becoming
+connected.
+
+@section guide-write-full-flt-comp-cls-comp-cls-methods Component class methods
+
+On top of the mandatory \bt_msg_iter_cls
+\link api-msg-iter-cls-meth-next "next"\endlink method and the
+\ref api-comp-cls-dev-meth-init "initialization method" of a
+\ref guide-write-min-flt-comp-cls "minimal filter component class",
+consider implementing:
+
+<dl>
+  <dt>\ref api-comp-cls-dev-meth-fini "Finalize"</dt>
+  <dd>
+    Destroy, free, or otherwise finalize any user data you attached to
+    the component with bt_self_component_set_data() in the
+    initialization method.
+
+    Set it with bt_component_class_filter_set_finalize_method(), or
+    with the BT_PLUGIN_FILTER_COMPONENT_CLASS_FINALIZE_METHOD() macro
+    in a
+    \ref guide-create-plugin "plugin definition file".
+  </dd>
+
+  <dt>\ref api-comp-cls-dev-meth-mip "Get supported MIP versions"</dt>
+  <dd>
+    Implement this \ref api-comp-cls-dev-class-meth "class method" if
+    your component class supports \bt_mip (MIP)&nbsp;1: without it,
+    the library assumes that any instance of your component class only
+    supports MIP&nbsp;version&nbsp;0.
+
+    See \ref guide-mip-0-to-mip-1 to learn how to support both MIP
+    versions.
+
+    Set it with
+    bt_component_class_filter_set_get_supported_mip_versions_method(),
+    or with the
+    BT_PLUGIN_FILTER_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD()
+    macro in a plugin definition file.
+  </dd>
+
+  <dt>\ref api-comp-cls-dev-meth-iport-connected "Input port connected"</dt>
+  <dd>
+    React to one of the \bt_p_iport of the component becoming
+    connected, for example to add more ports depending on the \bt_comp
+    at the other end of the new \bt_conn (see \ref guide-graph-listeners
+    for another way to react to topology changes from outside the
+    component).
+
+    Set it with
+    bt_component_class_filter_set_input_port_connected_method(), or
+    with the BT_PLUGIN_FILTER_COMPONENT_CLASS_INPUT_PORT_CONNECTED_METHOD()
+    macro in a plugin definition file.
+  </dd>
+
+  <dt>\ref api-comp-cls-dev-meth-oport-connected "Output port connected"</dt>
+  <dd>
+    React to one of the \bt_p_oport of the component becoming
+    connected.
+
+    Set it with
+    bt_component_class_filter_set_output_port_connected_method(), or
+    with the BT_PLUGIN_FILTER_COMPONENT_CLASS_OUTPUT_PORT_CONNECTED_METHOD()
+    macro in a plugin definition file.
+  </dd>
+
+  <dt>\ref api-comp-cls-dev-meth-query "Query"</dt>
+  <dd>
+    Let users of your component class, before or without instantiating
+    it, ask arbitrary questions about it.
+
+    See \ref guide-query to learn how to implement and call this
+    \ref api-comp-cls-dev-class-meth "class method".
+
+    Set it with bt_component_class_filter_set_query_method(), or with
+    the BT_PLUGIN_FILTER_COMPONENT_CLASS_QUERY_METHOD() macro in a
+    plugin definition file.
+  </dd>
+</dl>
+
+@section guide-write-full-flt-comp-cls-msg-iter-cls-methods Message iterator class methods
+
+On top of the mandatory
+\link api-msg-iter-cls-meth-next "next"\endlink method, consider
+implementing:
+
+<dl>
+  <dt>\ref api-msg-iter-cls-meth-init "Initialize"</dt>
+  <dd>
+    Perform any setup your \bt_msg_iter needs before its "next" method
+    is called for the first time, and attach user data to it with
+    bt_self_message_iterator_set_data().
+
+    This is typically where a filter message iterator creates its
+    upstream message iterator with
+    bt_message_iterator_create_from_message_iterator(), from the
+    \bt_iport the filter component reads from.
+
+    Set it with bt_message_iterator_class_set_initialize_method(), or
+    with the
+    BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD()
+    macro in a
+    \ref guide-create-plugin "plugin definition file".
+  </dd>
+
+  <dt>\ref api-msg-iter-cls-meth-fini "Finalize"</dt>
+  <dd>
+    Destroy, free, or otherwise finalize any user data you attached to
+    the message iterator in its initialization method, putting the
+    reference of its upstream message iterator, if any, with
+    bt_message_iterator_put_ref().
+
+    Set it with bt_message_iterator_class_set_finalize_method(), or
+    with the
+    BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_FINALIZE_METHOD()
+    macro in a plugin definition file.
+  </dd>
+
+  <dt>
+    \ref api-msg-iter-cls-meth-can-seek-beg "Can seek beginning?"
+  </dt>
+  <dt>
+    \ref api-msg-iter-cls-meth-seek-beg "Seek beginning"
+  </dt>
+  <dt>
+    \ref api-msg-iter-cls-meth-can-seek-ns "Can seek ns from origin?"
+  </dt>
+  <dt>
+    \ref api-msg-iter-cls-meth-seek-ns "Seek ns from origin"
+  </dt>
+  <dd>
+    Make your message iterator able to seek its beginning or a specific
+    point in time, typically by using the seeking capabilities of its
+    own upstream message iterator (with
+    bt_message_iterator_can_seek_beginning(),
+    bt_message_iterator_seek_beginning(),
+    bt_message_iterator_can_seek_ns_from_origin(), and
+    bt_message_iterator_seek_ns_from_origin()).
+
+    See \ref guide-seek-msg-iter to learn how to implement those
+    methods.
+
+    Set them with
+    bt_message_iterator_class_set_seek_beginning_methods() and
+    bt_message_iterator_class_set_seek_ns_from_origin_methods(), or
+    with the
+    BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_SEEK_BEGINNING_METHODS()
+    and
+    BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_SEEK_NS_FROM_ORIGIN_METHODS()
+    macros in a plugin definition file.
+  </dd>
+</dl>
+
+Whether you implement all, some, or none of the methods above depends
+entirely on the trace processing task your filter component class
+needs to accomplish. See the existing \bt_name \bt_p_plugin
+for real-world examples of filter component classes.
 
 @page guide-write-full-sink-comp-cls Write a complete sink component class
 
-TODO!
+This guide lists all the optional methods you can add to a
+\ref guide-write-min-sink-comp-cls "minimal sink component class" to
+make it robust and complete, ready for production use.
+
+On top of the mandatory
+\ref api-comp-cls-dev-meth-consume "consuming" method, the
+\ref api-comp-cls-dev-meth-init "initialization" method, and the
+\ref api-comp-cls-dev-meth-graph-configured "\"graph is configured\""
+method of a
+\ref guide-write-min-sink-comp-cls "minimal sink component class",
+consider implementing:
+
+<dl>
+  <dt>\ref api-comp-cls-dev-meth-fini "Finalize"</dt>
+  <dd>
+    Destroy, free, or otherwise finalize any user data you attached to
+    the component with bt_self_component_set_data() in the
+    initialization method, putting the reference of the upstream
+    message iterator, if any and if it's not already put, with
+    bt_message_iterator_put_ref().
+
+    Set it with bt_component_class_sink_set_finalize_method(), or
+    with the
+    BT_PLUGIN_SINK_COMPONENT_CLASS_FINALIZE_METHOD()
+    macro in a
+    \ref guide-create-plugin "plugin definition file".
+  </dd>
+
+  <dt>\ref api-comp-cls-dev-meth-mip "Get supported MIP versions"</dt>
+  <dd>
+    Implement this \ref api-comp-cls-dev-class-meth "class method" if
+    your component class supports \bt_mip (MIP)&nbsp;1: without it,
+    the library assumes that any instance of your component class only
+    supports MIP&nbsp;version&nbsp;0.
+
+    See \ref guide-mip-0-to-mip-1 to learn how to support both MIP
+    versions.
+
+    Set it with
+    bt_component_class_sink_set_get_supported_mip_versions_method(),
+    or with the
+    BT_PLUGIN_SINK_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD()
+    macro in a plugin definition file.
+  </dd>
+
+  <dt>\ref api-comp-cls-dev-meth-iport-connected "Input port connected"</dt>
+  <dd>
+    React to one of the \bt_p_iport of the component becoming
+    connected, for example to add more input ports (see
+    \ref guide-graph-listeners for another way to react to topology
+    changes from outside the component).
+
+    Set it with
+    bt_component_class_sink_set_input_port_connected_method(),
+    or
+    with the BT_PLUGIN_SINK_COMPONENT_CLASS_INPUT_PORT_CONNECTED_METHOD()
+    macro in a plugin definition file.
+  </dd>
+
+  <dt>\ref api-comp-cls-dev-meth-query "Query"</dt>
+  <dd>
+    Let users of your component class, before or without instantiating
+    it, ask arbitrary questions about it.
+
+    See \ref guide-query to learn how to implement and call this
+    \ref api-comp-cls-dev-class-meth "class method".
+
+    Set it with bt_component_class_sink_set_query_method(), or with
+    the BT_PLUGIN_SINK_COMPONENT_CLASS_QUERY_METHOD() macro in a
+    plugin definition file.
+  </dd>
+</dl>
+
+Also consider:
+
+- Checking whether or not your component is
+  \ref guide-intr-graph "interrupted" with
+  bt_self_component_sink_is_interrupted() during a long consuming
+  operation, and returning
+  #BT_COMPONENT_CLASS_SINK_CONSUME_METHOD_STATUS_AGAIN or
+  #BT_COMPONENT_CLASS_SINK_CONSUME_METHOD_STATUS_ERROR when it is.
+
+- Making your \ref api-comp-cls-dev-meth-consume "consuming" method
+  \ref guide-seek-msg-iter "seek" its upstream message iterator in
+  reaction to some external event or initialization parameter.
+
+- Supporting more than one \bt_iport, in which case your
+  \ref api-comp-cls-dev-meth-graph-configured "\"graph is configured\""
+  method creates one \bt_msg_iter per connected input port, and your
+  consuming method gets messages from each of them, for example in
+  round-robin fashion.
+
+Whether you implement all, some, or none of the methods above depends
+entirely on the trace processing task your sink component class needs
+to accomplish. See the existing \bt_name \bt_p_plugin
+for real-world examples of sink component classes.
 
 @page guide-query Query an object from a component class
 
-TODO!
+This guide shows both how to implement the optional
+\ref api-comp-cls-dev-meth-query "query" \bt_comp_cls method and how to
+call it to perform a query operation, that is, to get an arbitrary
+object from a \bt_comp_cls without necessarily having to instantiate
+it.
+
+A query operation is how, for example, a \bt_src_comp_cls can offer
+the list of traces available at a given path, or how a component class
+communicating with a distant server can offer the list of live tracing
+sessions currently available on this server, without any \bt_graph
+being involved.
+
+The semantics of the parameters and of the returned object of a query
+operation are completely up to the component class implementation: read
+its documentation to know which objects it offers, and with which
+parameters.
+
+@note
+    To keep the following code snippets focused, they don't check the
+    return status codes of API functions, but you \em must check them in
+    production code.
+
+@section guide-query-impl Implement the query method
+
+Implement the \ref api-comp-cls-dev-meth-query "query"
+\ref api-comp-cls-dev-class-meth "class method" of your \bt_comp_cls:
+
+@code
+static bt_component_class_query_method_status
+my_query(bt_self_component_class_source * const self_comp_class,
+         bt_private_query_executor * const query_exec,
+         const char * const object_name, const bt_value * const params,
+         void * const method_data, const bt_value ** const result)
+{
+    if (strcmp(object_name, "tamebsz-count") == 0) {
+        *result = bt_value_integer_unsigned_create_init(23);
+        return BT_COMPONENT_CLASS_QUERY_METHOD_STATUS_OK;
+    }
+
+    return BT_COMPONENT_CLASS_QUERY_METHOD_STATUS_UNKNOWN_OBJECT;
+}
+@endcode
+
+Within this method:
+
+- Compare \bt_p{object_name} to each object name your component class
+  offers, and set \bt_p{*result} to a \em new \bt_val reference
+  representing the result of the query operation.
+
+- If \bt_p{object_name} isn't an object your component class offers,
+  then return #BT_COMPONENT_CLASS_QUERY_METHOD_STATUS_UNKNOWN_OBJECT.
+
+- To check the \ref api-qexec-prop-log-lvl "logging level" of the query
+  executor performing the operation, first upcast \bt_p{query_exec}
+  with bt_private_query_executor_as_query_executor_const(), then use
+  bt_query_executor_get_logging_level().
+
+- If your query operation can block, then periodically check whether or
+  not the query executor is interrupted (see the \ref guide-intr-query
+  guide) and, if it is, return
+  #BT_COMPONENT_CLASS_QUERY_METHOD_STATUS_AGAIN.
+
+Set this method with bt_component_class_source_set_query_method(),
+bt_component_class_filter_set_query_method(), or
+bt_component_class_sink_set_query_method(), depending on the type of
+your component class.
+
+@section guide-query-perform Perform a query operation
+
+To call the query method of a component class:
+
+<ol>
+  <li>
+    Create a \bt_qexec with bt_query_executor_create(), passing the
+    component class to query, the name of the object to query, and the
+    query parameters, or with
+    bt_query_executor_create_with_method_data() if you also need to
+    pass custom data to the query method.
+
+    @code
+    bt_query_executor * const query_exec = bt_query_executor_create(comp_class,
+                                                                    "tamebsz-count",
+                                                                    params);
+    @endcode
+  <li>
+    \bt_dt_opt Set the \ref api-qexec-prop-log-lvl "logging level" of
+    the query executor with bt_query_executor_set_logging_level().
+  <li>
+    Perform the query operation with bt_query_executor_query().
+
+    @code
+    const bt_value *result;
+
+    const bt_query_executor_query_status status = bt_query_executor_query(query_exec, &result);
+    @endcode
+
+    If this function returns #BT_QUERY_EXECUTOR_QUERY_STATUS_AGAIN, then
+    you can call it again later. If it returns
+    #BT_QUERY_EXECUTOR_QUERY_STATUS_UNKNOWN_OBJECT, then the component
+    class doesn't offer the requested object.
+</ol>
+
+To interrupt a running query operation, see \ref guide-intr-query.
+
+Once you're done with the query executor and the result value, put
+their references with bt_query_executor_put_ref() and
+bt_value_put_ref().
 
 @page guide-seek-msg-iter Make a message iterator seek
 
-TODO!
+This guide shows both how to make an existing \bt_msg_iter seek and how
+to implement the seeking methods of a \bt_msg_iter_cls so that its
+message iterators support seeking.
+
+A message iterator can support two seeking
+\ref api-msg-iter-ops "operations":
+
+<dl>
+  <dt>\ref api-msg-iter-op-seek-beg "Seek beginning"</dt>
+  <dd>
+    Make the message iterator seek the very first \bt_msg of its
+    \ref api-msg-seq "sequence".
+  </dd>
+
+  <dt>\ref api-msg-iter-op-seek-ns "Seek ns from origin"</dt>
+  <dd>
+    Make the message iterator seek a message occurring at or after a
+    specific time, expressed in nanoseconds from some
+    \ref api-tir-clock-cls-origin "clock origin".
+
+    You don't specify \em which clock class: because all the
+    \bt_p_cs of the messages within the \ref api-msg-seq "sequence" of
+    a given message iterator are
+    \ref api-tir-clock-cls-origin "correlatable", they share a
+    single, common origin, and it's in terms of this shared origin
+    that you express the time to seek.
+  </dd>
+</dl>
+
+@note
+    To keep the following code snippets focused, they don't check the
+    return status codes of API functions, but you \em must check them in
+    production code.
+
+@section guide-seek-msg-iter-make Make a message iterator seek
+
+Before you make a message iterator seek, check whether or not it
+currently can with bt_message_iterator_can_seek_beginning() or
+bt_message_iterator_can_seek_ns_from_origin():
+
+@code
+bt_bool can_seek_beginning;
+
+bt_message_iterator_can_seek_beginning(msg_iter, &can_seek_beginning);
+
+if (can_seek_beginning) {
+    bt_message_iterator_seek_beginning(msg_iter);
+}
+@endcode
+
+Then make the message iterator seek with
+bt_message_iterator_seek_beginning() or
+bt_message_iterator_seek_ns_from_origin(), passing, for the latter, the
+specific time to seek in nanoseconds from the origin.
+
+If either seeking function fails (returns a status which isn't
+#BT_MESSAGE_ITERATOR_SEEK_BEGINNING_STATUS_OK or
+#BT_MESSAGE_ITERATOR_SEEK_NS_FROM_ORIGIN_STATUS_OK), you can only call
+bt_message_iterator_seek_beginning() or
+bt_message_iterator_seek_ns_from_origin() again afterwards: no other
+message iterator operation is valid.
+
+@section guide-seek-msg-iter-impl Implement the seeking methods of a message iterator class
+
+To make the message iterators of your \bt_msg_iter_cls support seeking,
+implement one or both of:
+
+<dl>
+  <dt>
+    \ref api-msg-iter-cls-meth-seek-beg "\"Seek beginning\"" and,
+    if your message iterator cannot \em always seek its beginning,
+    \ref api-msg-iter-cls-meth-can-seek-beg "\"can seek beginning?\""
+  </dt>
+  <dd>
+    @code
+    static bt_message_iterator_class_seek_beginning_method_status
+    my_iter_seek_beginning(bt_self_message_iterator * const self_msg_iter)
+    {
+        struct my_iter_data * const data = bt_self_message_iterator_get_data(self_msg_iter);
+
+        /* Reset the iteration state of `data` here */
+
+        return BT_MESSAGE_ITERATOR_CLASS_SEEK_BEGINNING_METHOD_STATUS_OK;
+    }
+    @endcode
+
+    Set both methods with
+    bt_message_iterator_class_set_seek_beginning_methods(), or
+    with the
+    BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_SEEK_BEGINNING_METHODS()
+    macro in a \ref guide-create-plugin "plugin definition file".
+  </dd>
+
+  <dt>
+    \ref api-msg-iter-cls-meth-seek-ns "\"Seek ns from origin\"" and, if
+    your message iterator cannot \em always seek any given time,
+    \ref api-msg-iter-cls-meth-can-seek-ns "\"can seek ns from origin?\""
+  </dt>
+  <dd>
+    @code
+    static bt_message_iterator_class_seek_ns_from_origin_method_status
+    my_iter_seek_ns_from_origin(bt_self_message_iterator * const self_msg_iter,
+                                const int64_t ns_from_origin)
+    {
+        struct my_iter_data * const data = bt_self_message_iterator_get_data(self_msg_iter);
+
+        /* Make `data` ready to emit a message at or after `ns_from_origin` here */
+
+        return BT_MESSAGE_ITERATOR_CLASS_SEEK_NS_FROM_ORIGIN_METHOD_STATUS_OK;
+    }
+    @endcode
+
+    Set them with
+    bt_message_iterator_class_set_seek_ns_from_origin_methods(), or
+    with the
+    BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_SEEK_NS_FROM_ORIGIN_METHODS()
+    macro in a plugin definition file.
+
+    Alternatively, if your message iterator can seek
+    <em>forward</em>, that is, if all the \bt_p_msg of its sequence
+    have a \bt_cs, then you don't strictly need to implement this
+    method: set the message iterator as being able to seek forward with
+    bt_self_message_iterator_configuration_set_can_seek_forward() within
+    its \ref api-msg-iter-cls-meth-init "initialization method" and
+    libbabeltrace2 implements bt_message_iterator_seek_ns_from_origin()
+    for you, using the
+    \ref api-msg-iter-cls-meth-seek-beg "seek beginning" method and
+    repeated calls to the "next" method.
+
+    @important
+        This fallback implementation is inefficient, as it may need to
+        seek the beginning of the message iterator sequence and then
+        replay many messages to reach the requested time: implement the
+        "seek ns from origin" method yourself whenever your message
+        iterator can seek more efficiently.
+  </dd>
+</dl>
+
+If your component class is a \bt_flt_comp_cls, then its message iterator
+will typically implement seeking in terms of the seeking capabilities
+of its own upstream message iterator, using
+bt_message_iterator_can_seek_beginning(),
+bt_message_iterator_seek_beginning(),
+bt_message_iterator_can_seek_ns_from_origin(), and
+bt_message_iterator_seek_ns_from_origin().
+
+If you need to block the thread while computing whether or not your
+message iterator can currently seek, or while actually seeking, you can
+instead report to try again later to the caller by returning the
+<code>*_STATUS_AGAIN</code> status code of the corresponding method.
 
 @page guide-intr-graph Interrupt a running graph
 
-TODO!
+This guide shows how to interrupt a running \bt_graph, that is, how to
+make bt_graph_run() or bt_graph_run_once() return
+#BT_GRAPH_RUN_STATUS_AGAIN (or #BT_GRAPH_RUN_ONCE_STATUS_AGAIN) as soon
+as possible from another thread or from a signal handler.
+
+@note
+    To keep the following code snippets focused, they don't check the
+    return status codes of API functions, but you \em must check them in
+    production code.
+
+Every trace processing graph has a default \bt_intr as soon as you
+create it with bt_graph_create(). To interrupt a graph, either:
+
+<ul>
+  <li>
+    Borrow its default interrupter with
+    bt_graph_borrow_default_interrupter() and set it with
+    bt_interrupter_set():
+
+    @code
+    bt_interrupter_set(bt_graph_borrow_default_interrupter(graph));
+    @endcode
+  <li>
+    Add your own \bt_intr with bt_graph_add_interrupter(), \em before
+    you run the graph with bt_graph_run() or bt_graph_run_once(), and
+    set it, also with bt_interrupter_set(), whenever you need to
+    interrupt the graph:
+
+    @code
+    bt_interrupter * const interrupter = bt_interrupter_create();
+
+    bt_graph_add_interrupter(graph, interrupter);
+
+    /* ... */
+
+    bt_interrupter_set(interrupter);
+    @endcode
+
+    Adding your own interrupter is useful, for example, if you need to
+    share a single interrupter amongst several trace processing graphs,
+    or between a graph and a \ref guide-intr-query "query executor".
+</ul>
+
+When bt_graph_run() or bt_graph_run_once() returns
+#BT_GRAPH_RUN_STATUS_AGAIN (or #BT_GRAPH_RUN_ONCE_STATUS_AGAIN), check
+the state of the interrupter(s) of the graph with
+bt_interrupter_is_set() to distinguish between a \bt_sink_comp
+returning "try again" and the graph actually getting interrupted.
+
+Within a \bt_comp \ref api-comp-cls-dev-methods "method" or a
+\bt_msg_iter_cls \ref api-msg-iter-cls-methods "method", you can check
+whether or not the owning graph is interrupted with
+bt_self_component_sink_is_interrupted() or
+bt_self_message_iterator_is_interrupted(): a well-behaved,
+long-running \ref api-comp-cls-dev-meth-consume "consuming" method or
+\link api-msg-iter-cls-meth-next "next"\endlink method should check
+this periodically and return an <code>*_STATUS_AGAIN</code> or
+<code>*_STATUS_ERROR</code> status code, depending on its capability to
+continue the current operation later, when it is.
+
+For example, a \bt_sink_comp \ref api-comp-cls-dev-meth-consume
+"consuming" method may check whether or not it's interrupted before
+doing any actual work:
+
+@code
+static bt_component_class_sink_consume_method_status
+my_sink_consume(bt_self_component_sink * const self_comp)
+{
+    if (bt_self_component_sink_is_interrupted(self_comp)) {
+        return BT_COMPONENT_CLASS_SINK_CONSUME_METHOD_STATUS_AGAIN;
+    }
+
+    /* Do some work here */
+
+    return BT_COMPONENT_CLASS_SINK_CONSUME_METHOD_STATUS_OK;
+}
+@endcode
+
+Once you get back the control of the thread after an interrupted
+trace processing graph, you can reset a given \bt_intr with
+bt_interrupter_reset() and, for example, call bt_graph_run() again.
 
 @page guide-intr-query Interrupt a query operation
 
-TODO!
+This guide shows how to interrupt a running
+\ref guide-query "query operation", that is, how to make
+bt_query_executor_query() return
+#BT_QUERY_EXECUTOR_QUERY_STATUS_AGAIN as soon as possible from another
+thread or from a signal handler.
+
+@note
+    To keep the following code snippets focused, they don't check the
+    return status codes of API functions, but you \em must check them in
+    production code.
+
+Every \bt_qexec has a default \bt_intr as soon as you create it with
+bt_query_executor_create() or
+bt_query_executor_create_with_method_data(). To interrupt a query
+executor, either:
+
+<ul>
+  <li>
+    Borrow its default interrupter with
+    bt_query_executor_borrow_default_interrupter() and set it with
+    bt_interrupter_set():
+
+    @code
+    bt_interrupter_set(bt_query_executor_borrow_default_interrupter(query_exec));
+    @endcode
+  <li>
+    Add your own \bt_intr with bt_query_executor_add_interrupter(),
+    \em before you call bt_query_executor_query(), and set it, also
+    with bt_interrupter_set(), whenever you need to interrupt the
+    query executor:
+
+    @code
+    bt_interrupter * const interrupter = bt_interrupter_create();
+
+    bt_query_executor_add_interrupter(query_exec, interrupter);
+
+    /* ... */
+
+    bt_interrupter_set(interrupter);
+    @endcode
+
+    Adding your own interrupter is useful, for example, if you need to
+    share a single interrupter amongst several query executors, or
+    between a query executor and a
+    \ref guide-intr-graph "trace processing graph".
+</ul>
+
+A component class \ref api-comp-cls-dev-meth-query "query" method
+should periodically check whether or not the query executor performing
+the operation is interrupted with bt_query_executor_is_interrupted(),
+using the private view of the query executor it receives, upcast with
+bt_private_query_executor_as_query_executor_const(), and return
+#BT_COMPONENT_CLASS_QUERY_METHOD_STATUS_AGAIN when it is.
+
+For example, expanding on the \ref guide-query-impl "query method"
+example above:
+
+@code
+static bt_component_class_query_method_status
+my_query(bt_self_component_class_source * const self_comp_class,
+         bt_private_query_executor * const query_exec,
+         const char * const object_name, const bt_value * const params,
+         void * const method_data, const bt_value ** const result)
+{
+    const bt_query_executor * const pub_query_exec =
+        bt_private_query_executor_as_query_executor_const(query_exec);
+
+    if (bt_query_executor_is_interrupted(pub_query_exec)) {
+        return BT_COMPONENT_CLASS_QUERY_METHOD_STATUS_AGAIN;
+    }
+
+    /* Do some work here */
+
+    return BT_COMPONENT_CLASS_QUERY_METHOD_STATUS_OK;
+}
+@endcode
+
+Once you get back the control of the thread after an interrupted query
+operation, you can reset a given \bt_intr with bt_interrupter_reset()
+and, for example, call bt_query_executor_query() again.
 
 @page guide-graph-listeners Use graph listeners to react to topology events
 
-TODO!
+This guide shows how to get notified, from outside a \bt_comp, when a
+\bt_comp of a \bt_graph adds a \bt_port, so that you can react to it,
+for example by connecting the new port automatically.
 
-@endif
+A component can add a port:
+
+- At initialization time, that is, when you
+  \ref guide-create-graph "add" the component to the graph with one of
+  the <code>bt_graph_add_*_component*()</code> functions.
+
+- When one of its ports gets connected, that is, when you
+  \ref guide-create-graph "connect" ports with
+  bt_graph_connect_ports() and the component reacts within its
+  \ref api-comp-cls-dev-meth-iport-connected "\"input port connected\""
+  or
+  \ref api-comp-cls-dev-meth-oport-connected "\"output port connected\""
+  method.
+
+To get notified when any component of a trace processing graph adds a
+port, add one or more "port added" listeners to the graph, depending on
+the component and port types you're interested in, \em before you
+\ref api-graph-lc "configure" it:
+
+<dl>
+  <dt>\bt_c_src_comp \bt_oport</dt>
+  <dd>bt_graph_add_source_component_output_port_added_listener()</dd>
+
+  <dt>\bt_c_flt_comp \bt_iport</dt>
+  <dd>bt_graph_add_filter_component_input_port_added_listener()</dd>
+
+  <dt>\bt_c_flt_comp output port</dt>
+  <dd>bt_graph_add_filter_component_output_port_added_listener()</dd>
+
+  <dt>\bt_c_sink_comp input port</dt>
+  <dd>bt_graph_add_sink_component_input_port_added_listener()</dd>
+</dl>
+
+For example, to get notified when a filter component adds an input
+port:
+
+@code
+static bt_graph_listener_func_status
+my_flt_iport_added(const bt_component_filter * const comp,
+                   const bt_port_input * const port, void * const user_data)
+{
+    /* React to the new port here, for example connect it */
+    return BT_GRAPH_LISTENER_FUNC_STATUS_OK;
+}
+@endcode
+
+@code
+bt_listener_id listener_id;
+
+bt_graph_add_filter_component_input_port_added_listener(graph, my_flt_iport_added,
+                                                        NULL, &listener_id);
+@endcode
+
+Within a "port added" listener function, you can
+\ref api-graph-lc-add "add more components" and
+\ref api-graph-lc-connect "connect more component ports", for example
+to connect the newly added port to an existing or to a new component,
+extending the topology of the graph dynamically as it gets configured.
+
+The \bt_p{user_data} parameter of a listener function is whatever
+pointer you pass as the corresponding parameter of the
+<code>bt_graph_add_*_added_listener()</code> function.
 */
