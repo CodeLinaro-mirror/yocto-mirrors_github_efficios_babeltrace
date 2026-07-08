@@ -270,8 +270,6 @@ This macro effectively moves a plugin set reference from the expression
 
 /*! @} */
 
-/*! @} */
-
 #ifdef __cplusplus
 }
 #endif
