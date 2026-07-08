@@ -2174,6 +2174,15 @@ extern bt_field_class *bt_field_class_bool_create(
 */
 
 /*!
+@typedef struct bt_field_class_bit_array_flag bt_field_class_bit_array_flag;
+
+@brief
+    Bit array field class flag.
+
+@bt_since{1}
+*/
+
+/*!
 @brief
     Creates a \bt_ba_fc with the length \bt_p{length} from the trace
     class \bt_p{trace_class}.

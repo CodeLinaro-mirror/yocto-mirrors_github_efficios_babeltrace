@@ -213,6 +213,20 @@ After this procedure, \bt_var{CURFIELD} is the located field.
 /*! @{ */
 
 /*!
+@name Type
+@{
+
+@typedef struct bt_field_location bt_field_location;
+
+@brief
+    Field location.
+
+@bt_since{1}
+
+@}
+*/
+
+/*!
 @brief
     Field location scope enumerators.
 
