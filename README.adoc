@@ -201,6 +201,14 @@ $ ./configure
 --
 The following options can modify the build:
 
+`--disable-debug-info`::
+    Do _not_ build the https://lttng.org/[LTTng] debug information
+    filter component class
+    (https://babeltrace.org/docs/v{btversion}/man7/babeltrace2-filter.lttng-utils.debug-info.7/[`filter.lttng-utils.debug-info`]).
+
+`--disable-man-pages`::
+    Do _not_ build the {bt2} manual pages.
+
 `--disable-python-bindings`::
     Do _not_ build the `bt2` Python bindings.
 +
@@ -222,6 +230,10 @@ run any test and exits with status{nbsp}0.
 `--enable-api-doc`::
     Build the {bt2}{nbsp}C{nbsp}API HTML documentation.
 
+`--enable-asan`::
+    Build with
+    https://clang.llvm.org/docs/AddressSanitizer.html[AddressSanitizer].
+
 `--enable-built-in-plugins`::
     Statically link the official plugins into the
     `babeltrace2` executable.
@@ -229,19 +241,21 @@ run any test and exits with status{nbsp}0.
 `--enable-built-in-python-plugin-support`::
     Statically link the Python plugin provider into libbabeltrace2.
 
-`--enable-debug-info`::
-    Build the https://lttng.org/[LTTng] debug information filter
-    component class
-    (https://babeltrace.org/docs/v{btversion}/man7/babeltrace2-filter.lttng-utils.debug-info.7/[`filter.lttng-utils.debug-info`]).
-
-`--enable-man-pages`::
-    Build the {bt2} manual pages.
-
 `--enable-python-bindings-doc`::
     Build the `bt2` Python bindings documentation.
 
+`--enable-vendor-catch2`::
+    Use an in-tree Catch2 instead of an installed one.
+
+`--enable-vendor-fmt`::
+    Use an in-tree pass:[{fmt}] instead of an installed one.
+
 `--enable-vendor-pytest`::
     Use an in-tree pytest instead of an installed one.
+
+`--enable-ubsan`::
+    Build with
+    https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html[UndefinedBehaviorSanitizer].
 
 The following environment variables can modify the build:
 
@@ -269,11 +283,17 @@ Set to `TRACE`, `DEBUG`, or `INFO`.
 `BABELTRACE_PLUGINS_DIR`::
     Installation directory of {bt2} official plugins.
 
-`PYTHON`::
-    Path to custom `python3` program.
+`PKG_CONFIG_PATH`::
+    Directories to add to the search path of `pkg-config`.
+
+`PKG_CONFIG`::
+    Path to custom `pkg-config` program.
 
 `PYTHON_CONFIG`::
     Path to custom `python3-config` program.
+
+`PYTHON`::
+    Path to custom `python3` program.
 
 Run `./configure --help` to list all the available options and
 environment variables.
