@@ -15,20 +15,12 @@ Build and install from source
 -----------------------------
 When you
 `build Babeltrace 2 from source <https://babeltrace.org/#bt2-build-from-src>`_,
-specify the ``--enable-python-bindings`` option at configuration time,
+Python bindings and Python plugin support are enabled by default,
 for example:
 
 .. code-block:: text
 
-   $ ./configure --enable-python-bindings
-
-If you also need the Babeltrace |~| 2 library (libbabeltrace2) to
-load Python plugins, specify the ``--enable-python-plugins`` option
-at configuration time:
-
-.. code-block:: text
-
-   $ ./configure --enable-python-bindings --enable-python-plugins
+   $ ./configure
 
 See the project's
 :bt2link:`README <https://github.com/efficios/babeltrace/blob/stable-@ver@/README.adoc>`

@@ -84,12 +84,9 @@ as the minimal logging level:
     @endcode
 </ol>
 
-\bt_name developer mode build configuration command line examples:
-
-@code{.unparsed}
-$ BABELTRACE_DEV_MODE=1 BABELTRACE_MINIMAL_LOG_LEVEL=TRACE ./configure \
-  --enable-python-bindings --enable-python-plugins
-@endcode
+Other \bt_name developer mode build configuration example, disabling
+the manual pages and the
+\bt_man{babeltrace2-filter.lttng-utils.debug-info,7} component class:
 
 @code{.unparsed}
 $ BABELTRACE_DEV_MODE=1 BABELTRACE_MINIMAL_LOG_LEVEL=TRACE ./configure \

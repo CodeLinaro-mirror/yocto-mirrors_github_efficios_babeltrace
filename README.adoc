@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: 2019-2024 Philippe Proulx <pproulx@efficios.com>
+// SPDX-FileCopyrightText: 2019-2026 Philippe Proulx <pproulx@efficios.com>
 //
 // SPDX-License-Identifier: CC-BY-SA-4.0
 
 // Render with Asciidoctor
 
 = Babeltrace 2
-27 April 2026
+9 July 2026
 :btversion: 2.1
 :bt2: Babeltrace{nbsp}2
 ifdef::env-github[]
@@ -201,6 +201,18 @@ $ ./configure
 --
 The following options can modify the build:
 
+`--disable-python-bindings`::
+    Do _not_ build the `bt2` Python bindings.
++
+Because tests need those Python bindings, you must also specify
+`--disable-tests`.
+
+`--disable-python-plugins`::
+    Do _not_ build support for {bt2} Python plugins.
++
+Because tests need Python plugin support, you must also specify
+`--disable-tests`.
+
 `--disable-tests`::
     Do _not_ build the tests at all.
 +
@@ -225,17 +237,8 @@ run any test and exits with status{nbsp}0.
 `--enable-man-pages`::
     Build the {bt2} manual pages.
 
-`--enable-python-bindings`::
-    Build the `bt2` Python bindings.
-+
-You can set the path to custom `python3` and `python3-config` programs
-with the `PYTHON` and `PYTHON_CONFIG` environment variable.
-
 `--enable-python-bindings-doc`::
     Build the `bt2` Python bindings documentation.
-
-`--enable-python-plugins`::
-    Build support for {bt2} Python plugins.
 
 `--enable-vendor-pytest`::
     Use an in-tree pytest instead of an installed one.
@@ -265,6 +268,12 @@ Set to `TRACE`, `DEBUG`, or `INFO`.
 
 `BABELTRACE_PLUGINS_DIR`::
     Installation directory of {bt2} official plugins.
+
+`PYTHON`::
+    Path to custom `python3` program.
+
+`PYTHON_CONFIG`::
+    Path to custom `python3-config` program.
 
 Run `./configure --help` to list all the available options and
 environment variables.
@@ -316,14 +325,6 @@ the {bt2} build.
 [role="term"]
 ----
 $ BABELTRACE_DEV_MODE=1 BABELTRACE_MINIMAL_LOG_LEVEL=TRACE ./configure
-----
-
-{bt2} development build configuration with Python support example:
-
-[role="term"]
-----
-$ BABELTRACE_DEV_MODE=1 BABELTRACE_MINIMAL_LOG_LEVEL=TRACE ./configure \
-  --enable-python-bindings --enable-python-plugins
 ----
 
 See the
