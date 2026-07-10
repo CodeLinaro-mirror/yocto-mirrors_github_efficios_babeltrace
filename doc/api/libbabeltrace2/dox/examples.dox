@@ -8,6 +8,9 @@
 The examples of this section apply the different parts of the
 libbabeltrace2 API to accomplish real tasks.
 
+See \ref guides for step-by-step procedures explaining many of the
+concepts that the examples below apply.
+
 The available examples are:
 
 - \subpage example-simple-plugin-def-file
@@ -18,7 +21,8 @@ The available examples are:
 @page example-simple-plugin-def-file Simple shared object plugin definition C file
 
 This example shows a basic \bt_name
-\ref api-plugin-so-dev "shared object plugin" definition C file.
+\ref api-plugin-so-dev "shared object plugin" definition C file,
+applying the steps of the \ref guide-create-plugin guide.
 
 The name of shared object plugin is <code>vestige</code>. Therefore
 the \c input and \c output \bt_p_comp_cls would be identified in the
@@ -39,6 +43,9 @@ link those files as a \bt_name shared object plugin.
 
 This example shows a basic \bt_src_comp_cls packaged as a
 \ref api-plugin-so-dev "shared object plugin".
+
+For general guidance on writing a source component class, see
+\ref guide-write-min-src-comp-cls and \ref guide-write-full-src-comp-cls.
 
 The name of the plugin is <code>dust</code> and the name of the source
 component class is <code>input</code>. Therefore the
@@ -122,6 +129,9 @@ $ babeltrace2 --plugin-path=. --component=source.dust.input --params='path="dust
 This example shows a basic \bt_flt_comp_cls packaged as a
 \ref api-plugin-so-dev "shared object plugin".
 
+For general guidance on writing a filter component class, see
+\ref guide-write-min-flt-comp-cls and \ref guide-write-full-flt-comp-cls.
+
 The name of the plugin is <code>distill</code> and the name of the
 filter component class is <code>theone</code>. Therefore the
 component class is identified in the \bt_cli
@@ -171,7 +181,8 @@ $ babeltrace2 --plugin-path=. /path/to/ctf/trace \
 @page example-simple-sink-cmp-cls Simple sink component class
 
 This example shows a basic \bt_sink_comp_cls packaged as a
-\ref api-plugin-so-dev "shared object plugin".
+\ref api-plugin-so-dev "shared object plugin", following the steps of
+the \ref guide-write-simple-sink-comp-cls guide.
 
 The name of the plugin is <code>epitome</code> and the name of the
 sink component class is <code>output</code>. Therefore the component

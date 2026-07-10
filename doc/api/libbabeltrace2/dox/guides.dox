@@ -14,6 +14,9 @@ the library and its API.
 Make sure to eventually read \ref api-fund before you use the \bt_api
 seriously.
 
+See \ref examples for complete, working examples which apply the
+concepts of some of the guides below.
+
 The available guides are:
 
 - \subpage guide-build-bt2-dev
@@ -1448,6 +1451,9 @@ This guide lists all the optional methods you can add to a
 \ref guide-write-min-src-comp-cls "minimal source component class" to
 make it robust and complete, ready for production use.
 
+For a working example which implements some of the methods below, see
+\ref example-simple-src-cmp-cls.
+
 @section guide-write-full-src-comp-cls-comp-cls-methods Component class methods
 
 On top of the mandatory \bt_msg_iter_cls
@@ -1593,6 +1599,9 @@ the only differences are
 the component class type and the fact that a filter component class
 can react to both its \bt_p_iport and its \bt_p_oport becoming
 connected.
+
+For a working example which implements some of the methods below, see
+\ref example-simple-flt-cmp-cls.
 
 @section guide-write-full-flt-comp-cls-comp-cls-methods Component class methods
 
