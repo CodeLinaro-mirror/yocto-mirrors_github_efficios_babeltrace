@@ -6,10 +6,6 @@ import types
 import bt2
 import utils
 import pytest
-from bt2 import field as bt2_field
-from bt2 import stream as bt2_stream
-from bt2 import event_class as bt2_ec
-from bt2 import clock_snapshot as bt2_cs
 
 
 # Creates a test event message with configurable fields.
@@ -179,11 +175,11 @@ def _pkt_fc_cfg(packet):
 def test_const_attr_ec():
     d = _const_ev_msg()
     assert d.msg.event.cls.addr == d.ec.addr
-    assert type(d.msg.event.cls) is bt2_ec._EventClassConst
+    assert type(d.msg.event.cls) is bt2._EventClassConst
 
 
 def test_attr_ec(ev_msg):
-    assert type(ev_msg.event.cls) is bt2_ec._EventClass
+    assert type(ev_msg.event.cls) is bt2._EventClass
 
 
 def test_const_attr_name():
@@ -206,11 +202,11 @@ def test_const_get_common_ctx_field():
     assert d.msg.event.common_context_field["cpu_id"] == 1
     assert d.msg.event.common_context_field["stuff"] == 13.194
     assert d.msg.event.common_context_field["gnu"] == "salut"
-    assert type(d.msg.event.common_context_field) is bt2_field._StructureFieldConst
+    assert type(d.msg.event.common_context_field) is bt2._StructureFieldConst
 
 
 def test_attr_common_ctx_field(ev_msg):
-    assert type(ev_msg.event.common_context_field) is bt2_field._StructureField
+    assert type(ev_msg.event.common_context_field) is bt2._StructureField
 
 
 def test_const_no_common_ctx_field():
@@ -226,11 +222,11 @@ def test_const_get_spec_ctx_field():
     d = _const_ev_msg(ec_fc_cfg=ec_fc_cfg, with_spec_ctx=True)
     assert d.msg.event.specific_context_field["ant"] == -1
     assert d.msg.event.specific_context_field["msg"] == "hellooo"
-    assert type(d.msg.event.specific_context_field) is bt2_field._StructureFieldConst
+    assert type(d.msg.event.specific_context_field) is bt2._StructureFieldConst
 
 
 def test_attr_spec_ctx_field(ev_msg):
-    assert type(ev_msg.event.specific_context_field) is bt2_field._StructureField
+    assert type(ev_msg.event.specific_context_field) is bt2._StructureField
 
 
 def test_const_no_spec_ctx_field():
@@ -248,11 +244,11 @@ def test_const_get_ev_payload_field():
     assert d.msg.event.payload_field["giraffe"] == 1
     assert d.msg.event.payload_field["gnu"] == 23
     assert d.msg.event.payload_field["mosquito"] == 42
-    assert type(d.msg.event.payload_field) is bt2_field._StructureFieldConst
+    assert type(d.msg.event.payload_field) is bt2._StructureFieldConst
 
 
 def test_attr_payload_field(ev_msg):
-    assert type(ev_msg.event.payload_field) is bt2_field._StructureField
+    assert type(ev_msg.event.payload_field) is bt2._StructureField
 
 
 def test_const_no_payload_field():
@@ -262,12 +258,12 @@ def test_const_no_payload_field():
 def test_const_clk_value():
     d = _const_ev_msg(with_clk_cls=True)
     assert d.msg.default_clock_snapshot.value == 789
-    assert type(d.msg.default_clock_snapshot) is bt2_cs._ClockSnapshotConst
+    assert type(d.msg.default_clock_snapshot) is bt2._ClockSnapshotConst
 
 
 def test_clk_value(ev_msg):
     assert ev_msg.default_clock_snapshot.value == 789
-    assert type(ev_msg.default_clock_snapshot) is bt2_cs._ClockSnapshotConst
+    assert type(ev_msg.default_clock_snapshot) is bt2._ClockSnapshotConst
 
 
 def test_const_no_clk_value():
@@ -279,11 +275,11 @@ def test_const_no_clk_value():
 def test_const_stream():
     d = _const_ev_msg()
     assert d.msg.event.stream.addr == d.stream.addr
-    assert type(d.msg.event.stream) is bt2_stream._StreamConst
+    assert type(d.msg.event.stream) is bt2._StreamConst
 
 
 def test_stream(ev_msg):
-    assert type(ev_msg.event.stream) is bt2_stream._Stream
+    assert type(ev_msg.event.stream) is bt2._Stream
 
 
 def test_const_getitem():
@@ -298,19 +294,19 @@ def test_const_getitem():
 
     # Test event fields
     assert ev["giraffe"] == 1
-    assert type(ev["giraffe"]) is bt2_field._SignedIntegerFieldConst
+    assert type(ev["giraffe"]) is bt2._SignedIntegerFieldConst
     assert ev["gnu"] == 23
     assert ev["mosquito"] == 42
     assert ev["ant"] == -1
-    assert type(ev["ant"]) is bt2_field._SignedIntegerFieldConst
+    assert type(ev["ant"]) is bt2._SignedIntegerFieldConst
     assert ev["msg"] == "hellooo"
     assert ev["cpu_id"] == 1
-    assert type(ev["cpu_id"]) is bt2_field._SignedIntegerFieldConst
+    assert type(ev["cpu_id"]) is bt2._SignedIntegerFieldConst
     assert ev["stuff"] == 13.194
 
     # Test packet fields
     assert ev["something"] == 154
-    assert type(ev["something"]) is bt2_field._UnsignedIntegerFieldConst
+    assert type(ev["something"]) is bt2._UnsignedIntegerFieldConst
     assert ev["something_else"] == 17.2
 
     with pytest.raises(KeyError):
@@ -330,13 +326,13 @@ def test_const_getitem_no_pkt():
 def test_getitem(ev_msg):
     ev = ev_msg.event
     assert ev["giraffe"] == 1
-    assert type(ev["giraffe"]) is bt2_field._SignedIntegerField
+    assert type(ev["giraffe"]) is bt2._SignedIntegerField
     assert ev["ant"] == -1
-    assert type(ev["ant"]) is bt2_field._SignedIntegerField
+    assert type(ev["ant"]) is bt2._SignedIntegerField
     assert ev["cpu_id"] == 1
-    assert type(ev["cpu_id"]) is bt2_field._SignedIntegerField
+    assert type(ev["cpu_id"]) is bt2._SignedIntegerField
     assert ev["something"] == 154
-    assert type(ev["something"]) is bt2_field._UnsignedIntegerField
+    assert type(ev["something"]) is bt2._UnsignedIntegerField
 
 
 _EXPECTED_FIELD_NAMES = [

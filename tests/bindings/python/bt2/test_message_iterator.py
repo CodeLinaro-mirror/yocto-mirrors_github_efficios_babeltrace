@@ -6,8 +6,6 @@ import sys
 import bt2
 import utils
 import pytest
-from bt2 import port as bt2_port
-from bt2 import message_iterator as bt2_msg_iter
 
 
 # Straightforward sink that creates one input port `in` and consumes
@@ -231,7 +229,7 @@ def test_cfg_param():
     cfg_type = None
     graph = _create_graph(MySrc, _SimpleSink)
     graph.run()
-    assert cfg_type is bt2_msg_iter._MessageIteratorConfiguration
+    assert cfg_type is bt2._MessageIteratorConfiguration
 
 
 @pytest.mark.parametrize("set_can_seek_forward", [False, True])
@@ -306,8 +304,8 @@ def test_port():
 
             called = True
             port = self_iter._port
-            assert type(self_port_output) is bt2_port._UserComponentOutputPort
-            assert type(port) is bt2_port._UserComponentOutputPort
+            assert type(self_port_output) is bt2._UserComponentOutputPort
+            assert type(port) is bt2._UserComponentOutputPort
             assert self_port_output.addr == port.addr
 
     class MySrc(bt2._UserSourceComponent, message_iterator_class=MyIter):

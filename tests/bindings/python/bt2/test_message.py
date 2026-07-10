@@ -6,15 +6,6 @@ import types
 import bt2
 import utils
 import pytest
-from bt2 import event as bt2_ev
-from bt2 import field as bt2_field
-from bt2 import trace as bt2_trace
-from bt2 import packet as bt2_pkt
-from bt2 import stream as bt2_stream
-from bt2 import event_class as bt2_ec
-from bt2 import trace_class as bt2_tc
-from bt2 import stream_class as bt2_sc
-from bt2 import clock_snapshot as bt2_cs
 
 
 def _create_all_msgs(with_clk_cls, with_stream_msgs_cs=False):
@@ -185,55 +176,53 @@ class TestStreamBeginning:
     def test_with_clk_cls(self, msgs_with_clk_cls):
         msg = msgs_with_clk_cls.stream_beg_msg
         assert type(msg) is bt2._StreamBeginningMessageConst
-        assert type(msg.stream) is bt2_stream._StreamConst
+        assert type(msg.stream) is bt2._StreamConst
         assert msg.stream.addr == msgs_with_clk_cls.stream.addr
         assert isinstance(msg.default_clock_snapshot, bt2._UnknownClockSnapshot)
 
     def test_without_clk_cls(self, msgs_without_clk_cls):
         msg = msgs_without_clk_cls.stream_beg_msg
         assert isinstance(msg, bt2._StreamBeginningMessageConst)
-        assert type(msg.stream) is bt2_stream._StreamConst
+        assert type(msg.stream) is bt2._StreamConst
         assert msg.stream.addr == msgs_without_clk_cls.stream.addr
 
         with pytest.raises(ValueError, match="stream class has no default clock class"):
             msg.default_clock_snapshot
 
     def test_non_const_type(self, stream_beginning_msg):
-        assert type(stream_beginning_msg.stream) is bt2_stream._Stream
+        assert type(stream_beginning_msg.stream) is bt2._Stream
 
 
 class TestStreamEnd:
     def test_with_clk_cls(self, msgs_with_clk_cls):
         msg = msgs_with_clk_cls.stream_end_msg
         assert type(msg) is bt2._StreamEndMessageConst
-        assert type(msg.stream) is bt2_stream._StreamConst
+        assert type(msg.stream) is bt2._StreamConst
         assert msg.stream.addr == msgs_with_clk_cls.stream.addr
         assert type(msg.default_clock_snapshot) is bt2._UnknownClockSnapshot
 
     def test_without_clk_cls(self, msgs_without_clk_cls):
         msg = msgs_without_clk_cls.stream_end_msg
         assert isinstance(msg, bt2._StreamEndMessageConst)
-        assert type(msg.stream) is bt2_stream._StreamConst
+        assert type(msg.stream) is bt2._StreamConst
         assert msg.stream.addr == msgs_without_clk_cls.stream.addr
 
         with pytest.raises(ValueError, match="stream class has no default clock class"):
             msg.default_clock_snapshot
 
     def test_non_const_type(self, stream_end_msg):
-        assert type(stream_end_msg.stream) is bt2_stream._Stream
+        assert type(stream_end_msg.stream) is bt2._Stream
 
     def test_with_cs(self):
         data = _create_all_msgs(with_clk_cls=True, with_stream_msgs_cs=True)
         assert isinstance(data.stream_beg_msg, bt2._StreamBeginningMessageConst)
         assert (
-            type(data.stream_beg_msg.default_clock_snapshot)
-            is bt2_cs._ClockSnapshotConst
+            type(data.stream_beg_msg.default_clock_snapshot) is bt2._ClockSnapshotConst
         )
         assert data.stream_beg_msg.default_clock_snapshot.value == 0
         assert isinstance(data.stream_end_msg, bt2._StreamEndMessageConst)
         assert (
-            type(data.stream_end_msg.default_clock_snapshot)
-            is bt2_cs._ClockSnapshotConst
+            type(data.stream_end_msg.default_clock_snapshot) is bt2._ClockSnapshotConst
         )
         assert data.stream_end_msg.default_clock_snapshot.value == 7
 
@@ -242,73 +231,70 @@ class TestPktBeginning:
     def test_with_clk_cls(self, msgs_with_clk_cls):
         msg = msgs_with_clk_cls.pkt_beg_msg
         assert type(msg) is bt2._PacketBeginningMessageConst
-        assert type(msg.packet) is bt2_pkt._PacketConst
-        assert type(msg.default_clock_snapshot) is bt2_cs._ClockSnapshotConst
+        assert type(msg.packet) is bt2._PacketConst
+        assert type(msg.default_clock_snapshot) is bt2._ClockSnapshotConst
         assert msg.packet.addr == msgs_with_clk_cls.pkt.addr
         assert msg.default_clock_snapshot.value == 1
 
     def test_without_clk_cls(self, msgs_without_clk_cls):
         msg = msgs_without_clk_cls.pkt_beg_msg
         assert isinstance(msg, bt2._PacketBeginningMessageConst)
-        assert type(msg.packet) is bt2_pkt._PacketConst
+        assert type(msg.packet) is bt2._PacketConst
         assert msg.packet.addr == msgs_without_clk_cls.pkt.addr
 
     def test_non_const_type(self, pkt_beginning_msg):
-        assert type(pkt_beginning_msg.packet) is bt2_pkt._Packet
+        assert type(pkt_beginning_msg.packet) is bt2._Packet
 
 
 class TestPktEnd:
     def test_with_clk_cls(self, msgs_with_clk_cls):
         msg = msgs_with_clk_cls.pkt_end_msg
         assert type(msg) is bt2._PacketEndMessageConst
-        assert type(msg.packet) is bt2_pkt._PacketConst
-        assert type(msg.default_clock_snapshot) is bt2_cs._ClockSnapshotConst
+        assert type(msg.packet) is bt2._PacketConst
+        assert type(msg.default_clock_snapshot) is bt2._ClockSnapshotConst
         assert msg.packet.addr == msgs_with_clk_cls.pkt.addr
         assert msg.default_clock_snapshot.value == 5
 
     def test_without_clk_cls(self, msgs_without_clk_cls):
         msg = msgs_without_clk_cls.pkt_end_msg
         assert isinstance(msg, bt2._PacketEndMessageConst)
-        assert type(msg.packet) is bt2_pkt._PacketConst
+        assert type(msg.packet) is bt2._PacketConst
         assert msg.packet.addr == msgs_without_clk_cls.pkt.addr
 
     def test_non_const_type(self, pkt_end_msg):
-        assert type(pkt_end_msg.packet) is bt2_pkt._Packet
+        assert type(pkt_end_msg.packet) is bt2._Packet
 
 
 class TestEv:
     def test_with_clk_cls(self, msgs_with_clk_cls):
         msg = msgs_with_clk_cls.ev_msg
         assert type(msg) is bt2._EventMessageConst
-        assert type(msg.event) is bt2_ev._EventConst
-        assert type(msg.default_clock_snapshot) is bt2_cs._ClockSnapshotConst
-        assert type(msg.event.payload_field) is bt2_field._StructureFieldConst
-        assert (
-            type(msg.event.payload_field["my_int"])
-            is bt2_field._SignedIntegerFieldConst
-        )
+        assert type(msg.event) is bt2._EventConst
+        assert type(msg.default_clock_snapshot) is bt2._ClockSnapshotConst
+        assert type(msg.event.payload_field) is bt2._StructureFieldConst
+        assert type(msg.event.payload_field["my_int"]) is bt2._SignedIntegerFieldConst
         assert msg.event.cls.addr == msgs_with_clk_cls.ec.addr
         assert msg.default_clock_snapshot.value == 2
 
     def test_without_clk_cls(self, msgs_without_clk_cls):
         msg = msgs_without_clk_cls.ev_msg
         assert isinstance(msg, bt2._EventMessageConst)
-        assert type(msg.event) is bt2_ev._EventConst
-        assert type(msg.event.cls) is bt2_ec._EventClassConst
+        assert type(msg.event) is bt2._EventConst
+        assert type(msg.event.cls) is bt2._EventClassConst
         assert msg.event.cls.addr == msgs_without_clk_cls.ec.addr
 
         with pytest.raises(ValueError, match="stream class has no default clock class"):
             msg.default_clock_snapshot
 
     def test_non_const_type(self, ev_msg):
-        assert type(ev_msg.event) is bt2_ev._Event
+        assert type(ev_msg.event) is bt2._Event
 
 
 class TestMsgIterInactivity:
     def test_with_clk_cls(self, msgs_with_clk_cls):
         msg = msgs_with_clk_cls.msg_iter_inactivity_msg
         assert type(msg) is bt2._MessageIteratorInactivityMessageConst
-        assert type(msg.clock_snapshot) is bt2_cs._ClockSnapshotConst
+        assert type(msg.clock_snapshot) is bt2._ClockSnapshotConst
         assert msg.clock_snapshot.value == 3
 
 
@@ -316,10 +302,10 @@ class TestDiscardedEvs:
     def test_with_clk_cls(self, msgs_with_clk_cls):
         msg = msgs_with_clk_cls.discarded_ev_msg
         assert type(msg) is bt2._DiscardedEventsMessageConst
-        assert type(msg.stream) is bt2_stream._StreamConst
-        assert type(msg.stream.cls) is bt2_sc._StreamClassConst
-        assert type(msg.beginning_default_clock_snapshot) is bt2_cs._ClockSnapshotConst
-        assert type(msg.end_default_clock_snapshot) is bt2_cs._ClockSnapshotConst
+        assert type(msg.stream) is bt2._StreamConst
+        assert type(msg.stream.cls) is bt2._StreamClassConst
+        assert type(msg.beginning_default_clock_snapshot) is bt2._ClockSnapshotConst
+        assert type(msg.end_default_clock_snapshot) is bt2._ClockSnapshotConst
         assert msg.stream.addr == msgs_with_clk_cls.stream.addr
         assert msg.count == 890
         assert msg.stream.cls.default_clock_class.addr == msgs_with_clk_cls.clk_cls.addr
@@ -329,8 +315,8 @@ class TestDiscardedEvs:
     def test_without_clk_cls(self, msgs_without_clk_cls):
         msg = msgs_without_clk_cls.discarded_ev_msg
         assert isinstance(msg, bt2._DiscardedEventsMessageConst)
-        assert type(msg.stream) is bt2_stream._StreamConst
-        assert type(msg.stream.cls) is bt2_sc._StreamClassConst
+        assert type(msg.stream) is bt2._StreamConst
+        assert type(msg.stream.cls) is bt2._StreamClassConst
         assert msg.stream.addr == msgs_without_clk_cls.stream.addr
         assert msg.count == 890
         assert msg.stream.cls.default_clock_class is None
@@ -465,11 +451,11 @@ class TestDiscardedPkts:
     def test_with_clk_cls(self, msgs_with_clk_cls):
         msg = msgs_with_clk_cls.discarded_pkt_msg
         assert type(msg) is bt2._DiscardedPacketsMessageConst
-        assert type(msg.stream) is bt2_stream._StreamConst
-        assert type(msg.stream.trace) is bt2_trace._TraceConst
-        assert type(msg.stream.trace.cls) is bt2_tc._TraceClassConst
-        assert type(msg.beginning_default_clock_snapshot) is bt2_cs._ClockSnapshotConst
-        assert type(msg.end_default_clock_snapshot) is bt2_cs._ClockSnapshotConst
+        assert type(msg.stream) is bt2._StreamConst
+        assert type(msg.stream.trace) is bt2._TraceConst
+        assert type(msg.stream.trace.cls) is bt2._TraceClassConst
+        assert type(msg.beginning_default_clock_snapshot) is bt2._ClockSnapshotConst
+        assert type(msg.end_default_clock_snapshot) is bt2._ClockSnapshotConst
         assert msg.stream.addr == msgs_with_clk_cls.stream.addr
         assert msg.count == 678
         assert msg.stream.cls.default_clock_class.addr == msgs_with_clk_cls.clk_cls.addr
@@ -479,9 +465,9 @@ class TestDiscardedPkts:
     def test_without_clk_cls(self, msgs_without_clk_cls):
         msg = msgs_without_clk_cls.discarded_pkt_msg
         assert isinstance(msg, bt2._DiscardedPacketsMessageConst)
-        assert type(msg.stream) is bt2_stream._StreamConst
-        assert type(msg.stream.cls) is bt2_sc._StreamClassConst
-        assert type(msg.stream.cls.trace_class) is bt2_tc._TraceClassConst
+        assert type(msg.stream) is bt2._StreamConst
+        assert type(msg.stream.cls) is bt2._StreamClassConst
+        assert type(msg.stream.cls.trace_class) is bt2._TraceClassConst
         assert msg.stream.addr == msgs_without_clk_cls.stream.addr
         assert msg.count == 678
         assert msg.stream.cls.default_clock_class is None

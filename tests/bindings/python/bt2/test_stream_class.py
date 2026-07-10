@@ -1,14 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Copyright (C) 2019-2026 EfficiOS Inc.
 
+import bt2
 import utils
 import pytest
-from bt2 import value as bt2_value
-from bt2 import clock_class as bt2_clk_cls
-from bt2 import event_class as bt2_ec
-from bt2 import field_class as bt2_fc
-from bt2 import trace_class as bt2_tc
-from bt2 import stream_class as bt2_sc
 
 
 @pytest.fixture
@@ -39,7 +34,7 @@ def trace(tc):
 
 def test_create_def(tc):
     sc = tc.create_stream_class()
-    assert type(sc) is bt2_sc._StreamClass
+    assert type(sc) is bt2._StreamClass
     assert sc.name is None
     assert sc.packet_context_field_class is None
     assert sc.event_common_context_field_class is None
@@ -71,7 +66,7 @@ def test_create_pkt_ctx_fc(tc):
     fc = tc.create_structure_field_class()
     sc = tc.create_stream_class(packet_context_field_class=fc, supports_packets=True)
     assert sc.packet_context_field_class == fc
-    assert type(sc.packet_context_field_class) is bt2_fc._StructureFieldClass
+    assert type(sc.packet_context_field_class) is bt2._StructureFieldClass
 
 
 def test_create_invalid_pkt_ctx_fc(tc):
@@ -100,7 +95,7 @@ def test_create_ev_common_ctx_fc(tc):
     fc = tc.create_structure_field_class()
     sc = tc.create_stream_class(event_common_context_field_class=fc)
     assert sc.event_common_context_field_class == fc
-    assert type(sc.event_common_context_field_class) is bt2_fc._StructureFieldClass
+    assert type(sc.event_common_context_field_class) is bt2._StructureFieldClass
 
 
 def test_create_invalid_ev_common_ctx_fc(tc):
@@ -116,7 +111,7 @@ def test_create_invalid_ev_common_ctx_fc(tc):
 def test_create_def_clk_cls(tc, cc):
     sc = tc.create_stream_class(default_clock_class=cc)
     assert sc.default_clock_class.addr == cc.addr
-    assert type(sc.default_clock_class) is bt2_clk_cls._ClockClass
+    assert type(sc.default_clock_class) is bt2._ClockClass
 
 
 def test_create_invalid_def_clk_cls(tc):
@@ -131,13 +126,13 @@ def test_create_invalid_def_clk_cls(tc):
 def test_create_user_attrs(tc):
     sc = tc.create_stream_class(user_attributes={"salut": 23})
     assert sc.user_attributes == {"salut": 23}
-    assert type(sc.user_attributes) is bt2_value.MapValue
+    assert type(sc.user_attributes) is bt2.MapValue
 
 
 def test_const_user_attrs(const_stream_beginning_msg):
     sc = const_stream_beginning_msg.stream.cls
     assert sc.user_attributes == {"a-stream-class-attribute": 1}
-    assert type(sc.user_attributes) is bt2_value._MapValueConst
+    assert type(sc.user_attributes) is bt2._MapValueConst
 
 
 def test_create_invalid_user_attrs(tc):
@@ -478,7 +473,7 @@ def test_supports_discarded_pkts_with_cs_without_def_clk_cls_raises(tc):
 def test_tc(tc):
     sc = tc.create_stream_class()
     assert sc.trace_class.addr == tc.addr
-    assert type(sc.trace_class) is bt2_tc._TraceClass
+    assert type(sc.trace_class) is bt2._TraceClass
 
 
 @pytest.fixture
@@ -497,9 +492,9 @@ def sc(sc_with_ecs):
 def test_getitem(sc_with_ecs):
     sc, ec1, ec2 = sc_with_ecs
     assert sc[23].addr == ec1.addr
-    assert type(sc[23]) is bt2_ec._EventClass
+    assert type(sc[23]) is bt2._EventClass
     assert sc[17].addr == ec2.addr
-    assert type(sc[17]) is bt2_ec._EventClass
+    assert type(sc[17]) is bt2._EventClass
 
 
 def test_getitem_wrong_key_type(sc):

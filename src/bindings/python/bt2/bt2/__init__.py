@@ -36,6 +36,7 @@ from bt2.error import (
     _ComponentClassErrorCause,
     _MessageIteratorErrorCause,
 )
+from bt2.event import _Event, _EventConst
 from bt2.field import (
     _Field,
     _BlobField,
@@ -97,7 +98,7 @@ from bt2.field import (
     _VariantFieldWithUnsignedIntegerSelectorFieldConst,
 )
 from bt2.graph import Graph
-from bt2.trace import _Trace, _TraceConst
+from bt2.trace import _Trace, _TraceConst, _TraceEnvironment, _TraceEnvironmentConst
 from bt2.utils import Stop, TryAgain, UnknownObject, _OverflowError, _ListenerHandle
 from bt2.value import (
     MapValue,
@@ -120,6 +121,7 @@ from bt2.value import (
     _SignedIntegerValueConst,
     _UnsignedIntegerValueConst,
 )
+from bt2.packet import _Packet, _PacketConst
 from bt2.plugin import (
     _Plugin,
     _PluginSet,
@@ -138,6 +140,7 @@ from bt2.logging import (
     get_minimal_logging_level,
 )
 from bt2.message import (
+    _Message,
     _EventMessage,
     _MessageConst,
     _PacketEndMessage,
@@ -180,6 +183,7 @@ from bt2.component import (
     _UserSourceComponentConfiguration,
 )
 from bt2.py_plugin import register_plugin, plugin_component_class
+from bt2.connection import _ConnectionConst
 from bt2.field_path import (
     FieldPathScope,
     _FieldPathItem,

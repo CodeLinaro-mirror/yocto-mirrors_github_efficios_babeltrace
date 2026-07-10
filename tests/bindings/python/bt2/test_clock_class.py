@@ -6,7 +6,6 @@ import uuid
 import bt2
 import utils
 import pytest
-from bt2 import value as bt2_value
 
 
 # Runs `user_func` within a component initialization context for the
@@ -213,7 +212,7 @@ class TestClkClsAllMips:
         )
 
         assert clk_cls.user_attributes == {"salut": 23}
-        assert type(clk_cls.user_attributes) is bt2_value.MapValue
+        assert type(clk_cls.user_attributes) is bt2.MapValue
 
     def test_create_invalid_user_attrs(self, raises_in_comp_init):
         raises_in_comp_init(

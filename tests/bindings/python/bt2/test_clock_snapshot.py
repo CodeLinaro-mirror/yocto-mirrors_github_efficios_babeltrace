@@ -6,7 +6,6 @@ import types
 import bt2
 import utils
 import pytest
-from bt2 import clock_class as bt2_clk_cls
 
 
 # Returns an object containing:
@@ -82,7 +81,7 @@ def test_create_def(cs_setup):
 def test_clk_cls(cs_setup):
     cs_clk_cls = cs_setup.msg.default_clock_snapshot.clock_class
     assert cs_clk_cls.addr == cs_setup.clk_cls.addr
-    assert type(cs_clk_cls) is bt2_clk_cls._ClockClassConst
+    assert type(cs_clk_cls) is bt2._ClockClassConst
 
 
 def test_ns_from_orig(cs_setup):

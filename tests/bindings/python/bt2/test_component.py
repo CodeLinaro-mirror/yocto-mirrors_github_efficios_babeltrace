@@ -2,7 +2,6 @@
 # Copyright (C) 2019-2026 EfficiOS Inc.
 
 import bt2
-from bt2 import component as bt2_comp
 
 
 def _create_comp(comp_cls, name=None, log_level=bt2.LoggingLevel.NONE):
@@ -93,7 +92,7 @@ def test_src_comp_cfg():
         bt2._UserSourceComponent, message_iterator_class=bt2._UserMessageIterator
     ):
         def __init__(comp_self, config, params, obj):
-            assert type(config) is bt2_comp._UserSourceComponentConfiguration
+            assert type(config) is bt2._UserSourceComponentConfiguration
 
     _create_comp(MySrc)
 
@@ -103,7 +102,7 @@ def test_flt_comp_cfg():
         bt2._UserFilterComponent, message_iterator_class=bt2._UserMessageIterator
     ):
         def __init__(comp_self, config, params, obj):
-            assert type(config) is bt2_comp._UserFilterComponentConfiguration
+            assert type(config) is bt2._UserFilterComponentConfiguration
 
     _create_comp(MyFlt)
 
@@ -111,7 +110,7 @@ def test_flt_comp_cfg():
 def test_sink_comp_cfg():
     class MySink(bt2._UserSinkComponent):
         def __init__(comp_self, config, params, obj):
-            assert type(config) is bt2_comp._UserSinkComponentConfiguration
+            assert type(config) is bt2._UserSinkComponentConfiguration
 
         def _user_consume(self):
             pass

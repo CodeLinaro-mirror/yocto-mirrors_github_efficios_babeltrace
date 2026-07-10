@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Copyright (C) 2019-2026 EfficiOS Inc.
 
+import bt2
 import utils
 import pytest
-from bt2 import field as bt2_field
-from bt2 import stream as bt2_stream
 
 
 def _create_pkt(with_pc):
@@ -65,23 +64,23 @@ def pkt_without_pc():
 def test_attr_stream(pkt_with_pc):
     pkt, stream, _ = pkt_with_pc
     assert pkt.stream.addr == stream.addr
-    assert type(pkt.stream) is bt2_stream._Stream
+    assert type(pkt.stream) is bt2._Stream
 
 
 def test_const_attr_stream(const_pkt_beginning_msg):
     pkt = const_pkt_beginning_msg.packet
-    assert type(pkt.stream) is bt2_stream._StreamConst
+    assert type(pkt.stream) is bt2._StreamConst
 
 
 def test_pc_field(pkt_with_pc):
     pkt, stream, pc_fc = pkt_with_pc
     assert pkt.context_field.cls.addr == pc_fc.addr
-    assert type(pkt.context_field) is bt2_field._StructureField
+    assert type(pkt.context_field) is bt2._StructureField
 
 
 def test_const_pc_field(const_pkt_beginning_msg):
     pkt = const_pkt_beginning_msg.packet
-    assert type(pkt.context_field) is bt2_field._StructureFieldConst
+    assert type(pkt.context_field) is bt2._StructureFieldConst
 
 
 def test_no_pc_field(pkt_without_pc):

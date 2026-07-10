@@ -3,7 +3,6 @@
 
 import bt2
 import pytest
-from bt2 import port as bt2_port
 
 
 def _create_comp(comp_cls, name=None):
@@ -29,7 +28,7 @@ class TestAdd:
 
         comp = _create_comp(_MySrc)
         assert len(comp.output_ports) == 1
-        assert type(comp.output_ports["out"]) is bt2_port._OutputPortConst
+        assert type(comp.output_ports["out"]) is bt2._OutputPortConst
 
     def test_src_output_port_dup_name_raises(self):
         class _MySrc(
@@ -90,7 +89,7 @@ class TestAdd:
 
         comp = _create_comp(_MyFlt)
         assert len(comp.input_ports) == 1
-        assert type(comp.input_ports["in"]) is bt2_port._InputPortConst
+        assert type(comp.input_ports["in"]) is bt2._InputPortConst
 
     def test_flt_input_port_dup_name_raises(self):
         class _MyFlt(

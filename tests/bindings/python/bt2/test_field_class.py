@@ -6,8 +6,6 @@ import functools
 import bt2
 import utils
 import pytest
-from bt2 import value as bt2_value
-from bt2 import field_class as bt2_fc
 
 
 # Subclass must define:
@@ -42,10 +40,10 @@ class _TestBase:
     def test_create_user_attrs(self, create_fc_func):
         fc = create_fc_func(user_attributes={"salut": 23})
         assert fc.user_attributes == {"salut": 23}
-        assert type(fc.user_attributes) is bt2_value.MapValue
+        assert type(fc.user_attributes) is bt2.MapValue
 
     def test_const_user_attrs(self, const_fc):
-        assert type(const_fc.user_attributes) is bt2_value._MapValueConst
+        assert type(const_fc.user_attributes) is bt2._MapValueConst
 
     def test_create_invalid_user_attrs(self, create_fc_func):
         with pytest.raises(TypeError):
@@ -297,7 +295,7 @@ class _TestEnum(_TestInt):
 class TestUnsignedEnum(_TestEnum):
     @pytest.fixture(scope="class")
     def mapping_type(self):
-        return bt2_fc._UnsignedEnumerationFieldClassMappingConst
+        return bt2._UnsignedEnumerationFieldClassMappingConst
 
     @pytest.fixture(scope="class")
     def range_set_const_type(self):
@@ -338,7 +336,7 @@ class TestUnsignedEnum(_TestEnum):
 class TestSignedEnum(_TestEnum):
     @pytest.fixture(scope="class")
     def mapping_type(self):
-        return bt2_fc._SignedEnumerationFieldClassMappingConst
+        return bt2._SignedEnumerationFieldClassMappingConst
 
     @pytest.fixture(scope="class")
     def range_set_const_type(self):
@@ -458,7 +456,7 @@ class TestStruct(_TestBase):
 
     def test_attr_fc(self, fc, int_fc):
         fc.append_member("int32", int_fc)
-        assert type(fc["int32"].field_class) is bt2_fc._SignedIntegerFieldClass
+        assert type(fc["int32"].field_class) is bt2._SignedIntegerFieldClass
 
     def test_const_attr_fc(self, def_tc, fc, int_fc):
         def value_setter(field):
@@ -467,9 +465,7 @@ class TestStruct(_TestBase):
         fc.append_member("int32", int_fc)
         const_fc = utils.create_const_fc(def_tc, fc, value_setter)
 
-        assert (
-            type(const_fc["int32"].field_class) is bt2_fc._SignedIntegerFieldClassConst
-        )
+        assert type(const_fc["int32"].field_class) is bt2._SignedIntegerFieldClassConst
 
     def test_iadd(self, def_tc, fc):
         a_fc = def_tc.create_single_precision_real_field_class()
@@ -578,8 +574,8 @@ class TestStruct(_TestBase):
         )
 
         assert fc["c"].user_attributes == {"salut": 23}
-        assert type(fc.user_attributes) is bt2_value.MapValue
-        assert type(fc["c"].user_attributes) is bt2_value.MapValue
+        assert type(fc.user_attributes) is bt2.MapValue
+        assert type(fc["c"].user_attributes) is bt2.MapValue
 
     def test_invalid_member_user_attrs(self, def_tc, fc):
         with pytest.raises(TypeError):
@@ -611,7 +607,7 @@ class TestStruct(_TestBase):
 
         assert (
             type(const_fc["real"].field_class)
-            is bt2_fc._SinglePrecisionRealFieldClassConst
+            is bt2._SinglePrecisionRealFieldClassConst
         )
 
     def test_member_fc(self, def_tc):
@@ -619,7 +615,7 @@ class TestStruct(_TestBase):
             members=(("real", def_tc.create_single_precision_real_field_class()),)
         )
 
-        assert type(fc["real"].field_class) is bt2_fc._SinglePrecisionRealFieldClass
+        assert type(fc["real"].field_class) is bt2._SinglePrecisionRealFieldClass
 
 
 class TestStaticArray(_TestBase):
@@ -665,12 +661,10 @@ class TestStaticArray(_TestBase):
             )
 
     def test_attr_elem_fc(self, fc):
-        assert type(fc.element_field_class) is bt2_fc._SignedIntegerFieldClass
+        assert type(fc.element_field_class) is bt2._SignedIntegerFieldClass
 
     def test_const_attr_elem_fc(self, const_fc):
-        assert (
-            type(const_fc.element_field_class) is bt2_fc._SignedIntegerFieldClassConst
-        )
+        assert type(const_fc.element_field_class) is bt2._SignedIntegerFieldClassConst
 
 
 # Subclass must satisfy the requirements of `_TestBase`.
@@ -680,12 +674,10 @@ class _TestDynArray(_TestBase):
         return def_tc.create_signed_integer_field_class(23)
 
     def test_attr_elem_fc(self, fc):
-        assert type(fc.element_field_class) is bt2_fc._SignedIntegerFieldClass
+        assert type(fc.element_field_class) is bt2._SignedIntegerFieldClass
 
     def test_const_attr_elem_fc(self, const_fc):
-        assert (
-            type(const_fc.element_field_class) is bt2_fc._SignedIntegerFieldClassConst
-        )
+        assert type(const_fc.element_field_class) is bt2._SignedIntegerFieldClassConst
 
 
 class TestDynArray(_TestDynArray):
@@ -830,10 +822,10 @@ class _TestOpt(_TestBase):
         return def_tc.create_signed_integer_field_class(23)
 
     def test_attr_fc(self, fc):
-        assert type(fc.field_class) is bt2_fc._SignedIntegerFieldClass
+        assert type(fc.field_class) is bt2._SignedIntegerFieldClass
 
     def test_const_attr_fc(self, const_fc):
-        assert type(const_fc.field_class) is bt2_fc._SignedIntegerFieldClassConst
+        assert type(const_fc.field_class) is bt2._SignedIntegerFieldClassConst
 
 
 # Subclass must satisfy the requirements of `_TestOpt` and define:
@@ -1226,8 +1218,8 @@ class TestVarWithoutSel(_TestVar):
         )
 
         assert fc["c"].user_attributes == {"salut": 23}
-        assert type(fc.user_attributes) is bt2_value.MapValue
-        assert type(fc["c"].user_attributes) is bt2_value.MapValue
+        assert type(fc.user_attributes) is bt2.MapValue
+        assert type(fc["c"].user_attributes) is bt2.MapValue
 
     def test_invalid_opt_user_attrs(self, def_tc, fc):
         with pytest.raises(TypeError):
@@ -1424,10 +1416,10 @@ class _TestVarWithIntSel(_TestVar):
         )
 
         assert fc["c"].user_attributes == {"salut": 23}
-        assert type(fc.user_attributes) is bt2_value.MapValue
+        assert type(fc.user_attributes) is bt2.MapValue
 
     def test_const_opt_user_attrs(self, const_fc):
-        assert type(const_fc.user_attributes) is bt2_value._MapValueConst
+        assert type(const_fc.user_attributes) is bt2._MapValueConst
 
     def test_invalid_opt_user_attrs(self, def_tc, fc, ranges_1):
         with pytest.raises(TypeError):
@@ -1478,10 +1470,10 @@ class _TestVarWithIntSel(_TestVar):
     def test_opt_fc(self, def_tc, fc, ranges_1):
         a_fc = def_tc.create_signed_integer_field_class(32)
         fc.append_option("a", a_fc, ranges_1)
-        assert type(fc["a"].field_class) is bt2_fc._SignedIntegerFieldClass
+        assert type(fc["a"].field_class) is bt2._SignedIntegerFieldClass
 
     def test_opt_const_fc(self, const_fc):
-        assert type(const_fc["a"].field_class) is bt2_fc._SignedIntegerFieldClassConst
+        assert type(const_fc["a"].field_class) is bt2._SignedIntegerFieldClassConst
 
     def test_contains(self, def_tc, fc, ranges_1):
         assert "a" not in fc

@@ -1,12 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Copyright (C) 2019-2026 EfficiOS Inc.
 
+import bt2
 import utils
 import pytest
-from bt2 import utils as bt2_utils
-from bt2 import value as bt2_value
-from bt2 import trace_class as bt2_tc
-from bt2 import stream_class as bt2_sc
 
 
 def _run_in_component_init(f):
@@ -31,7 +28,7 @@ def test_create_def():
 
     tc = _run_in_component_init(f)
     assert len(tc) == 0
-    assert type(tc) is bt2_tc._TraceClass
+    assert type(tc) is bt2._TraceClass
     assert tc.assigns_automatic_stream_class_id
     assert len(tc.user_attributes) == 0
 
@@ -42,13 +39,13 @@ def test_create_user_attrs():
 
     tc = _run_in_component_init(f)
     assert tc.user_attributes == {"salut": 23}
-    assert type(tc.user_attributes) is bt2_value.MapValue
+    assert type(tc.user_attributes) is bt2.MapValue
 
 
 def test_const_user_attrs(const_stream_beginning_msg):
     tc = const_stream_beginning_msg.stream.trace.cls
     assert tc.user_attributes == {"a-trace-class-attribute": 1}
-    assert type(tc.user_attributes) is bt2_value._MapValueConst
+    assert type(tc.user_attributes) is bt2._MapValueConst
 
 
 def test_create_invalid_user_attrs():
@@ -84,8 +81,8 @@ def test_automatic_stream_class_id():
     # This should not throw
     sc1 = tc.create_stream_class()
     sc2 = tc.create_stream_class()
-    assert type(sc1) is bt2_sc._StreamClass
-    assert type(sc2) is bt2_sc._StreamClass
+    assert type(sc1) is bt2._StreamClass
+    assert type(sc2) is bt2._StreamClass
     assert sc1.id != sc2.id
 
 
@@ -138,13 +135,13 @@ def tc_with_some_scs():
 
 def test_getitem(tc_with_some_scs):
     tc, _, _, sc3 = tc_with_some_scs
-    assert type(tc[2018]) is bt2_sc._StreamClass
+    assert type(tc[2018]) is bt2._StreamClass
     assert tc[2018].addr == sc3.addr
 
 
 def test_const_getitem(const_stream_beginning_msg):
     const_tc = const_stream_beginning_msg.stream.trace.cls
-    assert type(const_tc[0]) is bt2_sc._StreamClassConst
+    assert type(const_tc[0]) is bt2._StreamClassConst
 
 
 def test_getitem_wrong_key_type(tc_with_some_scs):
@@ -172,7 +169,7 @@ def test_iter(tc_with_some_scs):
 
     for sc_id, sc in tc.items():
         if sc_id == 12:
-            assert type(sc) is bt2_sc._StreamClass
+            assert type(sc) is bt2._StreamClass
             assert sc.addr == sc1.addr
         elif sc_id == 54:
             assert sc.addr == sc2.addr
@@ -183,7 +180,7 @@ def test_iter(tc_with_some_scs):
 def test_const_iter(const_stream_beginning_msg):
     const_tc = const_stream_beginning_msg.stream.trace.cls
     const_sc = list(const_tc.values())[0]
-    assert type(const_sc) is bt2_sc._StreamClassConst
+    assert type(const_sc) is bt2._StreamClassConst
 
 
 def test_destruction_listener():
@@ -191,14 +188,14 @@ def test_destruction_listener():
         nonlocal num_destruct_calls
 
         num_destruct_calls += 1
-        assert type(tc) is bt2_tc._TraceClassConst
+        assert type(tc) is bt2._TraceClassConst
 
     num_destruct_calls = 0
 
     # Add destruction listeners
     tc = utils.def_tc()
     handle_1 = tc.add_destruction_listener(on_tc_destruction)
-    assert type(handle_1) is bt2_utils._ListenerHandle
+    assert type(handle_1) is bt2._ListenerHandle
     handle_2 = tc.add_destruction_listener(on_tc_destruction)
 
     # Remove one listener

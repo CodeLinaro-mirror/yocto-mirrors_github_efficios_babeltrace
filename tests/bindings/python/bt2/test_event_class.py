@@ -4,10 +4,6 @@
 import bt2
 import utils
 import pytest
-from bt2 import value as bt2_value
-from bt2 import event_class as bt2_ec
-from bt2 import field_class as bt2_fc
-from bt2 import stream_class as bt2_sc
 
 
 @pytest.fixture
@@ -53,7 +49,7 @@ def const_ec(def_tc, sc):
 
 def test_create_def(sc):
     ec = sc.create_event_class()
-    assert type(ec) is bt2_ec._EventClass
+    assert type(ec) is bt2._EventClass
     assert ec.name is None
     assert type(ec.id) is int
     assert ec.specific_context_field_class is None
@@ -76,13 +72,11 @@ def test_create_specific_context_field_class(def_tc, sc):
     fc = def_tc.create_structure_field_class()
     ec = sc.create_event_class(specific_context_field_class=fc)
     assert ec.specific_context_field_class.addr == fc.addr
-    assert type(ec.specific_context_field_class) is bt2_fc._StructureFieldClass
+    assert type(ec.specific_context_field_class) is bt2._StructureFieldClass
 
 
 def test_const_create_specific_context_field_class(const_ec):
-    assert (
-        type(const_ec.specific_context_field_class) is bt2_fc._StructureFieldClassConst
-    )
+    assert type(const_ec.specific_context_field_class) is bt2._StructureFieldClassConst
 
 
 def test_create_invalid_specific_context_field_class(sc):
@@ -96,11 +90,11 @@ def test_create_payload_field_class(def_tc, sc):
     fc = def_tc.create_structure_field_class()
     ec = sc.create_event_class(payload_field_class=fc)
     assert ec.payload_field_class.addr == fc.addr
-    assert type(ec.payload_field_class) is bt2_fc._StructureFieldClass
+    assert type(ec.payload_field_class) is bt2._StructureFieldClass
 
 
 def test_const_create_payload_field_class(const_ec):
-    assert type(const_ec.payload_field_class) is bt2_fc._StructureFieldClassConst
+    assert type(const_ec.payload_field_class) is bt2._StructureFieldClassConst
 
 
 def test_create_invalid_payload_field_class(sc):
@@ -149,11 +143,11 @@ def test_create_invalid_log_level(sc):
 def test_create_user_attrs(sc):
     ec = sc.create_event_class(user_attributes={"salut": 23})
     assert ec.user_attributes == {"salut": 23}
-    assert type(ec.user_attributes) is bt2_value.MapValue
+    assert type(ec.user_attributes) is bt2.MapValue
 
 
 def test_const_create_user_attrs(const_ec):
-    assert type(const_ec.user_attributes) is bt2_value._MapValueConst
+    assert type(const_ec.user_attributes) is bt2._MapValueConst
 
 
 def test_create_invalid_user_attrs(sc):
@@ -173,8 +167,8 @@ def test_create_invalid_user_attrs_value_type(sc):
 def test_stream_class(sc):
     ec = sc.create_event_class()
     assert ec.stream_class.addr == sc.addr
-    assert type(ec.stream_class) is bt2_sc._StreamClass
+    assert type(ec.stream_class) is bt2._StreamClass
 
 
 def test_const_stream_class(const_ec):
-    assert type(const_ec.stream_class) is bt2_sc._StreamClassConst
+    assert type(const_ec.stream_class) is bt2._StreamClassConst

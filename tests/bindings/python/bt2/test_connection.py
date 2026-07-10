@@ -3,8 +3,6 @@
 
 import bt2
 import pytest
-from bt2 import port as bt2_port
-from bt2 import connection as bt2_conn
 
 
 class _MySrc(bt2._UserSourceComponent, message_iterator_class=bt2._UserMessageIterator):
@@ -47,15 +45,15 @@ def sink_comp(conn_env):
 
 
 def test_create(conn):
-    assert type(conn) is bt2_conn._ConnectionConst
+    assert type(conn) is bt2._ConnectionConst
 
 
 def test_downstream_port(conn, sink_comp):
     assert conn.downstream_port.addr == sink_comp.input_ports["in"].addr
-    assert type(conn) is bt2_conn._ConnectionConst
-    assert type(conn.downstream_port) is bt2_port._InputPortConst
+    assert type(conn) is bt2._ConnectionConst
+    assert type(conn.downstream_port) is bt2._InputPortConst
 
 
 def test_upstream_port(conn, src_comp):
     assert conn.upstream_port.addr == src_comp.output_ports["out"].addr
-    assert type(conn.upstream_port) is bt2_port._OutputPortConst
+    assert type(conn.upstream_port) is bt2._OutputPortConst
