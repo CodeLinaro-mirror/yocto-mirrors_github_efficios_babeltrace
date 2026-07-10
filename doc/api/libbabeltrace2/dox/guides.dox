@@ -21,6 +21,7 @@ The available guides are:
 
 - \subpage guide-build-bt2-dev
 - \subpage guide-comp-link-plugin-so
+- \subpage guide-write-plugin-provider
 - \subpage guide-comp-link-plugin-provider-so
 - \subpage guide-comp-link-app
 - \subpage guide-mip-0-to-mip-1
@@ -139,9 +140,213 @@ To compile and link a
     At least one of your C/C++ files must declare a \bt_name plugin
     and one or more \bt_p_comp_cls using the \ref api-plugin-so-dev macros.
 
+@page guide-write-plugin-provider Write a Babeltrace 2 plugin provider
+
+libbabeltrace2 finds and loads \bt_p_plugin through
+\ref api-plugin-provider "plugin providers".
+
+libbabeltrace2 ships with a shared
+object plugin provider and a Python plugin provider, but you can write
+your own to make libbabeltrace2 find and load other kinds of plugins,
+for example ones packaged as scripts in a language other than Python.
+
+This guide shows how to write a plugin provider using the
+\ref api-plugin-provider-dev macros.
+
+To write a plugin provider, write a
+<em>plugin provider definition C file</em>:
+
+<ol>
+  <li>
+    Start the file with:
+
+    @code
+    BT_PLUGIN_PROVIDER_MODULE();
+    @endcode
+  </li>
+
+  <li>
+    Define the plugin provider itself with BT_PLUGIN_PROVIDER(), passing
+    its name:
+
+    @code
+    BT_PLUGIN_PROVIDER(lua);
+    @endcode
+
+    The name of a plugin provider doesn't need to be a valid C
+    identifier if you use BT_PLUGIN_PROVIDER_WITH_ID() instead: see
+    \ref api-plugin-provider-dev-custom-plugin-provider-id "Custom
+    plugin provider ID" to learn more. You also need a custom ID
+    if your shared object file contains more than one plugin provider.
+  </li>
+
+  <li>
+    \bt_dt_opt Set plugin provider properties with
+    BT_PLUGIN_PROVIDER_AUTHOR(), BT_PLUGIN_PROVIDER_DESCRIPTION(),
+    BT_PLUGIN_PROVIDER_LICENSE(), and BT_PLUGIN_PROVIDER_VERSION():
+
+    @code
+    BT_PLUGIN_PROVIDER_DESCRIPTION("Finds and loads plugins written in Lua.");
+    BT_PLUGIN_PROVIDER_AUTHOR("Khn de Poitrine");
+    BT_PLUGIN_PROVIDER_LICENSE("MIT");
+    @endcode
+  </li>
+
+  <li>
+    \bt_dt_opt Set the initialization and finalization functions of the
+    plugin provider with BT_PLUGIN_PROVIDER_INITIALIZE_FUNC() and
+    BT_PLUGIN_PROVIDER_FINALIZE_FUNC().
+
+    libbabeltrace2 calls the initialization function once, when it
+    loads the shared object (see
+    \ref api-plugin-provider-loading-def-dirs "Automatic plugin
+    provider loading"), and the finalization function once, when it
+    destroys the shared object, only if the initialization function, if
+    any, succeeded.
+
+    Use the initialization function, for example, to set up any data
+    your other plugin provider functions need, and attach it to the
+    plugin provider with bt_self_plugin_provider_set_data():
+
+    @code
+    static bt_plugin_provider_initialize_func_status
+    lua_provider_initialize(bt_self_plugin_provider * const self_plugin_provider)
+    {
+        struct lua_provider_data * const data = lua_provider_data_create();
+
+        if (!data) {
+            return BT_PLUGIN_PROVIDER_INITIALIZE_FUNC_STATUS_MEMORY_ERROR;
+        }
+
+        bt_self_plugin_provider_set_data(self_plugin_provider, data);
+        return BT_PLUGIN_PROVIDER_INITIALIZE_FUNC_STATUS_OK;
+    }
+    @endcode
+
+    @code
+    BT_PLUGIN_PROVIDER_INITIALIZE_FUNC(lua_provider_initialize);
+    BT_PLUGIN_PROVIDER_FINALIZE_FUNC(lua_provider_finalize);
+    @endcode
+  </li>
+
+  <li>
+    Implement at least one of the two plugin provider methods below,
+    depending on which kind, or kinds, of plugins yours finds and loads:
+
+    <dl>
+      <dt>\ref bt_plugin_provider_create_all_from_file_func "Create all from file"</dt>
+      <dd>
+        Find and load all the plugins that the file with a given path
+        contains, adding them to a \bt_plugin_set.
+
+        libbabeltrace2 calls this method, in turn, for each known
+        plugin provider, when you call
+        bt_plugin_find_all_from_file(), or indirectly when you call
+        bt_plugin_find() or bt_plugin_find_all() to search the
+        \ref api-plugin-loading-def-dirs "default plugin search
+        directories".
+
+        Set it with BT_PLUGIN_PROVIDER_CREATE_ALL_FROM_FILE_FUNC().
+      </dd>
+
+      <dt>\ref bt_plugin_provider_create_all_from_static_func "Create all from static"</dt>
+      <dd>
+        Find and load all the plugins built directly into the
+        application or library which uses libbabeltrace2, instead of
+        plugins contained in a separate file.
+
+        Set it with BT_PLUGIN_PROVIDER_CREATE_ALL_FROM_STATIC_FUNC().
+      </dd>
+    </dl>
+
+    For example, to recognize and load Lua script files as plugins:
+
+    @code
+    static bt_plugin_provider_create_all_from_file_func_status
+    lua_provider_create_all_from_file(bt_self_plugin_provider * const self_plugin_provider,
+                                      const char * const path,
+                                      const bt_plugin_provider_create_all_from_file_options * const options,
+                                      bt_plugin_set * const plugin_set)
+    {
+        if (!path_has_lua_extension(path)) {
+            /* Not a Lua file: nothing to do */
+            return BT_PLUGIN_PROVIDER_CREATE_ALL_FROM_FILE_FUNC_STATUS_NOT_FOUND;
+        }
+
+        bt_plugin * const plugin = bt_plugin_create(lua_plugin_name_from_path(path));
+
+        if (!plugin) {
+            return BT_PLUGIN_PROVIDER_CREATE_ALL_FROM_FILE_FUNC_STATUS_MEMORY_ERROR;
+        }
+
+        bt_plugin_provider_create_all_from_file_func_status status;
+
+        /*
+         * Run the Lua script, letting it register one or more
+         * component classes with `plugin` using
+         * bt_plugin_add_component_class().
+         */
+        if (run_lua_plugin_script(path, plugin) != 0) {
+            status = BT_PLUGIN_PROVIDER_CREATE_ALL_FROM_FILE_FUNC_STATUS_ERROR;
+            goto end;
+        }
+
+        if (bt_plugin_set_add_plugin(plugin_set, plugin) !=
+                BT_PLUGIN_SET_ADD_PLUGIN_STATUS_OK) {
+            status = BT_PLUGIN_PROVIDER_CREATE_ALL_FROM_FILE_FUNC_STATUS_MEMORY_ERROR;
+            goto end;
+        }
+
+        status = BT_PLUGIN_PROVIDER_CREATE_ALL_FROM_FILE_FUNC_STATUS_OK;
+
+    end:
+        bt_plugin_put_ref(plugin);
+        return status;
+    }
+    @endcode
+
+    @code
+    BT_PLUGIN_PROVIDER_CREATE_ALL_FROM_FILE_FUNC(lua_provider_create_all_from_file);
+    @endcode
+
+    @note
+        Whether or not to consider a plugin loading error fatal, for a
+        given call, depends on
+        bt_plugin_provider_create_all_from_file_options_get_fail_on_load_error()
+        (for the "create all from file" method) or
+        bt_plugin_provider_create_all_from_static_options_get_fail_on_load_error()
+        (for the "create all from static" method) called with
+        \bt_p{options}. When it returns #BT_FALSE, prefer logging the
+        error and returning
+        #BT_PLUGIN_PROVIDER_CREATE_ALL_FROM_FILE_FUNC_STATUS_NOT_FOUND
+        over
+        #BT_PLUGIN_PROVIDER_CREATE_ALL_FROM_FILE_FUNC_STATUS_ERROR.
+  </li>
+</ol>
+
+@note
+    @parblock
+    Drive the logging statements of your plugin provider methods using
+    the logging level that
+    bt_self_plugin_provider_get_logging_level() returns.
+
+    Because the
+    effective logging level can change between calls, sample it at the
+    entry point of each method rather than caching it across calls.
+    @endparblock
+
+Once your plugin provider definition C file (and any other C file it
+depends on) is ready,
+\ref guide-comp-link-plugin-provider-so "compile and link it" as a
+shared object plugin provider, then install it to one of the
+\ref api-plugin-provider-loading-def-dirs "default plugin provider search directories",
+or make libbabeltrace2 find it with the
+\c BABELTRACE_PLUGIN_PROVIDER_PATH environment variable.
+
 @page guide-comp-link-plugin-provider-so Compile and link a Babeltrace 2 plugin provider
 
-To compile and link a \bt_name plugin provider:
+To compile and link a
+\link guide-write-plugin-provider \bt_name plugin provider\endlink:
 
 <ol>
   <li>
