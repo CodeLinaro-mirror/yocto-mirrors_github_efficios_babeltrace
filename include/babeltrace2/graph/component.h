@@ -143,6 +143,8 @@ the <code>bt_graph_add_*_component*()</code> functions. Those functions
 also return a borrowed reference of the created component through their
 \bt_p{component} parameter.
 
+@sa \ref guide-create-graph
+
 <h1>Properties</h1>
 
 A component has the following common properties:

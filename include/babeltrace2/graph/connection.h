@@ -40,6 +40,8 @@ The type of a connection is #bt_connection.
 Borrow the upstream (output) port and downstream (input) port of a
 connection with bt_connection_borrow_upstream_port_const() and
 bt_connection_borrow_downstream_port_const().
+
+@sa \ref guide-create-graph
 */
 
 /*! @{ */

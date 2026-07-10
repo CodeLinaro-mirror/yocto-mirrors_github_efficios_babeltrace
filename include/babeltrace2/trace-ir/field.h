@@ -132,6 +132,8 @@ bt_field_get_class_type(). Get whether or not a field class type
 conceptually \em is a given type with the inline
 bt_field_class_type_is() function.
 
+@sa \ref guide-mip-0-to-mip-1
+
 <h1>\anchor api-tir-field-bool Boolean field</h1>
 
 A <strong><em>boolean field</em></strong> is a \bt_bool_fc instance.

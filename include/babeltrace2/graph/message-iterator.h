@@ -100,6 +100,8 @@ Many message iterator relations are possible, for example:
 
 @image html msg-iter-complex.png
 
+@sa \ref guide-write-simple-sink-comp-cls
+
 <h1>\anchor api-msg-iter-ops Operations</h1>
 
 Once you have created a message iterator, there are three possible
@@ -144,6 +146,8 @@ operations:
     Before you call bt_message_iterator_seek_beginning() to make
     the message iterator seek its beginning, check if it can currently
     do it with bt_message_iterator_can_seek_beginning().
+
+    @sa \ref guide-seek-msg-iter
   </dd>
 
   <dt>
@@ -179,6 +183,8 @@ operations:
     Before you call bt_message_iterator_seek_ns_from_origin() to make
     the message iterator seek a specific point in time, check if it can
     currently do it with bt_message_iterator_can_seek_ns_from_origin().
+
+    @sa \ref guide-seek-msg-iter
   </dd>
 </dl>
 */

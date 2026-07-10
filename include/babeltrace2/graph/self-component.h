@@ -66,6 +66,11 @@ bt_self_component_sink_is_interrupted().
 public and common self component types with the
 <code>bt_self_component*_as_component*()</code> and
 <code>bt_self_component_*_as_self_component()</code> functions.
+
+@sa
+    - \ref guide-write-min-src-comp-cls
+    - \ref guide-write-min-flt-comp-cls
+    - \ref guide-write-min-sink-comp-cls
 */
 
 /*! @{ */

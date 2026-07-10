@@ -62,6 +62,8 @@ reference with bt_field_path_put_ref().
 
 The type of a field path is #bt_field_path.
 
+@sa \ref guide-mip-0-to-mip-1
+
 <h1>Properties</h1>
 
 A field path has the following properties:

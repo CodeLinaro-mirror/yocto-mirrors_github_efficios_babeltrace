@@ -113,6 +113,11 @@ Set the \ref api-comp-cls-prop-descr "description" and the
 bt_component_class_set_description() and
 bt_component_class_set_help().
 
+@sa
+    - \ref guide-write-min-src-comp-cls
+    - \ref guide-write-min-flt-comp-cls
+    - \ref guide-write-min-sink-comp-cls
+
 <h1>\anchor api-comp-cls-dev-methods Methods</h1>
 
 To learn when exactly the methods below are called, see

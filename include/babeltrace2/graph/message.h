@@ -948,6 +948,8 @@ However, for such a message sequence, the current \bt_mip
     the sequence with a clock snapshot must be correlatable
     (see \ref api-tir-clock-cls-origin "Clock value vs. clock class origin").
 </ul>
+
+@sa \ref guide-write-simple-sink-comp-cls
 */
 
 /*! @{ */

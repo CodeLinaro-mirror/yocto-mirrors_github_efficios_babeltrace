@@ -114,6 +114,10 @@ either:
 
   Then, set the interrupter with bt_interrupter_set().
 
+@sa
+    - \ref guide-create-graph
+    - \ref guide-intr-graph
+
 <h1>\anchor api-graph-lc Trace processing graph life cycle</h1>
 
 The following diagram shows the life cycle of a trace processing
@@ -511,6 +515,8 @@ added" listeners to the graph with:
 Within a "port added" listener function, you can
 \ref api-graph-lc-add "add more components"
 and \ref api-graph-lc-connect "connect more component ports".
+
+@sa \ref guide-graph-listeners
 */
 
 /*! @{ */

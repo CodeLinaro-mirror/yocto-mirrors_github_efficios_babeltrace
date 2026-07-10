@@ -122,6 +122,8 @@ bt_component_class_get_type(). You can also use the
 bt_component_class_is_source(), bt_component_class_is_filter(), and
 bt_component_class_is_sink() helper functions.
 
+@sa \ref guide-create-graph
+
 <h1>Properties</h1>
 
 A component class has the following common properties:

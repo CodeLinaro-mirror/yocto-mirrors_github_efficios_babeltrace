@@ -96,6 +96,8 @@ Add to and remove a destruction listener from a plugin with
 bt_plugin_add_destruction_listener() and
 bt_plugin_remove_destruction_listener().
 
+@sa \ref guide-create-graph
+
 <h1>Properties</h1>
 
 A plugin has the following properties:

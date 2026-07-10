@@ -77,6 +77,10 @@ new reference with bt_interrupter_get_ref() and put an existing
 reference with bt_interrupter_put_ref().
 
 The type of an interrupter is #bt_interrupter.
+
+@sa
+    - \ref guide-intr-graph
+    - \ref guide-intr-query
 */
 
 /*! @{ */

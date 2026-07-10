@@ -41,6 +41,8 @@ bt_plugin_provider_set_borrow_plugin_provider_by_index().
 See \ref api-plugin-provider-loading-def-dirs "Automatic plugin provider loading"
 to learn how libbabeltrace2 automatically loads plugin providers.
 
+@sa \ref guide-write-plugin-provider
+
 <h1>Plugin provider properties</h1>
 
 A plugin provider has the following properties:

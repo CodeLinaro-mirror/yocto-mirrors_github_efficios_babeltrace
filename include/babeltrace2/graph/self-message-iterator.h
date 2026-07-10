@@ -44,6 +44,11 @@ bt_self_message_iterator_is_interrupted().
 
 Set whether or not a message iterator can seek forward with
 bt_self_message_iterator_configuration_set_can_seek_forward().
+
+@sa
+    - \ref guide-write-min-src-comp-cls
+    - \ref guide-write-min-flt-comp-cls
+    - \ref guide-seek-msg-iter
 */
 
 /*! @{ */

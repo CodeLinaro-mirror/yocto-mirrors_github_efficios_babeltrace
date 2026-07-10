@@ -481,6 +481,8 @@ A stream class has the following properties:
     bt_stream_class_borrow_user_attributes_const().
   </dd>
 </dl>
+
+@sa \ref guide-mip-0-to-mip-1
 */
 
 /*! @{ */

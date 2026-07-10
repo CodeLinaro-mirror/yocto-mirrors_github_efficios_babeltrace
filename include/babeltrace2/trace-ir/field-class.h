@@ -293,6 +293,8 @@ When you call one of the four functions above:
 Once you have called one of the four functions above, the passed field
 class becomes \ref api-fund-freezing "frozen".
 
+@sa \ref guide-mip-0-to-mip-1
+
 <h1>Common field class property</h1>
 
 A field class has the following common property:

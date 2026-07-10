@@ -75,6 +75,8 @@ The type of a field location is #bt_field_location.
 
 Create a field location with bt_field_location_create().
 
+@sa \ref guide-mip-0-to-mip-1
+
 <h1>Properties</h1>
 
 A field location has the following properties:

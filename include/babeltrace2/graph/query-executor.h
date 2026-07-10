@@ -99,6 +99,10 @@ To interrupt a running query operation, either:
 
   Then, set the interrupter with bt_interrupter_set().
 
+@sa
+    - \ref guide-query
+    - \ref guide-intr-query
+
 <h1>Property</h1>
 
 A query executor has the following property:

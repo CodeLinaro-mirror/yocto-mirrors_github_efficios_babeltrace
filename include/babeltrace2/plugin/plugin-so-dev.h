@@ -58,7 +58,9 @@ sections of the shared object with specific names. The
 \ref api-plugin-loading functions can load the resulting shared object
 file and create corresponding \bt_plugin objects.
 
-See \ref guide-comp-link-plugin-so.
+@sa
+    - \ref guide-comp-link-plugin-so
+    - \ref guide-create-plugin
 
 <h1>Plugin definition C file structure</h1>
 

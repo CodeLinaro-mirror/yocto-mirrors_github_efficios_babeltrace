@@ -42,6 +42,11 @@ public and common self component port types with the
 <code>bt_self_component_port*_as_port*()</code> and
 <code>bt_self_component_port_*_as_self_component_port()</code>
 functions.
+
+@sa
+    - \ref guide-write-min-src-comp-cls
+    - \ref guide-write-min-flt-comp-cls
+    - \ref guide-write-min-sink-comp-cls
 */
 
 /*! @{ */

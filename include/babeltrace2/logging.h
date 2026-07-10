@@ -86,6 +86,8 @@ not built. For example, if the minimal logging level is
 #BT_LOGGING_LEVEL_DEBUG logging statements aren't built. Use
 bt_logging_get_minimal_level() to get the minimal logging
 level of the library.
+
+@sa \ref guide-build-bt2-dev
 */
 
 /*! @{ */

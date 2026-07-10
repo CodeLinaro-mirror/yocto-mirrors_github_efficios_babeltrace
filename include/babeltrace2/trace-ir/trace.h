@@ -171,6 +171,8 @@ A trace has the following properties:
     bt_trace_borrow_user_attributes_const().
   </dd>
 </dl>
+
+@sa \ref guide-mip-0-to-mip-1
 */
 
 /*! @{ */

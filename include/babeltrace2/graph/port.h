@@ -91,6 +91,10 @@ bt_port_borrow_connection_const().
 Borrow the component to which a port belongs with
 bt_port_borrow_component_const().
 
+@sa
+    - \ref guide-create-graph
+    - \ref guide-graph-listeners
+
 <h1>Properties</h1>
 
 A port has the following common properties:

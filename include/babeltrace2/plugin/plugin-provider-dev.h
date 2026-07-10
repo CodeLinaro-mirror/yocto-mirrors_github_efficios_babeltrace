@@ -34,7 +34,9 @@ Behind the scenes, the <code>BT_PLUGIN_PROVIDER*()</code> macros of this
 module create and fill global tables which are located in sections of
 the shared object with specific names.
 
-See \ref guide-comp-link-plugin-provider-so.
+@sa
+    - \ref guide-write-plugin-provider
+    - \ref guide-comp-link-plugin-provider-so
 
 <h1>Self plugin provider</h1>
 
@@ -170,7 +172,6 @@ BT_PLUGIN_PROVIDER_AUTHOR_WITH_ID(my_plugin_provider_id, "Julien Poulin");
     BT_PLUGIN_PROVIDER_AUTHOR("Julien Poulin");
     @endcode
     @endparblock
-
 */
 
 /*! @{ */

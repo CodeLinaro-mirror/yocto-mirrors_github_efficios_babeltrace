@@ -40,6 +40,10 @@ bt_private_query_executor_as_query_executor_const() function to
 \ref api-fund-c-typing "upcast" a private query executor to a
 \c const query executor. You need this to get the
 \ref api-qexec-prop-log-lvl "logging level" of the query executor.
+
+@sa
+    - \ref guide-query
+    - \ref guide-intr-query
 */
 
 /*! @{ */

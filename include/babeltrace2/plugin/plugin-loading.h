@@ -54,6 +54,8 @@ properties with the
     existing plugins and use the packaged \bt_p_comp_cls. To \em write a
     shared object plugin, see \ref api-plugin-so-dev.
 
+@sa \ref guide-create-graph
+
 <h1>Find and load plugins</h1>
 
 \anchor api-plugin-loading-def-dirs The bt_plugin_find() and

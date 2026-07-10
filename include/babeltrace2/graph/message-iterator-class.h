@@ -75,6 +75,10 @@ When you call this function, you must pass the mandatory
 \link api-msg-iter-cls-meth-next "next" method\endlink of the
 message iterator class.
 
+@sa
+    - \ref guide-write-min-src-comp-cls
+    - \ref guide-write-min-flt-comp-cls
+
 <h1>\anchor api-msg-iter-cls-methods Methods</h1>
 
 To learn when exactly the methods below are called, see
@@ -148,6 +152,8 @@ The available message iterator class methods to implement are:
 
     Set this optional method with the \bt_p{can_seek_method} parameter
     of bt_message_iterator_class_set_seek_beginning_methods().
+
+    @sa \ref guide-seek-msg-iter
   </dd>
 
   <dt>
@@ -187,6 +193,8 @@ The available message iterator class methods to implement are:
 
     Set this optional method with the \bt_p{can_seek_method} parameter
     of bt_message_iterator_class_set_seek_ns_from_origin_methods().
+
+    @sa \ref guide-seek-msg-iter
   </dd>
 
   <dt>

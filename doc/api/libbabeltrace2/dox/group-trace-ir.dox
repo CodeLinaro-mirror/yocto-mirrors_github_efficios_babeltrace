@@ -110,4 +110,6 @@ All metadata objects and some data objects have an optional <em>user
 attributes</em> property (a \bt_map_val): you can use it to attach
 custom attributes, without any semantics specified by the \bt_name
 project, to those objects.
+
+@sa \ref guide-mip-0-to-mip-1
 */
