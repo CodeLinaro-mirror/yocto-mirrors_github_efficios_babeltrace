@@ -1,6 +1,6 @@
 #compdef babeltrace2
 #
-# SPDX-FileCopyrightText: 2025 Philippe Proulx <eeppeliteloop@gmail.com>
+# SPDX-FileCopyrightText: 2025-2026 Philippe Proulx <eeppeliteloop@gmail.com>
 # SPDX-License-Identifier: MIT
 #
 # This is a Zsh completion function for the babeltrace2(1) command
@@ -205,6 +205,12 @@ __bt2_complete_live_session() {
 
 # Completes the `list-plugins` command.
 __bt2_complete_list_plugins_cmd() {
+  __bt2_reset_opts_and_switches
+  _describe -o option long_switches -- short_switches
+}
+
+# Completes the `list-plugin-providers` command.
+__bt2_complete_list_plugin_providers_cmd() {
   __bt2_reset_opts_and_switches
   _describe -o option long_switches -- short_switches
 }
@@ -979,6 +985,12 @@ __bt2_complete() {
                   __bt2_complete_list_plugins_cmd
                   return
                   ;;
+                list-plugin-providers)
+                  # Dispatch to list-plugin-providers
+                  ((word_index++))
+                  __bt2_complete_list_plugin_providers_cmd
+                  return
+                  ;;
                 help)
                   # Dispatch to help
                   ((word_index++))
@@ -1220,7 +1232,7 @@ __bt2_complete() {
     # Offer command names only if not in `convert` command and no
     # non-option argument yet.
     if ((! is_convert_cmd)) && [[ -z $last_non_opt_arg ]]; then
-      compadd -- convert help list-plugins query run
+      compadd -- convert help list-plugins list-plugin-providers query run
       return
     fi
 
