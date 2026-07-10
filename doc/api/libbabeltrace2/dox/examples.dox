@@ -22,7 +22,7 @@ The available examples are:
 
 This example shows a basic \bt_name
 \ref api-plugin-so-dev "shared object plugin" definition C file,
-applying the steps of the \ref guide-create-plugin guide.
+applying the steps of the \ref guide-write-plugin guide.
 
 The name of shared object plugin is <code>vestige</code>. Therefore
 the \c input and \c output \bt_p_comp_cls would be identified in the

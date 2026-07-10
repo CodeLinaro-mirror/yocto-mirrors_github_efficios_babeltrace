@@ -30,7 +30,7 @@ The available guides are:
 - \subpage guide-write-min-flt-comp-cls
 - \subpage guide-write-min-sink-comp-cls
 - \subpage guide-write-simple-sink-comp-cls
-- \subpage guide-create-plugin
+- \subpage guide-write-plugin
 - \subpage guide-write-full-src-comp-cls
 - \subpage guide-write-full-flt-comp-cls
 - \subpage guide-write-full-sink-comp-cls
@@ -104,7 +104,7 @@ $ BABELTRACE_DEV_MODE=1 BABELTRACE_MINIMAL_LOG_LEVEL=TRACE ./configure \
 @page guide-comp-link-plugin-so Compile and link a Babeltrace 2 shared object plugin
 
 To compile and link a
-\link guide-create-plugin \bt_name shared object plugin\endlink:
+\link guide-write-plugin \bt_name shared object plugin\endlink:
 
 <ol>
   <li>
@@ -1090,7 +1090,7 @@ their ports, and run it:
     @endcode
 
     To add a very basic \bt_sink_comp without having to write and
-    \ref guide-create-plugin "package" a whole sink component class,
+    \ref guide-write-plugin "package" a whole sink component class,
     use bt_graph_add_simple_sink_component() instead: see
     \ref api-graph-lc-add-ss "Add a simple sink component".
   <li>
@@ -1257,7 +1257,7 @@ To write a minimal source component class:
     @endcode
 </ol>
 
-You can now \ref guide-create-plugin "package" \bt_p{comp_class}
+You can now \ref guide-write-plugin "package" \bt_p{comp_class}
 within a \bt_plugin, or add it directly to a trace processing graph
 if you're creating it dynamically within your application (see
 \ref guide-create-graph).
@@ -1353,7 +1353,7 @@ To write a minimal filter component class:
     @endcode
 </ol>
 
-You can now \ref guide-create-plugin "package" \bt_p{component_class}
+You can now \ref guide-write-plugin "package" \bt_p{component_class}
 within a \bt_plugin, or add it directly to a trace processing graph
 if you're creating it dynamically within your application (see
 \ref guide-create-graph).
@@ -1430,7 +1430,7 @@ To write a minimal sink component class:
     @endcode
 </ol>
 
-You can now \ref guide-create-plugin "package" \bt_p{component_class}
+You can now \ref guide-write-plugin "package" \bt_p{component_class}
 within a \bt_plugin, or add it directly to a trace processing graph
 if you're creating it dynamically within your application (see
 \ref guide-create-graph).
@@ -1493,7 +1493,7 @@ Starting from a minimal sink component class which has a single
 
     Set it with bt_component_class_sink_set_graph_is_configured_method(),
     or with the BT_PLUGIN_SINK_COMPONENT_CLASS_GRAPH_IS_CONFIGURED_METHOD()
-    macro in a \ref guide-create-plugin "plugin definition file".
+    macro in a \ref guide-write-plugin "plugin definition file".
   <li>
     Rewrite the \ref api-comp-cls-dev-meth-consume "consuming" method to
     get a batch of messages from the message iterator with
@@ -1555,7 +1555,7 @@ Starting from a minimal sink component class which has a single
     plugin definition file.
 </ol>
 
-@page guide-create-plugin Create a Babeltrace 2 plugin
+@page guide-write-plugin Write a Babeltrace 2 plugin
 
 This guide shows how to package one or more \bt_p_comp_cls, for
 example ones you wrote by following the
@@ -1677,7 +1677,7 @@ consider implementing:
     Set it with bt_component_class_source_set_finalize_method(), or
     with the BT_PLUGIN_SOURCE_COMPONENT_CLASS_FINALIZE_METHOD() macro
     in a
-    \ref guide-create-plugin "plugin definition file".
+    \ref guide-write-plugin "plugin definition file".
   </dd>
 
   <dt>\ref api-comp-cls-dev-meth-mip "Get supported MIP versions"</dt>
@@ -1743,7 +1743,7 @@ implementing:
     with the
     BT_PLUGIN_SOURCE_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD()
     macro in a
-    \ref guide-create-plugin "plugin definition file".
+    \ref guide-write-plugin "plugin definition file".
   </dd>
 
   <dt>\ref api-msg-iter-cls-meth-fini "Finalize"</dt>
@@ -1826,7 +1826,7 @@ consider implementing:
     Set it with bt_component_class_filter_set_finalize_method(), or
     with the BT_PLUGIN_FILTER_COMPONENT_CLASS_FINALIZE_METHOD() macro
     in a
-    \ref guide-create-plugin "plugin definition file".
+    \ref guide-write-plugin "plugin definition file".
   </dd>
 
   <dt>\ref api-comp-cls-dev-meth-mip "Get supported MIP versions"</dt>
@@ -1907,7 +1907,7 @@ implementing:
     with the
     BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD()
     macro in a
-    \ref guide-create-plugin "plugin definition file".
+    \ref guide-write-plugin "plugin definition file".
   </dd>
 
   <dt>\ref api-msg-iter-cls-meth-fini "Finalize"</dt>
@@ -1990,7 +1990,7 @@ consider implementing:
     with the
     BT_PLUGIN_SINK_COMPONENT_CLASS_FINALIZE_METHOD()
     macro in a
-    \ref guide-create-plugin "plugin definition file".
+    \ref guide-write-plugin "plugin definition file".
   </dd>
 
   <dt>\ref api-comp-cls-dev-meth-mip "Get supported MIP versions"</dt>
@@ -2264,7 +2264,7 @@ implement one or both of:
     bt_message_iterator_class_set_seek_beginning_methods(), or
     with the
     BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_SEEK_BEGINNING_METHODS()
-    macro in a \ref guide-create-plugin "plugin definition file".
+    macro in a \ref guide-write-plugin "plugin definition file".
   </dd>
 
   <dt>

@@ -60,7 +60,7 @@ file and create corresponding \bt_plugin objects.
 
 @sa
     - \ref guide-comp-link-plugin-so
-    - \ref guide-create-plugin
+    - \ref guide-write-plugin
 
 <h1>Plugin definition C file structure</h1>
 
