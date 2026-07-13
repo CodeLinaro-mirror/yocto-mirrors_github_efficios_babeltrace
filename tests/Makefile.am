@@ -1519,10 +1519,11 @@ param_validation_test_param_validation_LDADD = \
 	$(CATCH2_LDADD) \
 	$(top_builddir)/src/param-parse/libparam-parse.la \
 	$(top_builddir)/src/plugins/common/param-validation/libparam-validation.la \
+	$(top_builddir)/src/cpp-common/libcpp-common.la \
+	$(FMT_LDADD) \
 	$(top_builddir)/src/lib/libbabeltrace2.la \
 	$(top_builddir)/src/common/libcommon.la \
-	$(top_builddir)/src/logging/liblogging.la \
-	$(FMT_LDADD)
+	$(top_builddir)/src/logging/liblogging.la
 
 noinst_PROGRAMS += plugins/src.ctf.fs/succeed/gen-trace-simple.bin
 plugins_src_ctf_fs_succeed_gen_trace_simple_bin_SOURCES = plugins/src.ctf.fs/succeed/gen-trace-simple.c

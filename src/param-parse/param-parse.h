@@ -13,6 +13,11 @@
 
 #include "common/macros.h"
 
-bt_value *bt_param_parse(const char *arg, GString *ini_error);
+/*
+ * Converts a `--params` argument to an equivalent map value object.
+ *
+ * Return value is owned by the caller.
+ */
+BT_EXTERN_C bt_value *bt_param_parse(const char *arg, GString *error);
 
 #endif /* BABELTRACE_PARAM_PARSE_PARAM_PARSE_H */

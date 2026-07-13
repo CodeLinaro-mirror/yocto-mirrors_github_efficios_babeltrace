@@ -57,13 +57,20 @@ babeltrace2_LDFLAGS = $(AM_LDFLAGS) $(LD_NO_AS_NEEDED)
 EXTRA_babeltrace2_DEPENDENCIES =
 
 # Libraries needed by the CLI itself.
+#
+# `libcpp-common.la` and `$(FMT_LDADD)` are needed unconditionally
+# here (regardless of `ENABLE_BUILT_IN_PLUGINS` below) because
+# `libparam-parse.la` uses `bt2c::StrScanner`, which is part of
+# `libcpp-common.la` and depends on the fmt library.
 babeltrace2_LDADD = \
 	$(top_builddir)/src/argpar/libargpar.la \
 	$(top_builddir)/src/autodisc/libautodisc.la \
 	$(top_builddir)/src/param-parse/libparam-parse.la \
 	$(top_builddir)/src/string-format/libstring-format.la \
 	$(top_builddir)/src/common/libcommon.la \
-	$(top_builddir)/src/logging/liblogging.la
+	$(top_builddir)/src/logging/liblogging.la \
+	$(top_builddir)/src/cpp-common/libcpp-common.la \
+	$(FMT_LDADD)
 
 if ENABLE_BUILT_IN_PLUGINS
 # Use the convenience library version of libbabeltrace2 so that its
@@ -93,8 +100,6 @@ babeltrace2_LDADD += \
 	$(top_builddir)/src/plugins/common/param-validation/libparam-validation.la \
 	$(top_builddir)/src/plugins/common/muxing/libmuxing.la \
 	$(top_builddir)/src/clock-correlation-validator/libclock-correlation-validator.la \
-	$(top_builddir)/src/cpp-common/libcpp-common.la \
-	$(FMT_LDADD) \
 	$(top_builddir)/src/ctfser/libctfser.la \
 	$(top_builddir)/src/compat/libcompat.la
 

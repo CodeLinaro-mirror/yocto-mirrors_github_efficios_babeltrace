@@ -265,7 +265,7 @@ logging_liblogging_la_SOURCES = \
 	logging/log.h
 
 param_parse_libparam_parse_la_SOURCES = \
-	param-parse/param-parse.c \
+	param-parse/param-parse.cpp \
 	param-parse/param-parse.h
 
 so_handle_libso_handle_la_SOURCES = \
