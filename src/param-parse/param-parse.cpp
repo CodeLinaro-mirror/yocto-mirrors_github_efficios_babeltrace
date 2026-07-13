@@ -39,12 +39,30 @@ public:
     }
 
     /*
-     * Tries to scan a map key or unquoted string
-     * value (`[a-zA-Z_][a-zA-Z0-9_.:-]*`).
+     * Tries to scan a map key (`[a-zA-Z_][a-zA-Z0-9_.:-]*`).
      */
-    std::string_view tryScanIdent() noexcept
+    std::string_view tryScanMapKey() noexcept
     {
         return this->_tryScanUnquotedStr({}, ".:-");
+    }
+
+    /*
+     * Tries to scan an unquoted string value
+     * (`[a-zA-Z0-9_/:.@=-]*`).
+     */
+    std::string_view tryScanUnquotedStrValue() noexcept
+    {
+        return this->_tryScanUnquotedStr("0123456789/:.@=-", "/:.@=-");
+    }
+
+    /*
+     * Whether or not `c` may follow the first character of an unquoted
+     * string value (see tryScanUnquotedStrValue()).
+     */
+    static bool isUnquotedStrValueOtherChar(const char c) noexcept
+    {
+        return c == '_' || std::isalnum(static_cast<unsigned char>(c)) ||
+               std::string_view {"/:.@=-"}.find(c) != std::string_view::npos;
     }
 
     /*
@@ -157,7 +175,7 @@ private:
 
     std::string _expectMapKey()
     {
-        const auto key = _mSs.tryScanIdent();
+        const auto key = _mSs.tryScanMapKey();
 
         if (key.empty()) {
             this->_errorExpecting("an unquoted map key");
@@ -205,8 +223,6 @@ private:
             if (const auto num = this->_tryScanNumber()) {
                 return this->_valueFromNumber(*num, false);
             }
-
-            this->_errorExpecting("a value");
         }
 
         return this->_expectUnquotedStrValue();
@@ -310,7 +326,7 @@ private:
      */
     bt2::Value::Shared _expectUnquotedStrValue()
     {
-        const auto str = _mSs.tryScanIdent();
+        const auto str = _mSs.tryScanUnquotedStrValue();
 
         if (str.empty()) {
             this->_errorExpecting("a value");
@@ -389,18 +405,42 @@ private:
      * (with an optional missing integer or fractional part, unlike
      * JSON), or, as a fallback, an unsigned integer (`0b`/`0B` binary,
      * `0x`/`0X` hexadecimal, leading-zero octal, or decimal).
+     *
+     * Rejects, backtracking, a match immediately followed by a
+     * character which may be part of an unquoted string value (see
+     * ParamsStrScanner::isUnquotedStrValueOtherChar()): what looks like
+     * a number is then only the beginning of a longer unquoted string
+     * value, for example a version string like `3.14.15` or a MAC
+     * address like `00:11:22:33:44:55`.
      */
     std::optional<_Number> _tryScanNumber() noexcept
     {
-        if (const auto val = _mSs.tryScanConstReal()) {
-            return _Number {*val};
+        const auto at = _mSs.at();
+
+        if (const auto realVal = _mSs.tryScanConstReal()) {
+            if (this->_numberIsFullyScanned()) {
+                return _Number {*realVal};
+            }
+        } else if (const auto uIntVal = _mSs.tryScanConstUInt<true>()) {
+            if (this->_numberIsFullyScanned()) {
+                return _Number {static_cast<std::uint64_t>(*uIntVal)};
+            }
+        } else {
+            return std::nullopt;
         }
 
-        if (const auto val = _mSs.tryScanConstUInt<true>()) {
-            return _Number {static_cast<std::uint64_t>(*val)};
-        }
-
+        _mSs.at(at);
         return std::nullopt;
+    }
+
+    /*
+     * Whether or not the current position of `_mSs`, right after
+     * scanning a number, is the actual end of that number, as opposed
+     * to being followed by more unquoted string value characters.
+     */
+    bool _numberIsFullyScanned() const noexcept
+    {
+        return _mSs.isDone() || !ParamsStrScanner::isUnquotedStrValueOtherChar(_mSs.curChar());
     }
 
     [[noreturn]] void _errorExpecting(const std::string_view what) const

@@ -41,8 +41,9 @@ import bt_tests_cli_utils as btu_cli
             id="float",
         ),
         pytest.param(
-            "a=10.5e6, b=10.5E6, c=10.5e-6, d=10.5E-6",
-            "{a=10500000.0000000, b=10500000.0000000, c=0.0000105, d=0.0000105}",
+            "a=10.5e6, b=10.5E6, c=10.5e-6, d=10.5E-6, e=10.5e+6, f=10.5E+6",
+            "{a=10500000.0000000, b=10500000.0000000, c=0.0000105, d=0.0000105, "
+            "e=10500000.0000000, f=10500000.0000000}",
             id="float-scientific-notation",
         ),
         pytest.param(
@@ -54,6 +55,21 @@ import bt_tests_cli_utils as btu_cli
             'a=4,a={},b={salut="la gang",comment="ca va",oh={x=2}}',
             "{a={}, b={comment=ca va, oh={x=2}, salut=la gang}}",
             id="map",
+        ),
+        pytest.param(
+            "a=3.14.15, b=00:11:22:33:44:55, c=192.168.0.1:8080, d=1.0",
+            "{a=3.14.15, b=00:11:22:33:44:55, c=192.168.0.1:8080, d=1.0000000}",
+            id="unquoted-string-value-looking-like-a-number",
+        ),
+        pytest.param(
+            "a=123abc, b=42dogs",
+            "{a=123abc, b=42dogs}",
+            id="unquoted-string-value-starting-with-a-digit",
+        ),
+        pytest.param(
+            "a=/dev/null, b=user@example.com, c=key=value",
+            "{a=/dev/null, b=user@example.com, c=key=value}",
+            id="unquoted-string-value-with-special-characters",
         ),
     ],
 )

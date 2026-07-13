@@ -104,7 +104,7 @@ With the \bt_cli tool, assuming you have a valid input file named
 <code>source.dust.input</code> message iterator emits:
 
 @code{.unparsed}
-$ babeltrace2 --plugin-path=. --component=source.dust.input --params='path="dust"'
+$ babeltrace2 --plugin-path=. --component=source.dust.input --params=path=dust
 @endcode
 
 The output is similar to:
@@ -120,7 +120,7 @@ The output is similar to:
 You can also view more details with
 
 @code{.unparsed}
-$ babeltrace2 --plugin-path=. --component=source.dust.input --params='path="dust"' \
+$ babeltrace2 --plugin-path=. --component=source.dust.input --params=path=dust \
                               --component=sink.text.details
 @endcode
 
@@ -175,7 +175,7 @@ With the \bt_cli tool, you can use a
 @code{.unparsed}
 $ babeltrace2 --plugin-path=. /path/to/ctf/trace \
               --component=filter.distill.theone \
-              --params='names=["sched_switch", "rcu_utilization", "kmem_kfree"]'
+              --params='names=[sched_switch, rcu_utilization, kmem_kfree]'
 @endcode
 
 @page example-simple-sink-cmp-cls Simple sink component class

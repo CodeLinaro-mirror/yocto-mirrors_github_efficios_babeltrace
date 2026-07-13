@@ -28,8 +28,9 @@ _VALUE_::
 * Double precision floating point number (scientific notation is
   accepted).
 
-* Unquoted string with no special characters, and not matching any of
-  the null and boolean value symbols above.
+* Unquoted string made of letters, digits, and the “`_`”, “`/`”,
+  “`:`”, “`.`”, “`@`”, “`=`”, and “`-`” characters and not matching
+  anything else above.
 
 * Double-quoted string (accepts escape characters).
 
@@ -53,7 +54,10 @@ Example:
           needs-quotes="some string",
           escape.chars-are:allowed="a \" quote",
           things=[1, "hello", 2.71828],
-          frog={slow=2, bath=[bike, 23], blind=NO}'
+          frog={slow=2, bath=[bike, 23], blind=NO},
+          version=3.14.15, address=192.168.0.1,
+          mac=00:11:22:33:44:55,
+          path="/usr/lib/libcaca++.so.0.99.20"'
 ----
 
 IMPORTANT: Like in the example above, make sure to single-quote the

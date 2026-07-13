@@ -63,7 +63,7 @@ The :class:`bt2.TraceCollectionMessageIterator` interface features:
 
      $ babeltrace2 /path/to/my/trace --params=detailed=no \
                    --component=source.ctf.fs \
-                   --params='inputs=["/path/to/my/trace"]'
+                   --params='inputs=[/path/to/my/trace]'
 
 * **Trace event muxing**.
 

@@ -167,9 +167,9 @@ It's equivalent to the following man:babeltrace2-run[1] command line:
 [role="term"]
 ----
 $ babeltrace2 run --component=ctf-fs:src.ctf.fs \
-                  --params='inputs=["/path/to/trace"] \
+                  --params='inputs=[/path/to/trace]' \
                   --component=ctf-fs-2:src.ctf.fs \
-                  --params='inputs=["/path/to/other/trace"] \
+                  --params='inputs=[/path/to/other/trace]' \
                   --component=muxer:filter.utils.muxer \
                   --component=pretty:sink.text.pretty \
                   --connect=ctf*:muxer --connect=muxer:pretty
@@ -424,7 +424,7 @@ the `ctf-version="1"` initialization parameter:
 [role="term"]
 ----
 $ babeltrace2 /path/to/input/trace --component=sink.ctf.fs \
-              --params='path="my-traces",ctf-version="1"'
+              --params='path=my-traces,ctf-version="1"'
 ----
 
 You can combine multiple methods to create multiple implicit components.
@@ -443,13 +443,13 @@ is:
 [role="term"]
 ----
 $ babeltrace2 run --component=auto-disc-source-ctf-fs:source.ctf.fs \
-                  --params='inputs=["/path/to/input/trace"]' \
+                  --params='inputs=[/path/to/input/trace]' \
                   --component=sink-ctf-fs:sink.ctf.fs \
-                  --params='path="out-dir"' \
+                  --params=path=out-dir \
                   --component=muxer:filter.utils.muxer \
                   --component=trimmer:filter.utils.trimmer \
-                  --params='begin="22:14:38"' \
-                  --params='end="22:15:07"' \
+                  --params=begin=22:14:38 \
+                  --params=end=22:15:07 \
                   --component=debug-info:filter.lttng-utils.debug-info \
                   --connect=auto-disc-source-ctf-fs:muxer \
                   --connect=muxer:trimmer \

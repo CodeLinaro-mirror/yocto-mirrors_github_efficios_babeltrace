@@ -72,7 +72,7 @@ $ babeltrace2 net://localhost/host/myhostname/my-session-name
 $ babeltrace2 net://localhost/host/myhostname/my-session-name \
               --params=session-not-found-action=end \
               --component=sink.ctf.fs \
-              --params='path="out-ctf-traces",ctf-version="1"'
+              --params='path=out-ctf-traces,ctf-version="1"'
 ----
 ====
 
@@ -98,7 +98,7 @@ $ babeltrace2 ctf-trace1 ctf-trace2 ctf-trace3 --stream-intersection \
 [role="term"]
 ----
 $ babeltrace2 ctf-trace --component=src.my-plugin.my-src \
-              --params='path="spec-trace",output-some-event-type=yes' \
+              --params=path=spec-trace,output-some-event-type=yes \
               --clock-seconds
 ----
 ====
