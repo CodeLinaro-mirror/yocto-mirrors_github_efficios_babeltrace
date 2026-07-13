@@ -15,10 +15,65 @@
 #include "common/assert.h"
 
 #include "exc.hpp"
+#include "regex.hpp"
 #include "str-scanner.hpp"
 
 namespace bt2c {
 namespace internal {
+
+/*
+ * String scanner specialized for JSON text.
+ */
+class JsonStrScanner final : public StrScanner
+{
+public:
+    explicit JsonStrScanner(const std::string_view str, const std::size_t baseOffset,
+                            const Logger& logger)
+        : StrScanner {str, baseOffset, logger}
+    {
+    }
+
+    /*
+     * Tries to scan a JSON double-quoted literal string.
+     */
+    std::string_view tryScanLitStr()
+    {
+        return this->_tryScanLitStr("/bfnrtu");
+    }
+
+    /*
+     * Tries to scan and decode a constant real number string, in the
+     * JSON number format (with mandatory fractional and exponent parts;
+     * see <https://www.json.org/>).
+     */
+    std::optional<double> tryScanConstReal() noexcept
+    {
+        return this->_tryScanConstReal(_realRegex);
+    }
+
+private:
+    /*
+     * JSON only has whitespaces as noise between constructs.
+     */
+    void _skipNoise() noexcept override
+    {
+        this->_skipWhitespaces();
+    }
+
+    /* clang-format off */
+
+    /* JSON number string regex */
+    static inline const bt2c::Regex _realRegex {
+        "^"                     /* Start of target */
+        "-?"                    /* Optional negation */
+        "(?:0|[1-9]\\d*)"       /* Integer part */
+        "(?=[eE.]\\d)"          /* Assertion: need fraction/exponent part */
+        "(?:\\.\\d+)?"          /* Optional fraction part */
+        "(?:[eE][+-]?\\d+)?"    /* Optional exponent part */
+    };
+
+    /* clang-format on */
+};
 
 template <typename ListenerT>
 class JsonParser final
@@ -102,22 +157,19 @@ private:
     }
 
     /*
-     * Calls StrScanner::tryScanLitStr() with the JSON-specific escape
-     * sequence starting characters.
-     */
-    std::string_view _tryScanLitStr()
-    {
-        return _mSs.tryScanLitStr("/bfnrtu");
-    }
-
-    /*
-     * Returns whether or not the current character of the underlying
-     * string scanner looks like the beginning of the fractional or
-     * exponent part of a constant real number.
+     * Whether or not the character at the current position of `_mSs`
+     * looks like the beginning of the fractional or exponent part of a
+     * constant real number.
      */
     bool _ssCurCharLikeConstRealFracOrExp() const noexcept
     {
-        return *_mSs.at() == '.' || *_mSs.at() == 'E' || *_mSs.at() == 'e';
+        if (_mSs.isDone()) {
+            return false;
+        }
+
+        const auto c = _mSs.curChar();
+
+        return c == '.' || c == 'E' || c == 'e';
     }
 
 private:
@@ -125,7 +177,7 @@ private:
     Logger _mLogger;
 
     /* Underlying string scanner */
-    StrScanner _mSs;
+    JsonStrScanner _mSs;
 
     /* JSON event listener */
     ListenerT *_mListener;
@@ -185,7 +237,7 @@ void JsonParser<ListenerT>::_parse()
     this->_expectVal();
 
     /* Skip trailing whitespaces */
-    _mSs.skipWhitespaces();
+    _mSs.skipNoise();
 
     /* Make sure all the text is consumed */
     if (!_mSs.isDone()) {
@@ -197,7 +249,7 @@ void JsonParser<ListenerT>::_parse()
 template <typename ListenerT>
 bool JsonParser<ListenerT>::_tryParseNull()
 {
-    _mSs.skipWhitespaces();
+    _mSs.skipNoise();
 
     const auto loc = _mSs.loc();
 
@@ -212,7 +264,7 @@ bool JsonParser<ListenerT>::_tryParseNull()
 template <typename ListenerT>
 bool JsonParser<ListenerT>::_tryParseBool()
 {
-    _mSs.skipWhitespaces();
+    _mSs.skipNoise();
 
     const auto loc = _mSs.loc();
 
@@ -230,7 +282,7 @@ bool JsonParser<ListenerT>::_tryParseBool()
 template <typename ListenerT>
 bool JsonParser<ListenerT>::_tryParseNumber()
 {
-    _mSs.skipWhitespaces();
+    _mSs.skipNoise();
 
     const auto loc = _mSs.loc();
 
@@ -250,8 +302,8 @@ bool JsonParser<ListenerT>::_tryParseNumber()
      *    can't be in fact a real number. If it can, then reset the
      *    position of the string scanner to P. It's safe to reset the
      *    string scanner position at this point because
-     *    `_mSs.skipWhitespaces()` was called above and the constant
-     *    number scanning methods won't scan a newline character.
+     *    `_mSs.skipNoise()` was called above and the constant number
+     *    scanning methods won't scan a newline character.
      *
      * 3. Call `_mSs.tryScanConstReal()` last.
      */
@@ -288,11 +340,11 @@ bool JsonParser<ListenerT>::_tryParseNumber()
 template <typename ListenerT>
 bool JsonParser<ListenerT>::_tryParseStr()
 {
-    _mSs.skipWhitespaces();
+    _mSs.skipNoise();
 
     const auto loc = _mSs.loc();
 
-    if (const auto str = this->_tryScanLitStr(); str.data()) {
+    if (const auto str = _mSs.tryScanLitStr(); str.data()) {
         _mListener->onScalarVal(str, loc);
         return true;
     }
@@ -303,11 +355,11 @@ bool JsonParser<ListenerT>::_tryParseStr()
 template <typename ListenerT>
 bool JsonParser<ListenerT>::_tryParseObjKey()
 {
-    _mSs.skipWhitespaces();
+    _mSs.skipNoise();
 
     const auto loc = _mSs.loc();
 
-    if (const auto str = this->_tryScanLitStr(); !str.empty()) {
+    if (const auto str = _mSs.tryScanLitStr(); !str.empty()) {
         /* _tryParseObj() pushes */
         BT_ASSERT(!_mKeys.empty());
 
@@ -327,7 +379,7 @@ bool JsonParser<ListenerT>::_tryParseObjKey()
 template <typename ListenerT>
 bool JsonParser<ListenerT>::_tryParseArray()
 {
-    _mSs.skipWhitespaces();
+    _mSs.skipNoise();
 
     const auto loc = _mSs.loc();
 
@@ -363,7 +415,7 @@ bool JsonParser<ListenerT>::_tryParseArray()
 template <typename ListenerT>
 bool JsonParser<ListenerT>::_tryParseObj()
 {
-    _mSs.skipWhitespaces();
+    _mSs.skipNoise();
 
     const auto loc = _mSs.loc();
 
@@ -385,7 +437,7 @@ bool JsonParser<ListenerT>::_tryParseObj()
 
     while (true) {
         /* Expect object key */
-        _mSs.skipWhitespaces();
+        _mSs.skipNoise();
 
         if (!this->_tryParseObjKey()) {
             BT_CPPLOGE_TEXT_LOC_APPEND_CAUSE_AND_THROW(

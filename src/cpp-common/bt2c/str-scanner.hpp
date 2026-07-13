@@ -22,29 +22,26 @@ namespace bt2c {
 
 /*!
 @brief
-    String scanner.
+    Abstract base string scanner.
 
 @ingroup common-cpp-bt2c
 
 A string scanner (lexer) wraps an input string view and scans specific
 characters and sequences of characters, managing a current position.
 
+This class is abstract: you inherit it to implement a concrete
+scanner for a specific grammar.
+
 When you call the various <code>tryScan*()</code> methods to try to scan
 some contents, the methods advance the current position on success. They
-also automatically skip initial whitespaces.
+also automatically skip leading "noise" first (see skipNoise()).
 
-The supported constructs are:
+The supported base constructs are:
 
 <table>
   <tr>
     <th>Construct
     <th>Scanning method
-  <tr>
-    <td>Double-quoted literal string with custom escape sequences
-    <td>tryScanLitStr()
-  <tr>
-    <td>Constant integer (templated for the signedness)
-    <td>tryScanConstInt()
   <tr>
     <td>Constant unsigned decimal integer (up to 18,446,744,073,709,551,615)
     <td>tryScanConstUInt()
@@ -54,17 +51,30 @@ The supported constructs are:
       9,223,372,036,854,775,807)
     <td>tryScanConstSInt()
   <tr>
-    <td>
-      <a href="https://www.json.org/">JSON</a> number \em with a
-      fraction or exponent part
-    <td>tryScanConstReal()
-  <tr>
     <td>Exact string
     <td>tryScanToken()
-  <tr>
-    <td>Whitespaces
-    <td>skipWhitespaces()
 </table>
+
+A concrete subclass adds its own <code>tryScan*()</code> methods on
+top of the ones this class already offers, and has access to a few
+protected primitives to help implement those methods without having
+to reimplement position/line tracking:
+
+- _tryScanAnyChar()
+- _incrAt()
+- _incrAtWithNewlineCheck()
+- _decrAt()
+- _tryScanLitStr()
+- _tryScanConstReal()
+- _skipWhitespaces()
+
+A subclass overrides _skipNoise(), which this class calls before
+scanning within each <code>tryScan*()</code> method, to skip whatever
+"noise" (whitespace and/or, for example, comments) may appear between
+scanned constructs in its own grammar. Such an override typically
+calls _skipWhitespaces() as part of, or as the entirety of, its own
+noise skipping logic. The default implementation of _skipNoise() does
+nothing.
 
 @note
     You must use this class in libbabeltrace2 context because it
@@ -75,7 +85,7 @@ The supported constructs are:
 #include "cpp-common/bt2c/str-scanner.hpp"
 @endcode
 */
-class StrScanner final
+class StrScanner
 {
 public:
     /*! @brief String view iterator. */
@@ -83,36 +93,9 @@ public:
 
     /*!
     @brief
-        Builds a string scanner, wrapping the string \bt_p{str}.
-
-    When the created string scanner logs or appends a cause to the
-    error of the current thread, it uses \bt_p{baseOffset} to format
-    the \link TextLoc text location\endlink part of the error message.
-
-    The created string scanner remains valid as long as \bt_p{str}
-    isn't modified.
-
-    @param[in] str
-        String to wrap.
-    @param[in] baseOffset
-        Base offset to use to format a text location for an
-        error message.
-    @param[in] logger
-        Logger to use on error.
+        Destroys this string scanner.
     */
-    explicit StrScanner(std::string_view str, std::size_t baseOffset, const Logger& logger);
-
-    /*!
-    @brief
-        Like StrScanner(std::string_view, std::size_t, const Logger&),
-        but with \bt_p{baseOffset} set to&nbsp;0.
-
-    @param[in] str
-        See StrScanner(std::string_view, std::size_t, const Logger&).
-    @param[in] logger
-        See StrScanner(std::string_view, std::size_t, const Logger&).
-    */
-    explicit StrScanner(std::string_view str, const Logger& logger);
+    virtual ~StrScanner() = 0;
 
     /*!
     @brief
@@ -138,6 +121,10 @@ public:
 
     @param[in] at
         New position.
+
+    @pre
+        \bt_p{at} is within
+        [<code>str().begin()</code>,&nbsp;<code>str().end()</code>].
     */
     void at(const Iter at) noexcept
     {
@@ -205,57 +192,42 @@ public:
 
     /*!
     @brief
+        Character at the current position.
+
+    @pre
+        isDone() returns \c false.
+
+    @returns
+        Character at the current position.
+    */
+    char curChar() const noexcept
+    {
+        BT_ASSERT_DBG(!this->isDone());
+        return *_mAt;
+    }
+
+    /*!
+    @brief
+        Skips leading "noise" at the current position, updating the
+        current position.
+
+    Each <code>tryScan*()</code> method of this class already calls
+    this method before scanning: you may still call it directly, for
+    example to get an accurate loc() before such a call.
+
+    @sa _skipNoise()
+    */
+    void skipNoise() noexcept
+    {
+        this->_skipNoise();
+    }
+
+    /*!
+    @brief
         Resets this string scanner, setting the current position
         to <code>str().begin()</code>.
     */
     void reset();
-
-    /*!
-    @brief
-        Tries to scan a double-quoted literal string, considering the
-        characters of \bt_p{escapeSeqStartList}, <code>\\</code>,
-        and <code>&quot;</code> as escape sequence starting characters.
-
-    If \bt_p{escapeSeqStartList} includes \c u, then a <code>\\u</code>
-    escape sequence is interpreted as in
-    <a href="https://www.json.org/">JSON</a>: four hexadecimal
-    characters which represent the value of a single Unicode codepoint.
-
-    Valid examples:
-
-    - <code>&quot;salut!&quot;</code>
-    - <code>&quot;en circulation\\nYves?&quot;</code>
-    - <code>&quot;\\u03c9 often represents angular velocity in physics&quot;</code>
-
-    Calls skipWhitespaces() before scanning.
-
-    Sets the current position to \em after the closing double
-    quote on success.
-
-    Logs and appends a cause to the error of the current thread,
-    throwing bt2c::Error, if the scanning method finds an invalid escape
-    sequence or an illegal control character.
-
-    @param[in] escapeSeqStartList
-        List of characters to consider as escape sequence
-        starting characters.
-
-    @returns
-        @parblock
-        View of the escaped string, \em without beginning/end
-        double quotes, on success, or an empty view if there's no
-        double-quoted literal string (or if the method reaches
-        <code>str().end()</code> before a closing <code>&quot;</code>).
-
-        The returned string view remains valid as long as you don't call
-        any method of this string scanner.
-        @endparblock
-
-    @pre
-        \bt_p{escapeSeqStartList} only contains characters amongst
-        \c a, \c b, \c f, \c n, \c r, \c t, \c u, and \c v.
-    */
-    std::string_view tryScanLitStr(std::string_view escapeSeqStartList);
 
     /*!
     @brief
@@ -269,7 +241,7 @@ public:
     - <code>-42</code>
     - <code>0</code>
 
-    Calls skipWhitespaces() before scanning.
+    Calls _skipNoise() before scanning.
 
     Sets the current position to \em after this constant integer string
     on success.
@@ -314,42 +286,9 @@ public:
 
     /*!
     @brief
-        Tries to scan and decode a constant real number string,
-        returning std::nullopt if not possible.
-
-    The format of the real number string to scan is the
-    <a href="https://www.json.org/">JSON</a> number one, \em with
-    a fraction or an exponent part. Without a fraction/exponent part,
-    this method returns std::nullopt: use tryScanConstInt() to
-    try scanning a constant integer instead.
-
-    Valid examples:
-
-    - <code>17.2</code>
-    - <code>-42.192</code>
-    - <code>8e9</code>
-    - <code>17E12</code>
-    - <code>9.14e+6</code>
-    - <code>-13.2777E-4</code>
-    - <code>0.0</code>
-    - <code>-0.0</code>
-
-    Calls skipWhitespaces() before scanning.
-
-    Sets the current position to \em after this constant real number
-    string on success.
-
-    @returns
-        Decoded constant real number on success, or std::nullopt
-        if the method couldn't scan a constant real number.
-    */
-    std::optional<double> tryScanConstReal() noexcept;
-
-    /*!
-    @brief
         Tries to scan the exact string \bt_p{token}.
 
-    Calls skipWhitespaces() before scanning.
+    Calls _skipNoise() before scanning.
 
     Sets the current position to \em after the token
     on success.
@@ -363,13 +302,6 @@ public:
         Scanned \bt_p{token}.
     */
     bool tryScanToken(std::string_view token) noexcept;
-
-    /*!
-    @brief
-        Skips all the following whitespaces, updating the
-        current position.
-    */
-    void skipWhitespaces() noexcept;
 
 private:
     /*
@@ -400,11 +332,131 @@ private:
      */
     bool _tryAppendEscapedChar(std::string_view escapeSeqStartList);
 
-    /*
-     * Tries to scan any character, returning it and advancing the
-     * current position on success, or returning -1 if the current
-     * position is `str().end()`.
-     */
+protected:
+    /*!
+    @brief
+        Builds a string scanner, wrapping the string \bt_p{str}.
+
+    When the created string scanner logs or appends a cause to the
+    error of the current thread, it uses \bt_p{baseOffset} to format
+    the \link TextLoc text location\endlink part of the error message.
+
+    The created string scanner remains valid as long as \bt_p{str}
+    isn't modified.
+
+    A subclass constructor uses this to initialize its `StrScanner`
+    base.
+
+    @param[in] str
+        String to wrap.
+    @param[in] baseOffset
+        Base offset to use to format a text location for an
+        error message.
+    @param[in] logger
+        Logger to use on error.
+    */
+    explicit StrScanner(std::string_view str, std::size_t baseOffset, const Logger& logger);
+
+    /*!
+    @brief
+        Like StrScanner(std::string_view, std::size_t, const Logger&),
+        but with \bt_p{baseOffset} set to&nbsp;0.
+
+    @param[in] str
+        See StrScanner(std::string_view, std::size_t, const Logger&).
+    @param[in] logger
+        See StrScanner(std::string_view, std::size_t, const Logger&).
+    */
+    explicit StrScanner(std::string_view str, const Logger& logger);
+
+    /*!
+    @brief
+        Tries to scan a double-quoted literal string, considering the
+        characters of \bt_p{escapeSeqStartList}, <code>\\</code>,
+        and <code>&quot;</code> as escape sequence starting characters.
+
+    If \bt_p{escapeSeqStartList} includes \c u, then a <code>\\u</code>
+    escape sequence is interpreted as in
+    <a href="https://www.json.org/">JSON</a>: four hexadecimal
+    characters which represent the value of a single Unicode codepoint.
+
+    Valid examples:
+
+    - <code>&quot;salut!&quot;</code>
+    - <code>&quot;en circulation\\nYves?&quot;</code>
+    - <code>&quot;\\u03c9 often represents angular velocity in physics&quot;</code>
+
+    Calls _skipNoise() before scanning.
+
+    Sets the current position to \em after the closing double
+    quote on success.
+
+    Logs and appends a cause to the error of the current thread,
+    throwing bt2c::Error, if the scanning method finds an invalid escape
+    sequence or an illegal control character.
+
+    A subclass can use this method to implement its own
+    <code>tryScanLitStr()</code> method (with or without parameters),
+    matching its own grammar.
+
+    @param[in] escapeSeqStartList
+        List of characters to consider as escape sequence
+        starting characters.
+
+    @returns
+        @parblock
+        View of the escaped string, \em without beginning/end
+        double quotes, on success, or an empty view if there's no
+        double-quoted literal string (or if the method reaches
+        <code>str().end()</code> before a closing <code>&quot;</code>).
+
+        The returned string view remains valid as long as you don't call
+        any method of this string scanner.
+        @endparblock
+    */
+    std::string_view _tryScanLitStr(std::string_view escapeSeqStartList);
+
+    /*!
+    @brief
+        Skips "noise" at the current position, updating the current
+        position.
+
+    Each <code>tryScan*()</code> method of this class calls this
+    method before scanning.
+
+    The default implementation does nothing.
+
+    A subclass whose grammar needs to skip more than whitespaces (for
+    example, comments) between scanned constructs overrides this
+    method, typically calling _skipWhitespaces() as part of its own
+    noise skipping logic.
+
+    @sa skipNoise()
+    */
+    virtual void _skipNoise() noexcept
+    {
+    }
+
+    /*!
+    @brief
+        Skips all the following whitespaces, updating the current
+        position accordingly.
+
+    A concrete _skipNoise() implementation can use this method to skip
+    whitespaces as part of, or as the entirety of, its own
+    noise-skipping logic.
+    */
+    void _skipWhitespaces() noexcept;
+
+    /*!
+    @brief
+        Tries to scan any character, returning it and advancing the
+        current position on success.
+
+    @returns
+        Scanned character on success, or -1 if the current position
+        is <code>str().end()</code>.
+    */
     int _tryScanAnyChar() noexcept
     {
         if (this->isDone()) {
@@ -417,35 +469,119 @@ private:
         return c;
     }
 
-    /*
-     * Checks if the character at the current position is a newline,
-     * updating the line count and line beginning position if so.
-     */
-    void _checkNewline() noexcept
-    {
-        if (*_mAt == '\n') {
-            ++_mNbLines;
-            _mLineBegin = _mAt + 1;
-        }
-    }
+    /*!
+    @brief
+        Increments the current position by \bt_p{count}.
 
-    /*
-     * Increments `_mAt` by `count`.
-     */
+    @warning
+        This method does \em not check for newline characters amongst
+        the skipped ones: it doesn't update the line count or the line
+        beginning position. Use _incrAtWithNewlineCheck() instead when
+        the single character you're advancing over may be a newline and
+        you need loc() to remain accurate.
+
+    @param[in] count
+        Number of characters to advance the current position by.
+
+    @pre
+        What <code>charsLeft()<code> returns is greater than or equal
+        to \bt_p{count}.
+    */
     void _incrAt(const std::size_t count = 1) noexcept
     {
         _mAt += count;
         BT_ASSERT_DBG(_mAt <= _mStr.end());
     }
 
-    /*
-     * Decrements `_mAt` by `count`.
-     */
+    /*!
+    @brief
+        Increments the current position by one character, first
+        checking whether that character is a newline and, if so,
+        updating the line count and line beginning position
+        accordingly.
+
+    A subclass can use this method instead of _incrAt() to advance the
+    current position by one character while scanning some contents
+    which may contain newline characters, such as the inner
+    characters of a literal string, so that loc() remains accurate.
+
+    @pre
+        isDone() returns \c false.
+    */
+    void _incrAtWithNewlineCheck() noexcept
+    {
+        BT_ASSERT_DBG(!this->isDone());
+
+        if (*_mAt == '\n') {
+            ++_mNbLines;
+            _mLineBegin = _mAt + 1;
+        }
+
+        this->_incrAt();
+    }
+
+    /*!
+    @brief
+        Decrements the current position by \bt_p{count}.
+
+    @warning
+        This method does \em not update the line count or the line
+        beginning position: it only moves the current position back,
+        assuming you're only rewinding over characters which can't have
+        updated this line tracking state in the first place (typically
+        to backtrack after a failed multi-character lookahead), \em not
+        over previously consumed newline characters.
+
+    @param[in] count
+        Number of characters to move the current position back by.
+
+    @pre
+        The current position is at least \bt_p{count} characters
+        after <code>str().begin()</code>.
+    */
     void _decrAt(const std::size_t count = 1) noexcept
     {
         _mAt -= count;
         BT_ASSERT_DBG(_mAt >= _mStr.begin());
     }
+
+    /*!
+    @brief
+        Tries to scan and decode a constant real number string whose
+        textual form, anchored at the current position, matches
+        \bt_p{regex}, returning \c std::nullopt if it doesn't match, or
+        if <code>std::strtod()</code> fails to parse it.
+
+    This is needed, instead of simply calling <code>std::strtod()</code>
+    directly, because <code>std::strtod()</code> accepts more formats
+    than a specific grammar may support.
+
+    A subclass can use this method to implement its own
+    <code>tryScanConstReal()</code> method, matching its own grammar,
+    without reimplementing the <code>std::strtod()</code> parsing and
+    error handling logic.
+
+    Calls _skipNoise() before scanning.
+
+    Sets the current position to \em after the scanned constant real
+    number string on success.
+
+    @param[in] regex
+        Regular expression which the constant real number string,
+        anchored at the current position, must match.
+
+    @returns
+        Decoded constant real number on success, or std::nullopt
+        if the method couldn't scan a constant real number.
+
+    @pre
+        \bt_p{regex} cannot match a string containing a newline
+        character: on success, this method jumps the current position
+        to \em after the match using at() directly, which doesn't
+        update the line count or the line beginning position (see the
+        warning of at()).
+    */
+    std::optional<double> _tryScanConstReal(const bt2c::Regex& regex) noexcept;
 
 private:
     /* Viewed string, given by user */
@@ -460,11 +596,8 @@ private:
     /* Number of lines scanned so far */
     std::size_t _mNbLines = 0;
 
-    /* String buffer, used by tryScanToken() and tryScanLitStr() */
+    /* String buffer, used by _tryScanLitStr() */
     std::string _mStrBuf;
-
-    /* Real number string regex */
-    static const bt2c::Regex _realRegex;
 
     /* Base offset for error messages */
     std::size_t _mBaseOffset;
@@ -509,7 +642,7 @@ std::optional<ValT> StrScanner::tryScanConstInt() noexcept
     static_assert(std::is_same_v<ValT, long long> || std::is_same_v<ValT, unsigned long long>,
                   "`ValT` is `long long` or `unsigned long long`.");
 
-    this->skipWhitespaces();
+    this->_skipNoise();
 
     /* Backup if we can't scan completely */
     const auto initAt = _mAt;

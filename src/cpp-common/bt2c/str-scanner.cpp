@@ -12,19 +12,6 @@
 
 namespace bt2c {
 
-/* clang-format off */
-
-const bt2c::Regex StrScanner::_realRegex {
-    "^"                     /* Start of target */
-    "-?"                    /* Optional negation */
-    "(?:0|[1-9]\\d*)"       /* Integer part */
-    "(?=[eE.]\\d)"          /* Assertion: need fraction/exponent part */
-    "(?:\\.\\d+)?"          /* Optional fraction part */
-    "(?:[eE][+-]?\\d+)?"    /* Optional exponent part */
-};
-
-/* clang-format on */
-
 StrScanner::StrScanner(const std::string_view str, const std::size_t baseOffset,
                        const Logger& logger)
     : _mStr {str},
@@ -40,6 +27,8 @@ StrScanner::StrScanner(const std::string_view str, const Logger& logger)
 {
 }
 
+StrScanner::~StrScanner() = default;
+
 void StrScanner::reset()
 {
     this->at(_mStr.begin());
@@ -47,13 +36,13 @@ void StrScanner::reset()
     _mLineBegin = _mStr.begin();
 }
 
-void StrScanner::skipWhitespaces() noexcept
+void StrScanner::_skipWhitespaces() noexcept
 {
     while (!this->isDone()) {
         switch (*_mAt) {
         case '\n':
-            this->_checkNewline();
-            /* Fall through */
+            this->_incrAtWithNewlineCheck();
+            break;
         case ' ':
         case '\t':
         case '\v':
@@ -173,9 +162,9 @@ bool StrScanner::_tryAppendEscapedChar(const std::string_view escapeSeqStartList
     return false;
 }
 
-std::string_view StrScanner::tryScanLitStr(const std::string_view escapeSeqStartList)
+std::string_view StrScanner::_tryScanLitStr(const std::string_view escapeSeqStartList)
 {
-    this->skipWhitespaces();
+    this->_skipNoise();
 
     /* Backup if we can't completely scan */
     const auto initAt = _mAt;
@@ -224,12 +213,9 @@ std::string_view StrScanner::tryScanLitStr(const std::string_view escapeSeqStart
             return _mStrBuf;
         }
 
-        /* Check for newline */
-        this->_checkNewline();
-
-        /* Append regular character and go to next one */
+        /* Append regular character and go to next one, checking for newline */
         _mStrBuf.push_back(*_mAt);
-        this->_incrAt();
+        this->_incrAtWithNewlineCheck();
     }
 
     /* Couldn't find end of string */
@@ -241,7 +227,7 @@ std::string_view StrScanner::tryScanLitStr(const std::string_view escapeSeqStart
 
 bool StrScanner::tryScanToken(const std::string_view token) noexcept
 {
-    this->skipWhitespaces();
+    this->_skipNoise();
 
     /* Backup if we can't completely scan */
     const auto initAt = _mAt;
@@ -270,17 +256,17 @@ bool StrScanner::tryScanToken(const std::string_view token) noexcept
     return true;
 }
 
-std::optional<double> StrScanner::tryScanConstReal() noexcept
+std::optional<double> StrScanner::_tryScanConstReal(const bt2c::Regex& regex) noexcept
 {
-    this->skipWhitespaces();
+    this->_skipNoise();
 
     /*
-     * Validate JSON number format (with fraction and/or exponent part).
+     * Validate the constant real number format using `regex`.
      *
-     * This is needed because std::strtod() accepts more formats which
-     * JSON doesn't support.
+     * This is needed because std::strtod() accepts more formats than a
+     * specific grammar may support.
      */
-    if (!_realRegex.match(_mStr.substr(_mAt - _mStr.begin()))) {
+    if (!regex.match(_mStr.substr(_mAt - _mStr.begin()))) {
         return std::nullopt;
     }
 
