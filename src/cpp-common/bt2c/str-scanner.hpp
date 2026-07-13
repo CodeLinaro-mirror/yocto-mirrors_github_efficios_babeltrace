@@ -11,6 +11,7 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "common/assert.h"
 #include "cpp-common/bt2c/logging.hpp"
@@ -75,6 +76,9 @@ scanned constructs in its own grammar. Such an override typically
 calls _skipWhitespaces() as part of, or as the entirety of, its own
 noise skipping logic. The default implementation of _skipNoise() does
 nothing.
+
+This class also supports backtracking with save(), accept(), and
+reject(). Prefer StrScannerRejecter for RAII-based backtracking.
 
 @note
     You must use this class in libbabeltrace2 context because it
@@ -231,6 +235,54 @@ public:
 
     /*!
     @brief
+        Pushes the current position on the position stack.
+
+    Call this before calling one or more scanning methods of which
+    the result could be reverted.
+
+    You must remove this new entry from the stack by calling
+    accept() or reject().
+
+    @sa accept()
+    @sa reject()
+    @sa StrScannerRejecter
+    */
+    void save()
+    {
+        _mStack.push_back({_mAt, _mLineBegin, _mNbLines});
+    }
+
+    /*!
+    @brief
+        Accepts the content scanned since the latest call to save().
+
+    This method removes an entry from the top of the position stack
+    without changing the current position.
+
+    @sa save()
+    @sa reject()
+    */
+    void accept()
+    {
+        BT_ASSERT_DBG(!_mStack.empty());
+        _mStack.pop_back();
+    }
+
+    /*!
+    @brief
+        Rejects the content scanned since the latest call to save().
+
+    This method removes an entry from the top of the position stack,
+    and also restores the current position and line information to the
+    saved values.
+
+    @sa save()
+    @sa accept()
+    */
+    void reject();
+
+    /*!
+    @brief
         Tries to scan and decode a constant integer string, possibly
         negative if \bt_p{ValT} (either <code>unsigned long long</code>
         or <code>long long</code>) is signed.
@@ -304,6 +356,16 @@ public:
     bool tryScanToken(std::string_view token) noexcept;
 
 private:
+    /*
+     * A frame of the position stack.
+     */
+    struct _tStackFrame final
+    {
+        Iter at;
+        Iter lineBegin;
+        std::size_t nbLines;
+    };
+
     /*
      * Tries to negate `ullVal` as a signed integer value if `ValT` is
      * signed and `negate` is true, returning `std::nullopt` if it
@@ -604,6 +666,9 @@ private:
 
     /* Logging configuration */
     Logger _mLogger;
+
+    /* Position stack for backtracking */
+    std::vector<_tStackFrame> _mStack;
 };
 
 template <typename ValT>
@@ -704,6 +769,86 @@ std::optional<ValT> StrScanner::tryScanConstInt() noexcept
     this->at(_mStr.begin() + (strEnd - _mStr.data()));
     return val;
 }
+
+/*!
+@brief
+    String scanner rejecter (RAII).
+
+@ingroup common-cpp-bt2c
+
+Automatically calls StrScanner::save() on construction and
+StrScanner::reject() on destruction, unless you call accept() or
+reject() manually first.
+*/
+class StrScannerRejecter final
+{
+public:
+    /*!
+    @brief
+        Builds a string scanner rejecter, managing the string
+        scanner \bt_p{ss}.
+
+    Immediately calls <code>ss.save()</code>.
+
+    @param[in] ss
+        String scanner to manage.
+    */
+    explicit StrScannerRejecter(StrScanner& ss) noexcept
+        : _mSs {&ss}
+    {
+        _mSs->save();
+    }
+
+    /*!
+    @brief
+        Destroys this string scanner rejecter.
+
+    If neither accept() nor reject() was called, then this destructor
+    calls StrScanner::reject() on the managed string scanner.
+    */
+    ~StrScannerRejecter()
+    {
+        if (_mReject) {
+            _mSs->reject();
+        }
+    }
+
+    /* Disable copy/move operations to simplify */
+    StrScannerRejecter(const StrScannerRejecter&) = delete;
+    StrScannerRejecter& operator=(const StrScannerRejecter&) = delete;
+    StrScannerRejecter(StrScannerRejecter&&) = delete;
+    StrScannerRejecter& operator=(StrScannerRejecter&&) = delete;
+
+    /*!
+    @brief
+        Accepts the content scanned since construction.
+
+    Calls StrScanner::accept() on the managed string scanner and
+    inhibits a future rejection by this rejecter.
+    */
+    void accept()
+    {
+        _mSs->accept();
+        _mReject = false;
+    }
+
+    /*!
+    @brief
+        Rejects the content scanned since construction.
+
+    Calls StrScanner::reject() on the managed string scanner and
+    inhibits a future rejection by this rejecter.
+    */
+    void reject()
+    {
+        _mSs->reject();
+        _mReject = false;
+    }
+
+private:
+    bool _mReject = true;
+    StrScanner *_mSs;
+};
 
 } /* namespace bt2c */
 

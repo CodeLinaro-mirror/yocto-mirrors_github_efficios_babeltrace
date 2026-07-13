@@ -34,6 +34,16 @@ void StrScanner::reset()
     this->at(_mStr.begin());
     _mNbLines = 0;
     _mLineBegin = _mStr.begin();
+    _mStack.clear();
+}
+
+void StrScanner::reject()
+{
+    BT_ASSERT_DBG(!_mStack.empty());
+    _mAt = _mStack.back().at;
+    _mLineBegin = _mStack.back().lineBegin;
+    _mNbLines = _mStack.back().nbLines;
+    _mStack.pop_back();
 }
 
 void StrScanner::_skipWhitespaces() noexcept
