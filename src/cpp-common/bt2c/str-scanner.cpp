@@ -172,7 +172,8 @@ bool StrScanner::_tryAppendEscapedChar(const std::string_view escapeSeqStartList
     return false;
 }
 
-std::string_view StrScanner::_tryScanLitStr(const std::string_view escapeSeqStartList)
+std::optional<std::string_view>
+StrScanner::_tryScanLitStr(const std::string_view escapeSeqStartList)
 {
     this->_skipNoise();
 
@@ -185,7 +186,7 @@ std::string_view StrScanner::_tryScanLitStr(const std::string_view escapeSeqStar
     const auto c = this->_tryScanAnyChar();
 
     if (c < 0) {
-        return {};
+        return std::nullopt;
     }
 
     if (c != '"') {
@@ -193,7 +194,7 @@ std::string_view StrScanner::_tryScanLitStr(const std::string_view escapeSeqStar
         this->at(initAt);
         _mLineBegin = initLineBegin;
         _mNbLines = initNbLines;
-        return {};
+        return std::nullopt;
     }
 
     /* Reset string buffer */
@@ -220,7 +221,7 @@ std::string_view StrScanner::_tryScanLitStr(const std::string_view escapeSeqStar
         if (*_mAt == '"') {
             /* Skip `"` */
             this->_incrAt();
-            return _mStrBuf;
+            return std::string_view {_mStrBuf};
         }
 
         /* Append regular character and go to next one, checking for newline */
@@ -232,7 +233,7 @@ std::string_view StrScanner::_tryScanLitStr(const std::string_view escapeSeqStar
     this->at(initAt);
     _mLineBegin = initLineBegin;
     _mNbLines = initNbLines;
-    return {};
+    return std::nullopt;
 }
 
 bool StrScanner::tryScanToken(const std::string_view token) noexcept

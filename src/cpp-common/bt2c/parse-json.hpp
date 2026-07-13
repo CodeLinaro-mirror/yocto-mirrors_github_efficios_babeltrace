@@ -36,7 +36,7 @@ public:
     /*
      * Tries to scan a JSON double-quoted literal string.
      */
-    std::string_view tryScanLitStr()
+    std::optional<std::string_view> tryScanLitStr()
     {
         return this->_tryScanLitStr("/bfnrtu");
     }
@@ -344,8 +344,8 @@ bool JsonParser<ListenerT>::_tryParseStr()
 
     const auto loc = _mSs.loc();
 
-    if (const auto str = _mSs.tryScanLitStr(); str.data()) {
-        _mListener->onScalarVal(str, loc);
+    if (const auto str = _mSs.tryScanLitStr()) {
+        _mListener->onScalarVal(*str, loc);
         return true;
     }
 
@@ -359,17 +359,17 @@ bool JsonParser<ListenerT>::_tryParseObjKey()
 
     const auto loc = _mSs.loc();
 
-    if (const auto str = _mSs.tryScanLitStr(); !str.empty()) {
+    if (const auto str = _mSs.tryScanLitStr()) {
         /* _tryParseObj() pushes */
         BT_ASSERT(!_mKeys.empty());
 
         /* Insert, checking for duplicate key */
-        if (auto [it, inserted] = _mKeys.back().emplace(str); !inserted) {
+        if (auto [it, inserted] = _mKeys.back().emplace(*str); !inserted) {
             BT_CPPLOGE_TEXT_LOC_APPEND_CAUSE_AND_THROW(Error, _mSs.loc(),
-                                                       "Duplicate JSON object key `{}`.", str);
+                                                       "Duplicate JSON object key `{}`.", *str);
         }
 
-        _mListener->onObjKey(str, loc);
+        _mListener->onObjKey(*str, loc);
         return true;
     }
 

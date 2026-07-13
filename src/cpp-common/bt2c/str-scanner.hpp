@@ -468,7 +468,7 @@ protected:
     @returns
         @parblock
         View of the escaped string, \em without beginning/end
-        double quotes, on success, or an empty view if there's no
+        double quotes, on success, or \c std::nullopt if there's no
         double-quoted literal string (or if the method reaches
         <code>str().end()</code> before a closing <code>&quot;</code>).
 
@@ -476,7 +476,7 @@ protected:
         any method of this string scanner.
         @endparblock
     */
-    std::string_view _tryScanLitStr(std::string_view escapeSeqStartList);
+    std::optional<std::string_view> _tryScanLitStr(std::string_view escapeSeqStartList);
 
     /*!
     @brief
