@@ -332,6 +332,48 @@ StrScanner::_tryScanLitStr(const std::string_view escapeSeqStartList)
     return std::nullopt;
 }
 
+std::string_view StrScanner::_tryScanUnquotedStr(const std::string_view extraFirstChars,
+                                                 const std::string_view extraOtherChars) noexcept
+{
+    this->_skipNoise();
+
+    {
+        /* First character: `_`, alpha, or one of `extraFirstChars` */
+        const auto c = this->_tryScanAnyChar();
+
+        if (c < 0) {
+            return {};
+        }
+
+        /* Validate first char., then initialize `_mStrBuf` with it */
+        const auto chr = static_cast<char>(c);
+
+        if (chr != '_' && !std::isalpha(static_cast<unsigned char>(chr)) &&
+            extraFirstChars.find(chr) == std::string_view::npos) {
+            this->_decrAt();
+            return {};
+        }
+
+        _mStrBuf.clear();
+        _mStrBuf.push_back(chr);
+    }
+
+    /* Next characters: `_`, alphanum., or one of `extraOtherChars` */
+    while (!this->isDone()) {
+        const auto nextChr = *_mAt;
+
+        if (nextChr != '_' && !std::isalnum(static_cast<unsigned char>(nextChr)) &&
+            extraOtherChars.find(nextChr) == std::string_view::npos) {
+            break;
+        }
+
+        _mStrBuf.push_back(nextChr);
+        this->_incrAt();
+    }
+
+    return _mStrBuf;
+}
+
 bool StrScanner::tryScanToken(const std::string_view token) noexcept
 {
     this->_skipNoise();

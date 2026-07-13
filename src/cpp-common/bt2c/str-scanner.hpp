@@ -66,6 +66,7 @@ to reimplement position/line tracking:
 - _incrAtWithNewlineCheck()
 - _decrAt()
 - _tryScanLitStr()
+- _tryScanUnquotedStr()
 - _tryScanConstReal()
 - _skipWhitespaces()
 
@@ -548,6 +549,38 @@ protected:
 
     /*!
     @brief
+        Tries to scan an unquoted string
+        (<code>[_a-zA-Z][_a-zA-Z0-9]*</code>, adding the characters
+        of \bt_p{extraFirstChars} to the first set and the characters
+        of \bt_p{extraOtherChars} to the second set), placing the
+        current position after the string on success.
+
+    Calls _skipNoise() before scanning.
+
+    A subclass can use this method to implement its own unquoted
+    string scanning method, matching its own grammar.
+
+    @param[in] extraFirstChars
+        Additional characters, besides <code>[_a-zA-Z]</code>, which
+        are allowed as the first character of the string.
+    @param[in] extraOtherChars
+        Additional characters, besides <code>[_a-zA-Z0-9]</code>, which
+        are allowed after the first character of the string.
+
+    @returns
+        @parblock
+        View of the scanned string on success, or an empty view
+        if there's no such unquoted string.
+
+        The returned string view remains valid as long as you don't call
+        any method of this string scanner.
+        @endparblock
+    */
+    std::string_view _tryScanUnquotedStr(std::string_view extraFirstChars = {},
+                                         std::string_view extraOtherChars = {}) noexcept;
+
+    /*!
+    @brief
         Skips "noise" at the current position, updating the current
         position.
 
@@ -726,7 +759,10 @@ private:
     /* Number of lines scanned so far */
     std::size_t _mNbLines = 0;
 
-    /* String buffer, used by _tryScanLitStr() */
+    /*
+     * String buffer, used by _tryScanLitStr()
+     * and _tryScanUnquotedStr().
+     */
     std::string _mStrBuf;
 
     /* Base offset for error messages */
