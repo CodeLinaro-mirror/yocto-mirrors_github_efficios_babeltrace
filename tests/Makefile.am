@@ -1300,6 +1300,14 @@ cpp_common_test_unicode_conv_LDADD = \
 	$(top_builddir)/src/lib/libbabeltrace2.la \
 	$(COMMON_TEST_LDADD)
 
+noinst_PROGRAMS += cpp-common/test-str-scanner
+cpp_common_test_str_scanner_SOURCES = cpp-common/test-str-scanner.cpp
+cpp_common_test_str_scanner_LDADD = \
+	$(top_builddir)/src/cpp-common/libcpp-common.la \
+	$(FMT_LDADD) \
+	$(top_builddir)/src/lib/libbabeltrace2.la \
+	$(COMMON_TEST_LDADD)
+
 noinst_LTLIBRARIES += lib/utils/liblib-utils.la
 lib_utils_liblib_utils_la_SOURCES = \
 	lib/utils/run-in.cpp \
