@@ -64,25 +64,25 @@ def create_value(value: "_ConvertibleToValue") -> typing.Optional["_Value"]:
         # null value object
         return
 
-    if isinstance(value, _Value):
-        return value
-
-    if isinstance(value, bool):
+    if isinstance(value, (bool, _BoolValueConst)):
         return BoolValue(value)
 
-    if isinstance(value, numbers.Integral):
+    if isinstance(value, _UnsignedIntegerValueConst):
+        return UnsignedIntegerValue(value)
+
+    if isinstance(value, (numbers.Integral, _SignedIntegerValueConst)):
         return SignedIntegerValue(value)
 
-    if isinstance(value, numbers.Real):
+    if isinstance(value, (numbers.Real, _RealValueConst)):
         return RealValue(value)
 
-    if isinstance(value, str):
+    if isinstance(value, (str, _StringValueConst)):
         return StringValue(value)
 
-    if isinstance(value, collections.abc.Sequence):
+    if isinstance(value, (collections.abc.Sequence, _ArrayValueConst)):
         return ArrayValue(value)
 
-    if isinstance(value, collections.abc.Mapping):
+    if isinstance(value, (collections.abc.Mapping, _MapValueConst)):
         return MapValue(value)
 
     raise TypeError(

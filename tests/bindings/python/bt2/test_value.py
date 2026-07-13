@@ -52,22 +52,77 @@ class TestCreate:
         assert isinstance(val, expected_type)
         assert val == raw_val
 
-    @pytest.mark.parametrize(
-        ["raw_val", "expected_type"],
-        [
-            pytest.param(False, bt2.BoolValue, id="bool-false"),
-            pytest.param(True, bt2.BoolValue, id="bool-true"),
-            pytest.param(-23, bt2.SignedIntegerValue, id="sint"),
-            pytest.param(17.5, bt2.RealValue, id="real"),
-            pytest.param("salut", bt2.StringValue, id="str"),
-            pytest.param([1, 2, 3], bt2.ArrayValue, id="array"),
-            pytest.param({"a": 1}, bt2.MapValue, id="map"),
-        ],
-    )
-    def test_from_val(self, raw_val, expected_type):
-        val = bt2.create_value(bt2.create_value(raw_val))
-        assert isinstance(val, expected_type)
+    _FROM_VAL_PARAMS = [
+        pytest.param(False, bt2.BoolValue, id="bool-false"),
+        pytest.param(True, bt2.BoolValue, id="bool-true"),
+        pytest.param(23, bt2.UnsignedIntegerValue, id="uint"),
+        pytest.param(-23, bt2.SignedIntegerValue, id="sint"),
+        pytest.param(17.5, bt2.RealValue, id="real"),
+        pytest.param("salut", bt2.StringValue, id="str"),
+        pytest.param([1, 2, 3], bt2.ArrayValue, id="array"),
+        pytest.param({"a": 1}, bt2.MapValue, id="map"),
+    ]
+
+    @pytest.mark.parametrize("make_const", [False, True], ids=["non-const", "const"])
+    @pytest.mark.parametrize("raw_val,expected_type", _FROM_VAL_PARAMS)
+    def test_from_val(self, raw_val, expected_type, make_const):
+        orig = expected_type(raw_val)
+
+        if make_const:
+            orig = _create_const_val(orig)
+
+        val = bt2.create_value(orig)
+        assert val is not None
+        assert type(val) is expected_type
         assert val == raw_val
+        assert val is not orig
+        assert val.addr != orig.addr
+
+    # Recursively asserts that `copy` is structurally equal to `orig` but
+    # shares no underlying `bt_value` object with it (that is, `copy` is a
+    # deep copy of `orig`).
+    def _assert_deep_copy(self, copy, orig):
+        if copy is None or orig is None:
+            assert copy is None
+            assert orig is None
+            return
+
+        assert copy.addr != orig.addr
+
+        if isinstance(copy, bt2.MapValue):
+            assert set(copy.keys()) == set(orig.keys())
+
+            for key in copy:
+                self._assert_deep_copy(copy[key], orig[key])
+        elif isinstance(copy, bt2.ArrayValue):
+            assert len(copy) == len(orig)
+
+            for copy_elem, orig_elem in zip(copy, orig):
+                self._assert_deep_copy(copy_elem, orig_elem)
+
+    @pytest.mark.parametrize("make_const", [False, True], ids=["non-const", "const"])
+    def test_from_val_deep_copy(self, make_const):
+        # A tree mixing maps and arrays nested within each other.
+        orig = bt2.create_value(
+            {
+                "aisle": {"name": "Yum Yum", "flavours": ["ketchup", "bbq"]},
+                "brands": [
+                    {"name": "Lay's", "flavours": ["nature", "crème sûre et oignon"]},
+                    {
+                        "name": "Miss Vickie's",
+                        "flavours": ["sel et vinaigre", "jalapeño"],
+                    },
+                ],
+                "poulet": None,
+            }
+        )
+
+        if make_const:
+            orig = _create_const_val(orig)
+
+        copy = bt2.create_value(orig)
+        assert copy == orig
+        self._assert_deep_copy(copy, orig)
 
     def test_invalid(self):
         with pytest.raises(
