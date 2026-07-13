@@ -69,7 +69,7 @@ class Graph(bt2_object._SharedObject):
     ) -> bt2_component._GenericSourceComponentConst: ...
 
     @typing.overload
-    def add_component(  # noqa: F811
+    def add_component(
         self,
         component_class: typing.Union[
             typing.Type[bt2_component._UserFilterComponent],
@@ -82,7 +82,7 @@ class Graph(bt2_object._SharedObject):
     ) -> bt2_component._GenericFilterComponentConst: ...
 
     @typing.overload
-    def add_component(  # noqa: F811
+    def add_component(
         self,
         component_class: typing.Union[
             typing.Type[bt2_component._UserSinkComponent],
@@ -94,7 +94,7 @@ class Graph(bt2_object._SharedObject):
         logging_level: bt2_logging.LoggingLevel = bt2_logging.LoggingLevel.NONE,
     ) -> bt2_component._GenericSinkComponentConst: ...
 
-    def add_component(  # noqa: F811
+    def add_component(
         self,
         component_class: typing.Union[
             bt2_component._ComponentClassConst,

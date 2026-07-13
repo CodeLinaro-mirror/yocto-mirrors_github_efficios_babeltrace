@@ -569,7 +569,7 @@ class _TraceClass(bt2_user_attrs._WithUserAttrs, _TraceClassConst):
         )
 
     @typing.overload
-    def create_dynamic_array_field_class(  # noqa: F811
+    def create_dynamic_array_field_class(
         self,
         elem_fc: bt2_field_class._FieldClass,
         length_fc: None = None,
@@ -580,7 +580,7 @@ class _TraceClass(bt2_user_attrs._WithUserAttrs, _TraceClassConst):
     ) -> bt2_field_class._DynamicArrayFieldClass: ...
 
     @typing.overload
-    def create_dynamic_array_field_class(  # noqa: F811
+    def create_dynamic_array_field_class(
         self,
         elem_fc: bt2_field_class._FieldClass,
         length_fc: bt2_field_class._UnsignedIntegerFieldClass,
@@ -588,7 +588,7 @@ class _TraceClass(bt2_user_attrs._WithUserAttrs, _TraceClassConst):
     ) -> bt2_field_class._DynamicArrayWithLengthFieldFieldClass: ...
 
     @typing.overload
-    def create_dynamic_array_field_class(  # noqa: F811
+    def create_dynamic_array_field_class(
         self,
         elem_fc: bt2_field_class._FieldClass,
         length_fc: bt2_field_class._UnsignedIntegerFieldClass,
@@ -597,7 +597,7 @@ class _TraceClass(bt2_user_attrs._WithUserAttrs, _TraceClassConst):
     ) -> bt2_field_class._DynamicArrayWithLengthFieldFieldClass: ...
 
     @typing.overload
-    def create_dynamic_array_field_class(  # noqa: F811
+    def create_dynamic_array_field_class(
         self,
         elem_fc: bt2_field_class._FieldClass,
         length_fc: bt2_field_class._UnsignedIntegerFieldClass,
@@ -605,7 +605,7 @@ class _TraceClass(bt2_user_attrs._WithUserAttrs, _TraceClassConst):
         length_field_location: typing.Optional[bt2_field_location._FieldLocationConst],
     ) -> bt2_field_class._DynamicArrayWithLengthFieldFieldClass: ...
 
-    def create_dynamic_array_field_class(  # noqa: F811
+    def create_dynamic_array_field_class(
         self,
         elem_fc: bt2_field_class._FieldClass,
         length_fc: typing.Optional[bt2_field_class._UnsignedIntegerFieldClass] = None,
@@ -751,7 +751,7 @@ class _TraceClass(bt2_user_attrs._WithUserAttrs, _TraceClassConst):
         return self.create_option_field_class_with_bool_selector_field(*args, **kwargs)
 
     @typing.overload
-    def create_option_field_class_with_integer_selector_field(  # noqa: F811
+    def create_option_field_class_with_integer_selector_field(
         self,
         content_fc: bt2_field_class._FieldClass,
         selector_fc: bt2_field_class._UnsignedIntegerFieldClass,
@@ -760,7 +760,7 @@ class _TraceClass(bt2_user_attrs._WithUserAttrs, _TraceClassConst):
     ) -> bt2_field_class._OptionWithUnsignedIntegerSelectorFieldClass: ...
 
     @typing.overload
-    def create_option_field_class_with_integer_selector_field(  # noqa: F811
+    def create_option_field_class_with_integer_selector_field(
         self,
         content_fc: bt2_field_class._FieldClass,
         selector_fc: bt2_field_class._SignedIntegerFieldClass,
@@ -768,7 +768,7 @@ class _TraceClass(bt2_user_attrs._WithUserAttrs, _TraceClassConst):
         user_attributes: typing.Optional[bt2_value._ConvertibleToMapValue] = None,
     ) -> bt2_field_class._OptionWithSignedIntegerSelectorFieldClass: ...
 
-    def create_option_field_class_with_integer_selector_field(  # noqa: F811
+    def create_option_field_class_with_integer_selector_field(
         self,
         content_fc: bt2_field_class._FieldClass,
         selector_fc: bt2_field_class._IntegerFieldClass,
@@ -895,7 +895,7 @@ class _TraceClass(bt2_user_attrs._WithUserAttrs, _TraceClassConst):
     ) -> bt2_field_class._VariantFieldClassWithoutSelector: ...
 
     @typing.overload
-    def create_variant_field_class(  # noqa: F811
+    def create_variant_field_class(
         self,
         selector_fc: bt2_field_class._UnsignedIntegerFieldClass,
         user_attributes: typing.Optional[bt2_value._ConvertibleToMapValue] = None,
@@ -919,7 +919,7 @@ class _TraceClass(bt2_user_attrs._WithUserAttrs, _TraceClassConst):
     ) -> bt2_field_class._VariantFieldClassWithUnsignedIntegerSelector: ...
 
     @typing.overload
-    def create_variant_field_class(  # noqa: F811
+    def create_variant_field_class(
         self,
         selector_fc: bt2_field_class._SignedIntegerFieldClass,
         user_attributes: typing.Optional[bt2_value._ConvertibleToMapValue] = None,
@@ -942,7 +942,7 @@ class _TraceClass(bt2_user_attrs._WithUserAttrs, _TraceClassConst):
         ] = None,
     ) -> bt2_field_class._VariantFieldClassWithSignedIntegerSelector: ...
 
-    def create_variant_field_class(  # noqa: F811
+    def create_variant_field_class(
         self,
         selector_fc: typing.Optional[bt2_field_class._IntegerFieldClass] = None,
         user_attributes: typing.Optional[bt2_value._ConvertibleToMapValue] = None,

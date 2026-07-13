@@ -828,13 +828,12 @@ class _LttngDataStreamIndex(Sequence[_LttngIndexEntryT]):
     def __getitem__(self, index: int) -> _LttngIndexEntryT: ...
 
     @overload
-    def __getitem__(self, index: slice) -> Sequence[_LttngIndexEntryT]:  # noqa: F811
-        ...
+    def __getitem__(self, index: slice) -> Sequence[_LttngIndexEntryT]: ...
 
     def __getitem__(self, index: Union[int, slice]) -> Union[
         _LttngIndexEntryT,
         Sequence[_LttngIndexEntryT],
-    ]:  # noqa: F811
+    ]:
         return self._entries[index]
 
     def __len__(self):
@@ -1154,10 +1153,9 @@ class LttngTrace(Sequence[_LttngDataStream]):
     def __getitem__(self, index: int) -> _LttngDataStream: ...
 
     @overload
-    def __getitem__(self, index: slice) -> Sequence[_LttngDataStream]:  # noqa: F811
-        ...
+    def __getitem__(self, index: slice) -> Sequence[_LttngDataStream]: ...
 
-    def __getitem__(  # noqa: F811
+    def __getitem__(
         self, index: Union[int, slice]
     ) -> Union[_LttngDataStream, Sequence[_LttngDataStream]]:
         return self._data_streams[index]
