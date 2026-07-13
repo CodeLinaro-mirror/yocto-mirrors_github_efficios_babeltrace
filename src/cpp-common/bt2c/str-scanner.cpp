@@ -129,6 +129,59 @@ void StrScanner::_appendEscapedUnicodeChar(const Iter at)
     }
 }
 
+void StrScanner::_appendEscapedOctalChar()
+{
+    /* `_mAt[0]` is `\` and `_mAt[1]` is the first octal digit */
+    auto val = static_cast<unsigned int>(_mAt[1] - '0');
+    std::size_t consumed = 2;
+
+    /* Try to consume up to two more octal digits */
+    for (std::size_t i = 0; i < 2 && consumed < this->charsLeft(); ++i) {
+        if (_mAt[consumed] >= '0' && _mAt[consumed] <= '7') {
+            val = (val << 3) | static_cast<unsigned int>(_mAt[consumed] - '0');
+            ++consumed;
+        } else {
+            break;
+        }
+    }
+
+    if (val > 255) {
+        BT_CPPLOGE_TEXT_LOC_APPEND_CAUSE_AND_THROW(
+            Error, this->loc(), "Octal escape sequence value {:#o} is greater than 255.", val);
+    }
+
+    _mStrBuf.push_back(static_cast<char>(val));
+    this->_incrAt(consumed);
+}
+
+void StrScanner::_appendEscapedHexChar()
+{
+    /* `_mAt[0]` is `\` and `_mAt[1]` is `x` or `X` */
+    std::size_t consumed = 2;
+
+    if (consumed >= this->charsLeft() || !std::isxdigit(_mAt[consumed])) {
+        BT_CPPLOGE_TEXT_LOC_APPEND_CAUSE_AND_THROW(
+            Error, this->loc(),
+            "`\\{:c}` escape sequence: expecting at least one hexadecimal digit.", _mAt[1]);
+    }
+
+    auto val = 0U;
+
+    while (consumed < this->charsLeft() && std::isxdigit(_mAt[consumed])) {
+        val = (val << 4) | hexDigitVal(_mAt[consumed]);
+        ++consumed;
+    }
+
+    if (val > 255) {
+        BT_CPPLOGE_TEXT_LOC_APPEND_CAUSE_AND_THROW(
+            Error, this->loc(), "`\\{:c}` escape sequence: value {:#x} is greater than 255.",
+            _mAt[1], val);
+    }
+
+    _mStrBuf.push_back(static_cast<char>(val));
+    this->_incrAt(consumed);
+}
+
 bool StrScanner::_tryAppendEscapedChar(const std::string_view escapeSeqStartList)
 {
     if (this->charsLeft() < 2) {
@@ -141,9 +194,26 @@ bool StrScanner::_tryAppendEscapedChar(const std::string_view escapeSeqStartList
         return false;
     }
 
+    /* `"` and `\` are always valid escape sequence starting characters */
+    if (_mAt[1] == '"' || _mAt[1] == '\\') {
+        _mStrBuf.push_back(_mAt[1]);
+        this->_incrAt(2);
+        return true;
+    }
+
     /* Try each character of `escapeSeqStartList` */
     for (const auto escapeSeqStart : escapeSeqStartList) {
-        if (_mAt[1] == '"' || _mAt[1] == '\\' || _mAt[1] == escapeSeqStart) {
+        if (escapeSeqStart == '0') {
+            /* Octal: `\` followed by an octal digit */
+            if (_mAt[1] >= '0' && _mAt[1] <= '7') {
+                this->_appendEscapedOctalChar();
+                return true;
+            }
+
+            continue;
+        }
+
+        if (_mAt[1] == escapeSeqStart) {
             /* Escape sequence detected */
             if (_mAt[1] == 'u') {
                 /* `\u` escape sequence */
@@ -155,6 +225,9 @@ bool StrScanner::_tryAppendEscapedChar(const std::string_view escapeSeqStartList
 
                 this->_appendEscapedUnicodeChar(_mAt + 2);
                 this->_incrAt(6);
+            } else if (_mAt[1] == 'x' || _mAt[1] == 'X') {
+                /* Hexadecimal escape sequence */
+                this->_appendEscapedHexChar();
             } else {
                 /* Single-character escape sequence */
                 switch (_mAt[1]) {

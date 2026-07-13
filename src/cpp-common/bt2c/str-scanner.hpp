@@ -387,6 +387,24 @@ private:
     void _appendEscapedUnicodeChar(Iter at);
 
     /*
+     * Handles an octal escape sequence (`\` followed by one to three
+     * octal digits), appending the decoded byte to `_mStrBuf` on
+     * success, or throwing `Error` on error.
+     *
+     * `_mAt[0]` is `\` and `_mAt[1]` is the first octal digit.
+     */
+    void _appendEscapedOctalChar();
+
+    /*
+     * Handles a `\x` or `\X` hexadecimal escape sequence, appending
+     * the decoded byte to `_mStrBuf` on success, or throwing `Error`
+     * on error.
+     *
+     * `_mAt[0]` is `\` and `_mAt[1]` is `x` or `X`.
+     */
+    void _appendEscapedHexChar();
+
+    /*
      * Tries to append an escaped character to `_mStrBuf` from the
      * escape sequence characters at the current positin, considering
      * the characters of `escapeSeqStartList`, `\`, and `"` as escape
@@ -442,11 +460,22 @@ protected:
     <a href="https://www.json.org/">JSON</a>: four hexadecimal
     characters which represent the value of a single Unicode codepoint.
 
+    If \bt_p{escapeSeqStartList} includes <code>0</code>, then a
+    <code>\\</code> followed by one to three octal digits (\c 0 to
+    <code>7</code>) is an octal escape sequence; the resulting byte
+    value must be less than&nbsp;256.
+
+    If \bt_p{escapeSeqStartList} includes \c x or \c X, then a
+    <code>\\x</code> or <code>\\X</code> followed by one or more
+    hexadecimal digits is a hexadecimal escape sequence; the resulting
+    byte value must be less than&nbsp;256.
+
     Valid examples:
 
     - <code>&quot;salut!&quot;</code>
     - <code>&quot;en circulation\\nYves?&quot;</code>
     - <code>&quot;\\u03c9 often represents angular velocity in physics&quot;</code>
+    - <code>&quot;\\101\\x42&quot;</code> (<code>AB</code>)
 
     Calls _skipNoise() before scanning.
 
