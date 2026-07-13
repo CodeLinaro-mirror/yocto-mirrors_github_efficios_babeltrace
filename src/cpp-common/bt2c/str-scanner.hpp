@@ -287,11 +287,32 @@ public:
         negative if \bt_p{ValT} (either <code>unsigned long long</code>
         or <code>long long</code>) is signed.
 
+    If \bt_p{AllowPrefixesV} is \c true, then the following prefixes
+    are supported:
+
+    <dl>
+      <dt><code>0x</code> or <code>0X</code></dt>
+      <dd>Hexadecimal</dd>
+
+      <dt><code>0b</code> or <code>0B</code></dt>
+      <dd>Binary</dd>
+
+      <dt><code>0</code></dt>
+      <dd>Octal</dd>
+    </dl>
+
+    When \bt_p{AllowPrefixesV} is \c false (the default), only decimal
+    integers are supported.
+
     Valid examples:
 
     - <code>9283</code>
     - <code>-42</code>
     - <code>0</code>
+    - When \bt_p{AllowPrefixesV} is <code>true</code>:
+      - <code>0x1f3a</code>
+      - <code>0b1101</code>
+      - <code>0777</code>
 
     Calls _skipNoise() before scanning.
 
@@ -305,7 +326,7 @@ public:
     @sa tryScanConstUInt()
     @sa tryScanConstSInt()
     */
-    template <typename ValT>
+    template <typename ValT, bool AllowPrefixesV = false>
     std::optional<ValT> tryScanConstInt() noexcept;
 
     /*!
@@ -317,9 +338,10 @@ public:
 
     @sa tryScanConstSInt()
     */
+    template <bool AllowPrefixesV = false>
     std::optional<unsigned long long> tryScanConstUInt() noexcept
     {
-        return this->tryScanConstInt<unsigned long long>();
+        return this->tryScanConstInt<unsigned long long, AllowPrefixesV>();
     }
 
     /*!
@@ -331,9 +353,10 @@ public:
 
     @sa tryScanConstUInt()
     */
+    template <bool AllowPrefixesV = false>
     std::optional<long long> tryScanConstSInt() noexcept
     {
-        return this->tryScanConstInt<long long>();
+        return this->tryScanConstInt<long long, AllowPrefixesV>();
     }
 
     /*!
@@ -375,6 +398,22 @@ private:
      */
     template <typename ValT>
     static std::optional<ValT> _tryNegateConstInt(unsigned long long ullVal, bool negate) noexcept;
+
+    /*
+     * Tries to scan a binary integer (after the `0b`/`0B` prefix has
+     * already been consumed), returning `std::nullopt` if not
+     * possible.
+     */
+    template <typename ValT>
+    std::optional<ValT> _tryScanConstBinInt(bool negate) noexcept;
+
+    /*
+     * Tries to scan a constant integer in base `BaseV` (after any
+     * prefix has already been consumed), returning `std::nullopt` if
+     * not possible.
+     */
+    template <typename ValT, int BaseV>
+    std::optional<ValT> _tryScanConstIntWithBase(bool negate) noexcept;
 
     /*
      * Handles a `\u` escape sequence, appending the UTF-8-encoded
@@ -731,6 +770,85 @@ std::optional<ValT> StrScanner::_tryNegateConstInt(const unsigned long long ullV
 }
 
 template <typename ValT>
+std::optional<ValT> StrScanner::_tryScanConstBinInt(const bool negate) noexcept
+{
+    const auto initAt = _mAt;
+
+    /* Accumulate `0` and `1` characters */
+    auto ullVal = 0ULL;
+    auto nbBits = 0;
+
+    while (!this->isDone()) {
+        if (*_mAt != '0' && *_mAt != '1') {
+            break;
+        }
+
+        if (nbBits >= 64) {
+            /* Too many bits */
+            this->at(initAt);
+            return std::nullopt;
+        }
+
+        ullVal = (ullVal << 1) | static_cast<unsigned long long>(*_mAt - '0');
+        ++nbBits;
+        this->_incrAt();
+    }
+
+    if (nbBits == 0) {
+        /* `0b`/`0B` not followed by `0` or `1` */
+        this->at(initAt);
+        return std::nullopt;
+    }
+
+    const auto val = StrScanner::_tryNegateConstInt<ValT>(ullVal, negate);
+
+    if (!val) {
+        this->at(initAt);
+    }
+
+    return val;
+}
+
+template <typename ValT, int BaseV>
+std::optional<ValT> StrScanner::_tryScanConstIntWithBase(const bool negate) noexcept
+{
+    /*
+     * Reject a `0x`/`0X` prefix at this level: std::strtoull() with
+     * base 16 would happily accept it, but the caller already handled
+     * such a prefix.
+     */
+    if constexpr (BaseV == 16) {
+        if (this->charsLeft() >= 2 && _mAt[0] == '0' && (_mAt[1] == 'x' || _mAt[1] == 'X')) {
+            return std::nullopt;
+        }
+    }
+
+    if (this->isDone() || !std::isxdigit(*_mAt)) {
+        return std::nullopt;
+    }
+
+    /* Parse */
+    char *strEnd = nullptr;
+    const auto ullVal = std::strtoull(&(*_mAt), &strEnd, BaseV);
+
+    if ((ullVal == 0 && &(*_mAt) == strEnd) || errno == ERANGE) {
+        /* Couldn't parse */
+        errno = 0;
+        return std::nullopt;
+    }
+
+    /* Negate if needed */
+    const auto val = StrScanner::_tryNegateConstInt<ValT>(ullVal, negate);
+
+    if (val) {
+        /* Success: update current position */
+        this->at(_mStr.begin() + (strEnd - _mStr.data()));
+    }
+
+    return val;
+}
+
+template <typename ValT, bool AllowPrefixesV>
 std::optional<ValT> StrScanner::tryScanConstInt() noexcept
 {
     static_assert(std::is_same_v<ValT, long long> || std::is_same_v<ValT, unsigned long long>,
@@ -774,28 +892,51 @@ std::optional<ValT> StrScanner::tryScanConstInt() noexcept
         return std::nullopt;
     }
 
-    /* Parse */
-    char *strEnd = nullptr;
-    const auto ullVal = std::strtoull(&(*_mAt), &strEnd, 10);
+    /* Check for a radix prefix */
+    if constexpr (AllowPrefixesV) {
+        if (*_mAt == '0' && this->charsLeft() >= 2) {
+            if (_mAt[1] == 'b' || _mAt[1] == 'B') {
+                /* Binary */
+                this->_incrAt(2);
 
-    if ((ullVal == 0 && &(*_mAt) == strEnd) || errno == ERANGE) {
-        /* Couldn't parse */
-        errno = 0;
-        this->at(initAt);
-        return std::nullopt;
+                const auto val = this->_tryScanConstBinInt<ValT>(negate);
+
+                if (!val) {
+                    this->at(initAt);
+                }
+
+                return val;
+            } else if (_mAt[1] == 'x' || _mAt[1] == 'X') {
+                /* Hexadecimal */
+                this->_incrAt(2);
+
+                const auto val = this->_tryScanConstIntWithBase<ValT, 16>(negate);
+
+                if (!val) {
+                    this->at(initAt);
+                }
+
+                return val;
+            } else if (_mAt[1] >= '0' && _mAt[1] <= '7') {
+                /* Octal (the leading `0` is part of the octal digits) */
+                const auto val = this->_tryScanConstIntWithBase<ValT, 8>(negate);
+
+                if (!val) {
+                    this->at(initAt);
+                }
+
+                return val;
+            }
+        }
     }
 
-    /* Negate if needed */
-    const auto val = this->_tryNegateConstInt<ValT>(ullVal, negate);
+    /* Decimal */
+    const auto val = this->_tryScanConstIntWithBase<ValT, 10>(negate);
 
     if (!val) {
-        /* Couldn't negate */
         this->at(initAt);
-        return std::nullopt;
     }
 
-    /* Success: update current position and return value */
-    this->at(_mStr.begin() + (strEnd - _mStr.data()));
     return val;
 }
 
