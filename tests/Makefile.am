@@ -1302,6 +1302,10 @@ noinst_PROGRAMS += cpp-common/test-prio-heap
 cpp_common_test_prio_heap_SOURCES = cpp-common/test-prio-heap.cpp
 cpp_common_test_prio_heap_LDADD = $(COMMON_TEST_LDADD)
 
+noinst_PROGRAMS += cpp-common/test-reverse-fixed-len-int-bits
+cpp_common_test_reverse_fixed_len_int_bits_SOURCES = cpp-common/test-reverse-fixed-len-int-bits.cpp
+cpp_common_test_reverse_fixed_len_int_bits_LDADD = $(COMMON_TEST_LDADD)
+
 noinst_PROGRAMS += cpp-common/test-uuid
 cpp_common_test_uuid_SOURCES = cpp-common/test-uuid.cpp
 cpp_common_test_uuid_LDADD = \
