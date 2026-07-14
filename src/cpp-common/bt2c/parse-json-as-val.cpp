@@ -20,11 +20,6 @@ namespace {
 class JsonValBuilder final
 {
 public:
-    explicit JsonValBuilder(const std::size_t baseOffset)
-        : _mBaseOffset {baseOffset}
-    {
-    }
-
     void onNull(const TextLoc& loc)
     {
         this->_handleVal(loc);
@@ -114,10 +109,14 @@ private:
     template <typename... ArgTs>
     void _handleVal(const TextLoc& loc, ArgTs&&...args)
     {
-        /* Create a JSON value from custom arguments and `loc` */
-        auto jsonVal =
-            createJsonVal(std::forward<ArgTs>(args)...,
-                          TextLoc {loc.offset() + _mBaseOffset, loc.lineNo(), loc.colNo()});
+        /*
+         * Create a JSON value from custom arguments and `loc`.
+         *
+         * `loc` already accounts for the base offset passed to
+         * parseJson(): the underlying string scanner adds it to every
+         * text location it reports.
+         */
+        auto jsonVal = createJsonVal(std::forward<ArgTs>(args)..., loc);
 
         if (_mStack.empty()) {
             /* Assign as root */
@@ -148,7 +147,6 @@ private:
     }
 
 private:
-    std::size_t _mBaseOffset;
     std::vector<_StackFrame> _mStack;
     JsonVal::UP _mJsonVal;
 };
@@ -158,7 +156,7 @@ private:
 JsonVal::UP parseJson(const std::string_view str, const std::size_t baseOffset,
                       const Logger& logger)
 {
-    JsonValBuilder builder {baseOffset};
+    JsonValBuilder builder;
 
     parseJson(str, builder, baseOffset, logger);
     return builder.releaseVal();
