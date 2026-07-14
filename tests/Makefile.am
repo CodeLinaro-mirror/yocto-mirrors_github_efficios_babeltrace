@@ -1302,6 +1302,14 @@ noinst_PROGRAMS += cpp-common/test-join
 cpp_common_test_join_SOURCES = cpp-common/test-join.cpp
 cpp_common_test_join_LDADD = $(COMMON_TEST_LDADD)
 
+noinst_PROGRAMS += cpp-common/test-parse-json
+cpp_common_test_parse_json_SOURCES = cpp-common/test-parse-json.cpp
+cpp_common_test_parse_json_LDADD = \
+	$(top_builddir)/src/cpp-common/libcpp-common.la \
+	$(FMT_LDADD) \
+	$(top_builddir)/src/lib/libbabeltrace2.la \
+	$(COMMON_TEST_LDADD)
+
 noinst_PROGRAMS += cpp-common/test-prio-heap
 cpp_common_test_prio_heap_SOURCES = cpp-common/test-prio-heap.cpp
 cpp_common_test_prio_heap_LDADD = $(COMMON_TEST_LDADD)
