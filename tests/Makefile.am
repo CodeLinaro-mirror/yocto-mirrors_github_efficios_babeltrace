@@ -1286,6 +1286,10 @@ noinst_PROGRAMS += cpp-common/test-c-string-view
 cpp_common_test_c_string_view_SOURCES = cpp-common/test-c-string-view.cpp
 cpp_common_test_c_string_view_LDADD = $(COMMON_TEST_LDADD)
 
+noinst_PROGRAMS += cpp-common/test-align
+cpp_common_test_align_SOURCES = cpp-common/test-align.cpp
+cpp_common_test_align_LDADD = $(COMMON_TEST_LDADD)
+
 noinst_PROGRAMS += cpp-common/test-uuid
 cpp_common_test_uuid_SOURCES = cpp-common/test-uuid.cpp
 cpp_common_test_uuid_LDADD = \
