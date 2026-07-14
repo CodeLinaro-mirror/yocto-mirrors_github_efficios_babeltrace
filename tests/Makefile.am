@@ -1290,6 +1290,10 @@ noinst_PROGRAMS += cpp-common/test-align
 cpp_common_test_align_SOURCES = cpp-common/test-align.cpp
 cpp_common_test_align_LDADD = $(COMMON_TEST_LDADD)
 
+noinst_PROGRAMS += cpp-common/test-data-len
+cpp_common_test_data_len_SOURCES = cpp-common/test-data-len.cpp
+cpp_common_test_data_len_LDADD = $(COMMON_TEST_LDADD)
+
 noinst_PROGRAMS += cpp-common/test-uuid
 cpp_common_test_uuid_SOURCES = cpp-common/test-uuid.cpp
 cpp_common_test_uuid_LDADD = \
