@@ -117,7 +117,7 @@ void StrScanner::_appendEscapedUnicodeChar(const Iter at)
     } else if (cp <= 0x7ff) {
         _mStrBuf.push_back(static_cast<char>((cp >> 6) + 0xc0));
         _mStrBuf.push_back(static_cast<char>((cp & 0x3f) + 0x80));
-    } else if (cp > 0xd800 && cp <= 0xdfff) {
+    } else if (cp >= 0xd800 && cp <= 0xdfff) {
         /* Unsupported surrogate pairs */
         BT_CPPLOGE_TEXT_LOC_APPEND_CAUSE_AND_THROW(
             Error, this->loc(), "In `\\u` escape sequence: unsupported surrogate codepoint U+{:X}.",
