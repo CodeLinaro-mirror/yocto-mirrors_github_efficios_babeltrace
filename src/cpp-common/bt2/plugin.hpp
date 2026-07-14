@@ -17,7 +17,9 @@
 #include "borrowed-object-iterator.hpp"
 #include "borrowed-object.hpp"
 #include "component-class.hpp"
+#include "plugin-provider.hpp"
 #include "shared-object.hpp"
+#include "version.hpp"
 
 namespace bt2 {
 
@@ -151,43 +153,6 @@ public:
         ConstPluginComponentClasses<internal::PluginFilterCompClsFuncs>;
     using SinkComponementClasses = ConstPluginComponentClasses<internal::PluginSinkCompClsFuncs>;
 
-    class Version final
-    {
-    public:
-        explicit Version(const unsigned int major, const unsigned int minor,
-                         const unsigned int patch, const bt2c::CStringView extra) noexcept
-            : _mMajor {major},
-              _mMinor {minor},
-              _mPatch {patch},
-              _mExtra {extra}
-        {
-        }
-
-        unsigned int major() const noexcept
-        {
-            return _mMajor;
-        }
-
-        unsigned int minor() const noexcept
-        {
-            return _mMinor;
-        }
-
-        unsigned int patch() const noexcept
-        {
-            return _mPatch;
-        }
-
-        bt2c::CStringView extra() const noexcept
-        {
-            return _mExtra;
-        }
-
-    private:
-        unsigned int _mMajor, _mMinor, _mPatch;
-        bt2c::CStringView _mExtra;
-    };
-
     using Shared = SharedObject<ConstPlugin, const bt_plugin, internal::PluginRefFuncs>;
 
     explicit ConstPlugin(const LibObjPtr plugin)
@@ -231,6 +196,11 @@ public:
         }
 
         return Version {major, minor, patch, extra};
+    }
+
+    OptionalBorrowedObject<ConstPluginProvider> provider() const noexcept
+    {
+        return bt_plugin_borrow_provider(this->libObjPtr());
     }
 
     SourceComponementClasses sourceComponentClasses() const noexcept

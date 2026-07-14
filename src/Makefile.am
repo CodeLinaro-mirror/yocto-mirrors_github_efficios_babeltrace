@@ -185,6 +185,8 @@ cpp_common_libcpp_common_la_SOURCES = \
 	cpp-common/bt2/optional-borrowed-object.hpp \
 	cpp-common/bt2/plugin-so-dev.hpp \
 	cpp-common/bt2/plugin-load.hpp \
+	cpp-common/bt2/plugin-provider-set.hpp \
+	cpp-common/bt2/plugin-provider.hpp \
 	cpp-common/bt2/plugin-set.hpp \
 	cpp-common/bt2/plugin.hpp \
 	cpp-common/bt2/private-query-executor.hpp \
@@ -198,6 +200,7 @@ cpp_common_libcpp_common_la_SOURCES = \
 	cpp-common/bt2/trace-ir.hpp \
 	cpp-common/bt2/type-traits.hpp \
 	cpp-common/bt2/value.hpp \
+	cpp-common/bt2/version.hpp \
 	cpp-common/bt2/wrap.hpp \
 	cpp-common/bt2c/aliases.hpp \
 	cpp-common/bt2c/align.hpp \
