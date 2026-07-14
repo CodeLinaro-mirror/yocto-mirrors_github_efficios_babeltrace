@@ -28,6 +28,13 @@ inline int intFromByte(const std::uint8_t byte) noexcept
     return byte;
 }
 
+/* Returns byte `byte` as an `int`. */
+
+inline int intFromByte(const std::int8_t byte) noexcept
+{
+    return byte;
+}
+
 namespace bt2c {
 
 /*

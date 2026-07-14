@@ -1294,6 +1294,10 @@ noinst_PROGRAMS += cpp-common/test-data-len
 cpp_common_test_data_len_SOURCES = cpp-common/test-data-len.cpp
 cpp_common_test_data_len_LDADD = $(COMMON_TEST_LDADD)
 
+noinst_PROGRAMS += cpp-common/test-endian
+cpp_common_test_endian_SOURCES = cpp-common/test-endian.cpp
+cpp_common_test_endian_LDADD = $(COMMON_TEST_LDADD)
+
 noinst_PROGRAMS += cpp-common/test-join
 cpp_common_test_join_SOURCES = cpp-common/test-join.cpp
 cpp_common_test_join_LDADD = $(COMMON_TEST_LDADD)
