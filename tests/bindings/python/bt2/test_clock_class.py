@@ -168,7 +168,7 @@ class TestClkClsAllMips:
         raises_in_comp_init(
             TypeError,
             lambda comp_self: comp_self._create_clock_class(origin=23),
-            "'int' is not a '<class 'bt2.clock_class.ClockOrigin'>' object",
+            "'int' is not a 'bt2.ClockOrigin' object",
         )
 
     @pytest.mark.parametrize(

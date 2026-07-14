@@ -117,16 +117,12 @@ def test_comp_spec_create_from_name_wrong_params_type():
 
 
 def test_comp_spec_create_wrong_log_level_type(dmesg_comp_cls):
-    with pytest.raises(
-        TypeError, match="'str' is not a '<enum 'LoggingLevel'>' object"
-    ):
+    with pytest.raises(TypeError, match="'str' is not a 'bt2.LoggingLevel' object"):
         bt2.ComponentSpec(dmesg_comp_cls, logging_level="banane")
 
 
 def test_comp_spec_create_from_name_wrong_log_level_type():
-    with pytest.raises(
-        TypeError, match="'str' is not a '<enum 'LoggingLevel'>' object"
-    ):
+    with pytest.raises(TypeError, match="'str' is not a 'bt2.LoggingLevel' object"):
         bt2.ComponentSpec.from_named_plugin_and_component_class(
             "text", "dmesg", logging_level="banane"
         )

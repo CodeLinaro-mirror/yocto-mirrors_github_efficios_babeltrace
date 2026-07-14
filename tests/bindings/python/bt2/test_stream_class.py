@@ -72,7 +72,7 @@ def test_create_pkt_ctx_fc(tc):
 def test_create_invalid_pkt_ctx_fc(tc):
     with pytest.raises(
         TypeError,
-        match="'int' is not a '<class 'bt2.field_class._StructureFieldClass'>' object",
+        match="'int' is not a 'bt2._StructureFieldClass' object",
     ):
         tc.create_stream_class(packet_context_field_class=22, supports_packets=True)
 
@@ -101,7 +101,7 @@ def test_create_ev_common_ctx_fc(tc):
 def test_create_invalid_ev_common_ctx_fc(tc):
     with pytest.raises(
         TypeError,
-        match="'int' is not a '<class 'bt2.field_class._StructureFieldClass'>' object",
+        match="'int' is not a 'bt2._StructureFieldClass' object",
     ):
         tc.create_stream_class(event_common_context_field_class=22)
 
@@ -115,9 +115,7 @@ def test_create_def_clk_cls(tc, cc):
 
 
 def test_create_invalid_def_clk_cls(tc):
-    with pytest.raises(
-        TypeError, match="'int' is not a '<class 'bt2.clock_class._ClockClass'>' object"
-    ):
+    with pytest.raises(TypeError, match="'int' is not a 'bt2._ClockClass' object"):
         tc.create_stream_class(default_clock_class=12)
 
     assert len(tc) == 0
@@ -147,7 +145,7 @@ def test_create_invalid_user_attrs(tc):
 def test_create_invalid_user_attrs_value_type(tc):
     with pytest.raises(
         TypeError,
-        match="'SignedIntegerValue' is not a '<class 'bt2.value.MapValue'>' object",
+        match="'SignedIntegerValue' is not a 'bt2.MapValue' object",
     ):
         tc.create_stream_class(user_attributes=23)
 

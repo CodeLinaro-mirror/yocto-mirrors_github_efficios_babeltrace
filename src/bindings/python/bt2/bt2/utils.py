@@ -57,9 +57,31 @@ def _check_str(o):
 _Type = typing.TypeVar("_Type")
 
 
+# Format the name of type `cls` for use in error messages.
+#
+# Types from the `bt2` package are formatted with the `bt2.Foo` form, to
+# avoid printing the name of internal modules (e.g. `bt2._StructureFieldClass`,
+# instead of `bt2.field_class._StructureFieldClass`).
+#
+# Types from other modules keep their natural qualified name (`uuid.UUID`),
+# except for built-ins, which are shown unqualified (`int`, not
+# `builtins.int`).
+def _typename(cls: type) -> str:
+    module = cls.__module__
+
+    if module.startswith("bt2."):
+        module = "bt2"
+    elif module == "builtins":
+        return cls.__qualname__
+
+    return f"{module}.{cls.__qualname__}"
+
+
 def _check_type(o: typing.Any, expected_type: typing.Type[_Type]) -> _Type:
     if not isinstance(o, expected_type):
-        raise TypeError(f"'{o.__class__.__name__}' is not a '{expected_type}' object")
+        raise TypeError(
+            f"'{o.__class__.__name__}' is not a '{_typename(expected_type)}' object"
+        )
 
     return o
 

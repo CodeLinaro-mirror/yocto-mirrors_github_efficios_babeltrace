@@ -199,9 +199,7 @@ def test_destruction_listener():
 def test_remove_destruction_listener_wrong_type(def_tc):
     trace = def_tc()
 
-    with pytest.raises(
-        TypeError, match=r"'int' is not a '<class 'bt2.utils._ListenerHandle'>' object"
-    ):
+    with pytest.raises(TypeError, match=r"'int' is not a 'bt2._ListenerHandle' object"):
         trace.remove_destruction_listener(123)
 
 
