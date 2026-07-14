@@ -21,7 +21,9 @@
 
 This file offers overloads of <code>%bt2c::littleEndianToNative()</code>
 and <code>%bt2c::bigEndianToNative()</code> to deal with the endianness
-of standard integer sizes.
+of standard integer sizes, as well as the bt2c::Endianness enumerators
+and the bt2c::nativeEndianness constant to know the endianness of the
+host.
 
 You may use them as such:
 
@@ -39,6 +41,24 @@ IntT fromBe(const IntT val) noexcept
 #include "compat/endian.h" /* IWYU pragma: keep  */
 
 namespace bt2c {
+
+/*! @brief Endianness. */
+enum class Endianness
+{
+    /*! @brief Little-endian. */
+    Little,
+
+    /*! @brief Big-endian. */
+    Big,
+};
+
+/*! @brief Endianness of the host. */
+constexpr auto nativeEndianness =
+#if BYTE_ORDER == LITTLE_ENDIAN
+    Endianness::Little;
+#else
+    Endianness::Big;
+#endif
 
 /*!
 @brief
