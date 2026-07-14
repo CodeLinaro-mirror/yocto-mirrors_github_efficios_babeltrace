@@ -64,12 +64,12 @@ private:
 
     /* JSON number string regex */
     static inline const bt2c::Regex _realRegex {
-        "^"                     /* Start of target */
-        "-?"                    /* Optional negation */
-        "(?:0|[1-9]\\d*)"       /* Integer part */
-        "(?=[eE.]\\d)"          /* Assertion: need fraction/exponent part */
-        "(?:\\.\\d+)?"          /* Optional fraction part */
-        "(?:[eE][+-]?\\d+)?"    /* Optional exponent part */
+        "^"                         /* Start of target */
+        "-?"                        /* Optional negation */
+        "(?:0|[1-9]\\d*)"           /* Integer part */
+        "(?=\\.\\d|[eE][+-]?\\d)"   /* Assertion: need fraction/exponent part */
+        "(?:\\.\\d+)?"              /* Optional fraction part */
+        "(?:[eE][+-]?\\d+)?"        /* Optional exponent part */
     };
 
     /* clang-format on */
