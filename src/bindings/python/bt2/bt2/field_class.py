@@ -570,7 +570,7 @@ class _StructureFieldClassConst(
 
 class _StructureFieldClass(_StructureFieldClassConst, _FieldClass):
     _NAME = "Structure"
-    _borrow_member_by_index = staticmethod(
+    _borrow_member_ptr_by_index = staticmethod(
         native_bt.field_class_structure_borrow_member_by_index
     )
     _borrow_member_ptr_by_name = staticmethod(
