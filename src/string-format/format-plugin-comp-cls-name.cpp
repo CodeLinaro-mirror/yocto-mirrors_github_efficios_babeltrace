@@ -4,6 +4,8 @@
  * Copyright EfficiOS, Inc.
  */
 
+/* clang-format off */
+
 #define BT_LOG_OUTPUT_LEVEL log_level
 #define BT_LOG_TAG "COMMON/FORMAT-PLUGIN-COMP-CLS-NAME"
 #include <logging/log.h>

@@ -276,9 +276,9 @@ so_handle_libso_handle_la_SOURCES = \
 	so-handle/so-handle.h
 
 string_format_libstring_format_la_SOURCES = \
-	string-format/format-plugin-comp-cls-name.c \
+	string-format/format-plugin-comp-cls-name.cpp \
 	string-format/format-plugin-comp-cls-name.h \
-	string-format/format-error.c \
+	string-format/format-error.cpp \
 	string-format/format-error.h
 
 plugins_common_muxing_libmuxing_la_SOURCES = \

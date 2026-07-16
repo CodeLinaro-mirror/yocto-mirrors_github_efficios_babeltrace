@@ -4,6 +4,8 @@
  * Copyright EfficiOS, Inc.
  */
 
+/* clang-format off */
+
 #define BT_LOG_OUTPUT_LEVEL ((enum bt_log_level) log_level)
 #define BT_LOG_TAG "COMMON/FORMAT-ERROR"
 #include <logging/log.h>
