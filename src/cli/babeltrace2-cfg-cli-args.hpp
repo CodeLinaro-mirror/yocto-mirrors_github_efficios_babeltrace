@@ -4,13 +4,11 @@
  * Copyright 2016-2017 Philippe Proulx <pproulx@efficios.com>
  */
 
-/* clang-format off */
-
 #ifndef BABELTRACE_CLI_BABELTRACE2_CFG_CLI_ARGS_HPP
 #define BABELTRACE_CLI_BABELTRACE2_CFG_CLI_ARGS_HPP
 
-#include <stdbool.h>
 #include <glib.h>
+#include <stdbool.h>
 
 #include "babeltrace2-cfg.hpp"
 
@@ -20,31 +18,29 @@
  */
 enum bt_config_cli_args_status
 {
-	/*
-	 * Config was successfully created and returned through the out
-	 * parameter.
-	 */
-	BT_CONFIG_CLI_ARGS_STATUS_OK = 0,
+    /*
+     * Config was successfully created and returned through the out
+     * parameter.
+     */
+    BT_CONFIG_CLI_ARGS_STATUS_OK = 0,
 
-	/*
-	 * Config could not be created due to an error. The out parameter is
-	 * left unchanged.
-	 */
-	BT_CONFIG_CLI_ARGS_STATUS_ERROR = -1,
+    /*
+     * Config could not be created due to an error. The out parameter is
+     * left unchanged.
+     */
+    BT_CONFIG_CLI_ARGS_STATUS_ERROR = -1,
 
-	/*
-	 * The arguments caused the function to print some information (help,
-	 * version, etc), not config was created.  The out parameter is left
-	 * unchanged.
-	 */
-	BT_CONFIG_CLI_ARGS_STATUS_INFO_ONLY = 1,
+    /*
+     * The arguments caused the function to print some information (help,
+     * version, etc), not config was created.  The out parameter is left
+     * unchanged.
+     */
+    BT_CONFIG_CLI_ARGS_STATUS_INFO_ONLY = 1,
 };
 
-enum bt_config_cli_args_status bt_config_cli_args_create(int argc,
-		const char *argv[],
-		struct bt_config **cfg, bool force_omit_system_plugin_path,
-		bool force_omit_home_plugin_path,
-		const bt_value *initial_plugin_paths,
-		const bt_interrupter *interrupter);
+enum bt_config_cli_args_status
+bt_config_cli_args_create(int argc, const char *argv[], struct bt_config **cfg,
+                          bool force_omit_system_plugin_path, bool force_omit_home_plugin_path,
+                          const bt_value *initial_plugin_paths, const bt_interrupter *interrupter);
 
 #endif /* BABELTRACE_CLI_BABELTRACE2_CFG_CLI_ARGS_HPP */

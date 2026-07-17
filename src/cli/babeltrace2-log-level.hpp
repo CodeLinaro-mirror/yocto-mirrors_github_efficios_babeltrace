@@ -4,13 +4,12 @@
  * Copyright 2019 Philippe Proulx <pproulx@efficios.com>
  */
 
-/* clang-format off */
-
 #ifndef BABELTRACE_CLI_BABELTRACE2_LOG_LEVEL_HPP
 #define BABELTRACE_CLI_BABELTRACE2_LOG_LEVEL_HPP
 
-#include <babeltrace2/babeltrace.h>
 #include <glib.h>
+
+#include <babeltrace2/babeltrace.h>
 
 #define ENV_BABELTRACE_CLI_LOG_LEVEL "BABELTRACE_CLI_LOG_LEVEL"
 
@@ -20,16 +19,15 @@
  * If one of the parameter has the value -1, it is ignored in the comparison
  * and the other value is returned.  If both parameters are -1, -1 is returned.
  */
-static inline
-int logging_level_min(int a, int b)
+static inline int logging_level_min(int a, int b)
 {
-	if (a == -1) {
-		return b;
-	} else if (b == -1) {
-		return a;
-	} else {
-		return MIN(a, b);
-	}
+    if (a == -1) {
+        return b;
+    } else if (b == -1) {
+        return a;
+    } else {
+        return MIN(a, b);
+    }
 }
 
 void set_auto_log_levels(int *logging_level);

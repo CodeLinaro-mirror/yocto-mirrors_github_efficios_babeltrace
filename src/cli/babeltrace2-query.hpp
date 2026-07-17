@@ -4,16 +4,14 @@
  * Copyright 2016-2019 EfficiOS Inc.
  */
 
-/* clang-format off */
-
 #ifndef BABELTRACE_CLI_BABELTRACE2_QUERY_HPP
 #define BABELTRACE_CLI_BABELTRACE2_QUERY_HPP
 
 #include <babeltrace2/babeltrace.h>
 
-bt_query_executor_query_status cli_query(const bt_component_class *comp_cls,
-		const char *obj, const bt_value *params,
-		bt_logging_level log_level, const bt_interrupter *interrupter,
-		const bt_value **user_result, const char **fail_reason);
+bt_query_executor_query_status cli_query(const bt_component_class *comp_cls, const char *obj,
+                                         const bt_value *params, bt_logging_level log_level,
+                                         const bt_interrupter *interrupter,
+                                         const bt_value **user_result, const char **fail_reason);
 
 #endif /* BABELTRACE_CLI_BABELTRACE2_QUERY_HPP */
