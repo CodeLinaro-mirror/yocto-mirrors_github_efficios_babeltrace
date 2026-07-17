@@ -7,7 +7,8 @@
 #ifndef BABELTRACE_BINDINGS_PYTHON_BT2_BT2_NATIVE_BT_AUTODISC_I_HPP
 #define BABELTRACE_BINDINGS_PYTHON_BT2_BT2_NATIVE_BT_AUTODISC_I_HPP
 
-#include <autodisc/autodisc.h>
+#include <autodisc/autodisc.hpp>
+
 #include <common/common.h>
 
 /*

@@ -4,13 +4,15 @@
  * Copyright (c) 2019 EfficiOS Inc. and Linux Foundation
  */
 
+/* clang-format off */
+
 #define BT_LOG_TAG "CLI-CFG-SRC-AUTO-DISC"
 #define BT_LOG_OUTPUT_LEVEL ((enum bt_log_level) log_level)
 #include "logging/log.h"
 
 #include <stdbool.h>
 
-#include "autodisc.h"
+#include "autodisc.hpp"
 #include "common/common.h"
 
 #define BT_AUTODISC_LOG_AND_APPEND(_lvl, _fmt, ...)				\
@@ -162,7 +164,8 @@ auto_source_discovery_internal_status auto_source_discovery_add(
 
 	if (group) {
 		for (i = 0; i < len; i++) {
-			res = g_ptr_array_index(auto_disc->results, i);
+			res = (auto_source_discovery_result *)
+				g_ptr_array_index(auto_disc->results, i);
 
 			if (strcmp(res->plugin_name, plugin_name) != 0) {
 				continue;
@@ -303,7 +306,7 @@ bt_query_executor_query_status simple_query(const bt_component_class *comp_cls,
 			"Cannot set query executor's logging level: "
 			"log-level=%s",
 			bt_common_logging_level_string(log_level));
-		status = (int) set_logging_level_status;
+		status = (bt_query_executor_query_status) set_logging_level_status;
 		goto end;
 	}
 
@@ -590,7 +593,7 @@ auto_source_discovery_internal_status auto_discover_source_for_input_as_dir_or_f
 	} else if (g_file_test(input->str, G_FILE_TEST_IS_DIR)) {
 		const gchar *dirent;
 		gsize saved_input_len;
-		int dir_status = AUTO_SOURCE_DISCOVERY_INTERNAL_STATUS_NO_MATCH;
+		auto_source_discovery_internal_status dir_status = AUTO_SOURCE_DISCOVERY_INTERNAL_STATUS_NO_MATCH;
 
 		/* It's a directory. */
 		status = support_info_query_all_sources(input->str,
@@ -751,7 +754,7 @@ auto_source_discovery_status auto_discover_source_components(
 			 * validated by the caller and that it's a valid log
 			 * level value.
 			 */
-			log_level = bt_value_integer_unsigned_get(log_level_value);
+			log_level = static_cast<bt_logging_level>(bt_value_integer_unsigned_get(log_level_value));
 		} else {
 			BT_ASSERT(bt_value_get_type(log_level_value) == BT_VALUE_TYPE_NULL);
 			log_level = default_log_level;

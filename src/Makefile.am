@@ -108,8 +108,8 @@ argpar_libargpar_la_SOURCES = \
 	argpar/argpar.h
 
 autodisc_libautodisc_la_SOURCES = \
-	autodisc/autodisc.c \
-	autodisc/autodisc.h
+	autodisc/autodisc.cpp \
+	autodisc/autodisc.hpp
 
 clock_correlation_validator_libclock_correlation_validator_la_SOURCES = \
 	clock-correlation-validator/clock-correlation-validator.cpp \

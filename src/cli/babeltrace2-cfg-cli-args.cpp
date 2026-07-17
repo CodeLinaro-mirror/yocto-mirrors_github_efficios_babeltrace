@@ -19,7 +19,7 @@
 #include "logging.hpp"
 
 #include "argpar/argpar.h"
-#include "autodisc/autodisc.h"
+#include "autodisc/autodisc.hpp"
 #include "common/assert.h"
 #include "common/common.h"
 #include "common/version.h"

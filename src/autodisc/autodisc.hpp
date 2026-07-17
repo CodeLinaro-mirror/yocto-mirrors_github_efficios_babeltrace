@@ -4,8 +4,10 @@
  * Copyright (C) 2019 EfficiOS Inc. and Linux Foundation
  */
 
-#ifndef BABELTRACE_AUTODISC_AUTODISC_H
-#define BABELTRACE_AUTODISC_AUTODISC_H
+/* clang-format off */
+
+#ifndef BABELTRACE_AUTODISC_AUTODISC_HPP
+#define BABELTRACE_AUTODISC_AUTODISC_HPP
 
 #include <glib.h>
 
@@ -89,4 +91,4 @@ auto_source_discovery_status auto_discover_source_components(
 }
 #endif
 
-#endif /* BABELTRACE_AUTODISC_AUTODISC_H */
+#endif /* BABELTRACE_AUTODISC_AUTODISC_HPP */
