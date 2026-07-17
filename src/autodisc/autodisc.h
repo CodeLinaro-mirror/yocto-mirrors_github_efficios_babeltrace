@@ -60,16 +60,28 @@ int auto_source_discovery_init(struct auto_source_discovery *auto_disc);
 void auto_source_discovery_fini(struct auto_source_discovery *auto_disc);
 
 /*
- * Given `inputs` a list of strings, query source component classes to discover
- * which source components should be instantiated to deal with these inputs.
+ * Given `inputs`, an array of strings, query source component classes to
+ * discover which source components should be instantiated to deal with these
+ * inputs.
+ *
+ * `log_levels` is an array with the same length as `inputs`, where each element
+ * specifies the log level applied to the input at the same index in `inputs`.
+ * Each element is either an unsigned integer containing a valid log level
+ * value, or null, if no log level is specified for that particular input. This
+ * log level is used for logging the autodisc code itself (when working on that
+ * input) and queries made on component classes when handling that input.
+ *
+ * `default_log_level` is the log level to use for inputs without a specific log
+ * level.
  */
 
 auto_source_discovery_status auto_discover_source_components(
 		const bt_value *inputs,
+		const bt_value *log_levels,
 		const bt_plugin **plugins,
 		size_t plugin_count,
 		const char *component_class_restrict,
-		enum bt_logging_level log_level,
+		enum bt_logging_level default_log_level,
 		struct auto_source_discovery *auto_disc,
 		const bt_interrupter *interrupter);
 

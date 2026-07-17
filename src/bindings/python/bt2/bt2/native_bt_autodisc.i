@@ -5,6 +5,7 @@
  */
 
 bt_value *bt_bt2_auto_discover_source_components(const bt_value *inputs,
+		const bt_value *log_levels,
 		const bt_plugin_set *plugin_set);
 
 %{

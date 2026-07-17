@@ -571,6 +571,18 @@ def dir_ab(ascd_params_log_level_dir):
     return ascd_params_log_level_dir / "dir-ab"
 
 
+@pytest.fixture(scope="session")
+def ascd_query_log_level_dir(common_data_dir):
+    return common_data_dir / "auto-src-comp-discovery/query-log-level"
+
+
+@pytest.fixture
+def ascd_query_log_level_env(monkeypatch, ascd_query_log_level_dir):
+    monkeypatch.setenv(
+        "BABELTRACE_PLUGIN_PATH", str(ascd_query_log_level_dir), prepend=os.pathsep
+    )
+
+
 def _assert_reported(capsys, expected):
     # Each instantiated component prints one line on stdout, prefixed with its
     # class name. The order in which the lines are printed is unpredictable (it
@@ -983,6 +995,31 @@ def test_ascd_obj_no_override_with_no_obj(
             f"TestSourceB: {id(obj_ab)}",
         ],
     )
+
+
+@pytest.mark.parametrize(
+    ["log_level_1", "log_level_2"],
+    [
+        pytest.param(None, None, id="default"),
+        pytest.param(bt2.LoggingLevel.INFO, bt2.LoggingLevel.DEBUG, id="specific"),
+    ],
+)
+def test_ascd_log_level_in_query(
+    ascd_query_log_level_env, capsys, log_level_1, log_level_2
+):
+    bt2.TraceCollectionMessageIterator(
+        [
+            bt2.AutoSourceComponentSpec("str1", logging_level=log_level_1),
+            bt2.AutoSourceComponentSpec("str2", logging_level=log_level_2),
+        ]
+    )
+
+    # The component's `babeltrace.support-info` query prints the input name and
+    # the effective log level on stdout, in the order the inputs are given.
+    assert capsys.readouterr().out.splitlines() == [
+        "str1 {}".format(log_level_1 or bt2.LoggingLevel.NONE),
+        "str2 {}".format(log_level_2 or bt2.LoggingLevel.NONE),
+    ]
 
 
 @pytest.fixture(scope="session")

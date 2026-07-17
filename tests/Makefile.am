@@ -45,6 +45,7 @@ EXTRA_DIST = \
 	cli/test_auto_src_comp_discovery_grouping.py \
 	cli/test_auto_src_comp_discovery_log_level.py \
 	cli/test_auto_src_comp_discovery_params.py \
+	cli/test_auto_src_comp_discovery_query_log_level.py \
 	cli/test_convert_args.py \
 	cli/test_exit_status.py \
 	cli/test_help.py \

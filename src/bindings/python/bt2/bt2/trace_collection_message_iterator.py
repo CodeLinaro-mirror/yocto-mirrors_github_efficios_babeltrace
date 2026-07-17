@@ -263,6 +263,16 @@ def source_component_specs_from_auto_source_component_specs(
         bt2_utils._check_type(spec, AutoSourceComponentSpec)
 
     inputs = bt2_value.ArrayValue([spec.input for spec in auto_source_comp_specs])
+    log_levels = bt2_value.ArrayValue(
+        [
+            (
+                bt2_value.UnsignedIntegerValue(spec.logging_level.value)
+                if spec.logging_level is not None
+                else None
+            )
+            for spec in auto_source_comp_specs
+        ]
+    )
 
     if plugin_set is None:
         plugin_set = _find_plugins()
@@ -270,7 +280,7 @@ def source_component_specs_from_auto_source_component_specs(
         bt2_utils._check_type(plugin_set, bt2_plugin._PluginSet)
 
     res_ptr = native_bt.bt2_auto_discover_source_components(
-        inputs._ptr, plugin_set._ptr
+        inputs._ptr, log_levels._ptr, plugin_set._ptr
     )
 
     if res_ptr is None:

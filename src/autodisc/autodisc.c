@@ -720,10 +720,11 @@ end:
 
 auto_source_discovery_status auto_discover_source_components(
 		const bt_value *inputs,
+		const bt_value *log_levels,
 		const bt_plugin **plugins,
 		size_t plugin_count,
 		const char *component_class_restrict,
-		enum bt_logging_level log_level,
+		enum bt_logging_level default_log_level,
 		struct auto_source_discovery *auto_disc,
 		const bt_interrupter *interrupter)
 {
@@ -733,12 +734,29 @@ auto_source_discovery_status auto_discover_source_components(
 
 	input_count = bt_value_array_get_length(inputs);
 
+	BT_ASSERT(input_count == bt_value_array_get_length(log_levels));
+
 	for (i_inputs = 0; i_inputs < input_count; i_inputs++) {
-		const bt_value *input_value;
+		const bt_value *input_value, *log_level_value;
 		const char *input;
+		enum bt_logging_level log_level;
 
 		input_value = bt_value_array_borrow_element_by_index_const(inputs, i_inputs);
 		input = bt_value_string_get(input_value);
+
+		log_level_value = bt_value_array_borrow_element_by_index_const(log_levels, i_inputs);
+		if (bt_value_get_type(log_level_value) == BT_VALUE_TYPE_UNSIGNED_INTEGER) {
+			/*
+			 * We assume that the log level in `log_level_value` was
+			 * validated by the caller and that it's a valid log
+			 * level value.
+			 */
+			log_level = bt_value_integer_unsigned_get(log_level_value);
+		} else {
+			BT_ASSERT(bt_value_get_type(log_level_value) == BT_VALUE_TYPE_NULL);
+			log_level = default_log_level;
+		}
+
 		internal_status = auto_discover_source_for_input_as_string(input, i_inputs,
 			plugins, plugin_count, component_class_restrict,
 			log_level, auto_disc, interrupter);

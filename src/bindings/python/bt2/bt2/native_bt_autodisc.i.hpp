@@ -12,10 +12,12 @@
 
 /*
  * Interface between the Python bindings and the auto source discovery system:
- * input strings go in, specs for components to instantiate go out.
+ * input strings and log levels go in, specs for components to instantiate go
+ * out.
  *
- * `inputs` must be an array of strings, the list of inputs in which to look
- * for traces.  `plugin_set` is the set of plugins to query.
+ * `inputs` and `log_levels` match what `auto_discover_source_components`
+ * expects, for the parameters of the same name. `plugin_set` is the set of
+ * plugins to query.
  *
  * Returns a map with the following entries:
  *
@@ -33,6 +35,7 @@
  * for the return value and status code.
  */
 static bt_value *bt_bt2_auto_discover_source_components(const bt_value *inputs,
+                                                        const bt_value *log_levels,
                                                         const bt_plugin_set *plugin_set)
 {
     uint64_t i;
@@ -52,6 +55,24 @@ static bt_value *bt_bt2_auto_discover_source_components(const bt_value *inputs,
         const bt_value *elem = bt_value_array_borrow_element_by_index_const(inputs, i);
         BT_ASSERT(bt_value_get_type(elem) == BT_VALUE_TYPE_STRING);
     }
+
+    BT_ASSERT(bt_value_get_type(log_levels) == BT_VALUE_TYPE_ARRAY);
+    for (i = 0; i < bt_value_array_get_length(log_levels); i++) {
+        const bt_value *log_level_value =
+            bt_value_array_borrow_element_by_index_const(log_levels, i);
+        bt_value_type type = bt_value_get_type(log_level_value);
+
+        if (type == BT_VALUE_TYPE_UNSIGNED_INTEGER) {
+            uint64_t log_level = bt_value_integer_unsigned_get(log_level_value);
+            BT_ASSERT(
+                (log_level >= BT_LOGGING_LEVEL_TRACE && log_level <= BT_LOGGING_LEVEL_FATAL) ||
+                log_level == BT_LOGGING_LEVEL_NONE);
+        } else {
+            BT_ASSERT(type == BT_VALUE_TYPE_NULL);
+        }
+    }
+
+    BT_ASSERT(bt_value_array_get_length(inputs) == bt_value_array_get_length(log_levels));
 
     result = bt_value_map_create();
     if (!result) {
@@ -83,7 +104,7 @@ static bt_value *bt_bt2_auto_discover_source_components(const bt_value *inputs,
         plugins[i] = bt_plugin_set_borrow_plugin_by_index_const(plugin_set, i);
     }
 
-    status = auto_discover_source_components(inputs, plugins, plugin_count, NULL,
+    status = auto_discover_source_components(inputs, log_levels, plugins, plugin_count, NULL,
                                              (bt_logging_level) bt_python_bindings_bt2_log_level,
                                              &auto_disc, NULL);
     if (status != 0) {

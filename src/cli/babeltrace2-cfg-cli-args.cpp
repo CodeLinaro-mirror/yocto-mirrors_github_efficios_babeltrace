@@ -1933,6 +1933,23 @@ static void print_run_usage(FILE *fp)
 }
 
 /*
+ * Returns the log level as an integer for the string `str`.
+ *
+ * If `str` is not a valid log level string, log an error, append an error cause
+ * and return -1.
+ */
+static int get_log_level_from_string(const char *str)
+{
+    int level = bt_log_get_level_from_string(str);
+
+    if (level < 0) {
+        BT_CLI_LOGE_APPEND_CAUSE("Invalid argument for --log-level option:\n    %s", str);
+    }
+
+    return level;
+}
+
+/*
  * Creates a Babeltrace config object from the arguments of a run
  * command.
  */
@@ -2115,9 +2132,8 @@ static enum bt_config_cli_args_status bt_config_run_from_args(int argc, const ch
                 goto error;
             }
 
-            cur_cfg_comp->log_level = bt_log_get_level_from_string(arg);
+            cur_cfg_comp->log_level = get_log_level_from_string(arg);
             if (cur_cfg_comp->log_level < 0) {
-                BT_CLI_LOGE_APPEND_CAUSE("Invalid argument for --log-level option:\n    %s", arg);
                 goto error;
             }
             break;
@@ -3193,9 +3209,10 @@ static int create_implicit_component_args_from_auto_discovered_sources(
 
             loglevel_value =
                 bt_value_array_borrow_element_by_index_const(non_opt_loglevels, orig_idx);
-            if (bt_value_get_type(loglevel_value) == BT_VALUE_TYPE_STRING) {
-                const char *loglevel = bt_value_string_get(loglevel_value);
+            if (bt_value_get_type(loglevel_value) == BT_VALUE_TYPE_UNSIGNED_INTEGER) {
                 bt_value_array_append_element_status append_status;
+                uint64_t log_level = bt_value_integer_unsigned_get(loglevel_value);
+                char log_level_str[2] = {0};
 
                 append_status =
                     bt_value_array_append_string_element(comp->extra_params, "--log-level");
@@ -3204,11 +3221,17 @@ static int create_implicit_component_args_from_auto_discovered_sources(
                     goto error;
                 }
 
-                append_status = bt_value_array_append_string_element(comp->extra_params, loglevel);
+                log_level_str[0] =
+                    bt_log_get_letter_from_level(static_cast<bt_log_level>(log_level));
+
+                append_status =
+                    bt_value_array_append_string_element(comp->extra_params, log_level_str);
                 if (append_status != BT_VALUE_ARRAY_APPEND_ELEMENT_STATUS_OK) {
                     BT_CLI_LOGE_APPEND_CAUSE("Failed to append array element.");
                     goto error;
                 }
+            } else {
+                BT_ASSERT(bt_value_get_type(loglevel_value) == BT_VALUE_TYPE_NULL);
             }
         }
 
@@ -3313,6 +3336,16 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
     GList *sink_names = NULL;
     bt_value *non_opts = NULL;
     bt_value *non_opt_params = NULL;
+
+    /*
+     * Array where each element is the log level associated to the
+     * non-option argument at the same index in `non_opts`. Each element
+     * can be either:
+     *
+     *  - an unsigned integer, if a log level was specified for this
+     *    non-option argument
+     *  - null, if no log level was specified for this non-option argument
+     */
     bt_value *non_opt_loglevels = NULL;
     struct implicit_component_args implicit_ctf_output_args = {};
     struct implicit_component_args implicit_lttng_live_args = {};
@@ -3615,17 +3648,23 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
                 } else if (current_item_type == CONVERT_CURRENT_ITEM_TYPE_NON_OPT) {
                     uint64_t idx = bt_value_array_get_length(non_opt_loglevels) - 1;
                     enum bt_value_array_set_element_by_index_status set_element_status;
-                    bt_value *log_level_str_value;
+                    bt_value *log_level_value;
+                    int log_level;
 
-                    log_level_str_value = bt_value_string_create_init(arg);
-                    if (!log_level_str_value) {
+                    log_level = get_log_level_from_string(arg);
+                    if (log_level < 0) {
+                        goto error;
+                    }
+
+                    log_level_value = bt_value_integer_unsigned_create_init(log_level);
+                    if (!log_level_value) {
                         BT_CLI_LOGE_APPEND_CAUSE_OOM();
                         goto error;
                     }
 
                     set_element_status = bt_value_array_set_element_by_index(non_opt_loglevels, idx,
-                                                                             log_level_str_value);
-                    bt_value_put_ref(log_level_str_value);
+                                                                             log_level_value);
+                    bt_value_put_ref(log_level_value);
                     if (set_element_status != BT_VALUE_ARRAY_SET_ELEMENT_BY_INDEX_STATUS_OK) {
                         BT_CLI_LOGE_APPEND_CAUSE_OOM();
                         goto error;
@@ -4191,7 +4230,7 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
             }
 
             auto_disc_status = auto_discover_source_components(
-                non_opts, plugins, plugin_count,
+                non_opts, non_opt_loglevels, plugins, plugin_count,
                 auto_source_discovery_restrict_component_class_name,
                 static_cast<bt_logging_level>(*default_log_level), &auto_disc, interrupter);
 
@@ -4710,11 +4749,9 @@ bt_config_cli_args_create(int argc, const char *argv[], struct bt_config **cfg,
                 break;
             case OPT_LOG_LEVEL:
             {
-                int level = bt_log_get_level_from_string(arg);
+                int level = get_log_level_from_string(arg);
 
                 if (level < 0) {
-                    BT_CLI_LOGE_APPEND_CAUSE("Invalid argument for --log-level option:\n    %s",
-                                             arg);
                     goto error;
                 }
 

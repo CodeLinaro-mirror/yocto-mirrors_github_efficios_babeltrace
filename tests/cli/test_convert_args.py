@@ -27,6 +27,11 @@ def path_to_trace_2(ctf_traces_dir):
             id="path-non-option-arg",
         ),
         pytest.param(
+            "{path_to_trace} -l DEBUG",
+            "--component auto-disc-source-ctf-fs:source.ctf.fs --log-level D --params 'inputs=[\"{path_to_trace}\"]' --component pretty:sink.text.pretty --component muxer:filter.utils.muxer --connect auto-disc-source-ctf-fs:muxer --connect muxer:pretty",
+            id="path-non-option-arg-with-log-level",
+        ),
+        pytest.param(
             "{path_to_trace} {path_to_trace_2}",
             '--component auto-disc-source-ctf-fs:source.ctf.fs --params \'inputs=["{path_to_trace}", "{path_to_trace_2}"]\' --component pretty:sink.text.pretty --component muxer:filter.utils.muxer --connect auto-disc-source-ctf-fs:muxer --connect muxer:pretty',
             id="path-non-option-args",
