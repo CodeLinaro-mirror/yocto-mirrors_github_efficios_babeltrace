@@ -31,23 +31,23 @@ endif
 bin_PROGRAMS = babeltrace2
 
 babeltrace2_SOURCES = \
-	babeltrace2.c \
-	babeltrace2-cfg.c \
-	babeltrace2-cfg.h \
-	babeltrace2-cfg-cli-args.c \
-	babeltrace2-cfg-cli-args.h \
-	babeltrace2-cfg-cli-args-connect.c \
-	babeltrace2-cfg-cli-args-connect.h \
-	babeltrace2-cfg-cli-args-default.h \
-	babeltrace2-cfg-cli-args-default.c \
-	babeltrace2-log-level.c \
-	babeltrace2-log-level.h \
-	babeltrace2-plugins.c \
-	babeltrace2-plugins.h \
-	babeltrace2-query.c \
-	babeltrace2-query.h \
+	babeltrace2.cpp \
+	babeltrace2-cfg.cpp \
+	babeltrace2-cfg.hpp \
+	babeltrace2-cfg-cli-args.cpp \
+	babeltrace2-cfg-cli-args.hpp \
+	babeltrace2-cfg-cli-args-connect.cpp \
+	babeltrace2-cfg-cli-args-connect.hpp \
+	babeltrace2-cfg-cli-args-default.hpp \
+	babeltrace2-cfg-cli-args-default.cpp \
+	babeltrace2-log-level.cpp \
+	babeltrace2-log-level.hpp \
+	babeltrace2-plugins.cpp \
+	babeltrace2-plugins.hpp \
+	babeltrace2-query.cpp \
+	babeltrace2-query.hpp \
 	logging.cpp \
-	logging.h
+	logging.hpp
 
 # -Wl,--no-as-needed is needed for recent gold linker who seems to think
 # it knows better and considers libraries with constructors having

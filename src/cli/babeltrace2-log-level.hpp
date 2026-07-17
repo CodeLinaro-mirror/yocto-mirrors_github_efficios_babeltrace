@@ -4,10 +4,13 @@
  * Copyright 2019 Philippe Proulx <pproulx@efficios.com>
  */
 
-#ifndef BABELTRACE_CLI_BABELTRACE2_LOG_LEVEL_H
-#define BABELTRACE_CLI_BABELTRACE2_LOG_LEVEL_H
+/* clang-format off */
+
+#ifndef BABELTRACE_CLI_BABELTRACE2_LOG_LEVEL_HPP
+#define BABELTRACE_CLI_BABELTRACE2_LOG_LEVEL_HPP
 
 #include <babeltrace2/babeltrace.h>
+#include <glib.h>
 
 #define ENV_BABELTRACE_CLI_LOG_LEVEL "BABELTRACE_CLI_LOG_LEVEL"
 
@@ -31,4 +34,4 @@ int logging_level_min(int a, int b)
 
 void set_auto_log_levels(int *logging_level);
 
-#endif /* BABELTRACE_CLI_BABELTRACE2_LOG_LEVEL_H */
+#endif /* BABELTRACE_CLI_BABELTRACE2_LOG_LEVEL_HPP */

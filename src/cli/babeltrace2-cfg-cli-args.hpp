@@ -4,13 +4,15 @@
  * Copyright 2016-2017 Philippe Proulx <pproulx@efficios.com>
  */
 
-#ifndef BABELTRACE_CLI_BABELTRACE2_CFG_CLI_ARGS_H
-#define BABELTRACE_CLI_BABELTRACE2_CFG_CLI_ARGS_H
+/* clang-format off */
+
+#ifndef BABELTRACE_CLI_BABELTRACE2_CFG_CLI_ARGS_HPP
+#define BABELTRACE_CLI_BABELTRACE2_CFG_CLI_ARGS_HPP
 
 #include <stdbool.h>
 #include <glib.h>
 
-#include "babeltrace2-cfg.h"
+#include "babeltrace2-cfg.hpp"
 
 /*
  * Return value of functions that create a bt_config from CLI args and return
@@ -45,4 +47,4 @@ enum bt_config_cli_args_status bt_config_cli_args_create(int argc,
 		const bt_value *initial_plugin_paths,
 		const bt_interrupter *interrupter);
 
-#endif /* BABELTRACE_CLI_BABELTRACE2_CFG_CLI_ARGS_H */
+#endif /* BABELTRACE_CLI_BABELTRACE2_CFG_CLI_ARGS_HPP */

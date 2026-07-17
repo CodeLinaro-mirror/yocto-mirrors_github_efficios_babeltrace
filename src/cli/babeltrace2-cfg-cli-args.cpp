@@ -6,8 +6,10 @@
  * Babeltrace trace converter - parameter parsing
  */
 
+/* clang-format off */
+
 #define BT_LOG_TAG "CLI/CFG-CLI-ARGS"
-#include "logging.h"
+#include "logging.hpp"
 
 #include <stdlib.h>
 #include <string.h>
@@ -19,12 +21,12 @@
 #include <glib.h>
 #include <sys/types.h>
 #include "argpar/argpar.h"
-#include "babeltrace2-cfg.h"
-#include "babeltrace2-cfg-cli-args.h"
-#include "babeltrace2-cfg-cli-args-connect.h"
+#include "babeltrace2-cfg.hpp"
+#include "babeltrace2-cfg-cli-args.hpp"
+#include "babeltrace2-cfg-cli-args-connect.hpp"
 #include "param-parse/param-parse.h"
-#include "babeltrace2-log-level.h"
-#include "babeltrace2-plugins.h"
+#include "babeltrace2-log-level.hpp"
+#include "babeltrace2-plugins.hpp"
 #include "autodisc/autodisc.h"
 #include "common/version.h"
 #include "compat/compiler.h"
@@ -484,7 +486,7 @@ void destroy_glist_of_gstring(GList *list)
 	}
 
 	for (at = list; at; at = g_list_next(at)) {
-		g_string_free(at->data, TRUE);
+		g_string_free(static_cast<GString *>(at->data), TRUE);
 	}
 
 	g_list_free(list);
@@ -504,8 +506,8 @@ GScanner *create_csv_identifiers_scanner(void)
 		.cset_skip_characters = (gchar *) " \t\n",
 		.cset_identifier_first = (gchar *) G_CSET_a_2_z G_CSET_A_2_Z "_",
 		.cset_identifier_nth = (gchar *) G_CSET_a_2_z G_CSET_A_2_Z ":_-",
-		.case_sensitive = TRUE,
 		.cpair_comment_single = NULL,
+		.case_sensitive = TRUE,
 		.skip_comment_multi = TRUE,
 		.skip_comment_single = TRUE,
 		.scan_comment_multi = FALSE,
@@ -513,20 +515,21 @@ GScanner *create_csv_identifiers_scanner(void)
 		.scan_identifier_1char = TRUE,
 		.scan_identifier_NULL = FALSE,
 		.scan_symbols = FALSE,
-		.symbol_2_token = FALSE,
-		.scope_0_fallback = FALSE,
 		.scan_binary = FALSE,
 		.scan_octal = FALSE,
 		.scan_float = FALSE,
 		.scan_hex = FALSE,
 		.scan_hex_dollar = FALSE,
-		.numbers_2_int = FALSE,
-		.int_2_float = FALSE,
-		.store_int64 = FALSE,
 		.scan_string_sq = FALSE,
 		.scan_string_dq = FALSE,
+		.numbers_2_int = FALSE,
+		.int_2_float = FALSE,
 		.identifier_2_string = FALSE,
 		.char_2_token = TRUE,
+		.symbol_2_token = FALSE,
+		.scope_0_fallback = FALSE,
+		.store_int64 = FALSE,
+		.padding_dummy = 0,
 	};
 
 	scanner = g_scanner_new(&scanner_config);
@@ -1131,7 +1134,9 @@ struct bt_config *bt_config_help_create(const bt_value *plugin_paths,
 	}
 
 	cfg->cmd_data.help.cfg_component =
-		bt_config_component_create(-1, NULL, NULL, default_log_level);
+		bt_config_component_create(
+			static_cast<bt_component_class_type>(-1), NULL, NULL,
+			default_log_level);
 	if (!cfg->cmd_data.help.cfg_component) {
 		goto error;
 	}
@@ -2387,7 +2392,7 @@ enum bt_config_cli_args_status bt_config_run_from_args_array(
 	uint64_t i, len = bt_value_array_get_length(run_args);
 
 	BT_ASSERT(len <= SIZE_MAX);
-	argv = calloc((size_t) len, sizeof(*argv));
+	argv = static_cast<const char **>(calloc((size_t) len, sizeof(*argv)));
 	if (!argv) {
 		BT_CLI_LOGE_APPEND_CAUSE_OOM();
 		goto error;
@@ -2849,7 +2854,8 @@ int append_multiple_implicit_components_param(GPtrArray *implicit_comp_args,
 	int n = 0;
 
 	for (i = 0; i < implicit_comp_args->len; i++) {
-		struct implicit_component_args *args = implicit_comp_args->pdata[i];
+		struct implicit_component_args *args =
+			static_cast<implicit_component_args *>(implicit_comp_args->pdata[i]);
 
 		if (strcmp(args->comp_arg->str, comp_arg) == 0) {
 			append_implicit_component_param(args, key, value);
@@ -3160,8 +3166,8 @@ int convert_auto_connect(bt_value *run_args,
 
 	/* Connect all sources to the first filter */
 	for (source_at = source_names; source_at; source_at = g_list_next(source_at)) {
-		GString *source_name = source_at->data;
-		GString *filter_name = filter_at->data;
+		GString *source_name = static_cast<GString *>(source_at->data);
+		GString *filter_name = static_cast<GString *>(filter_at->data);
 
 		ret = append_connect_arg(run_args, source_name->str,
 			filter_name->str);
@@ -3175,8 +3181,8 @@ int convert_auto_connect(bt_value *run_args,
 
 	/* Connect remaining filters */
 	for (; filter_at; filter_prev = filter_at, filter_at = g_list_next(filter_at)) {
-		GString *filter_name = filter_at->data;
-		GString *filter_prev_name = filter_prev->data;
+		GString *filter_name = static_cast<GString *>(filter_at->data);
+		GString *filter_prev_name = static_cast<GString *>(filter_prev->data);
 
 		ret = append_connect_arg(run_args, filter_prev_name->str,
 			filter_name->str);
@@ -3187,8 +3193,8 @@ int convert_auto_connect(bt_value *run_args,
 
 	/* Connect last filter to all sinks */
 	for (sink_at = sink_names; sink_at; sink_at = g_list_next(sink_at)) {
-		GString *filter_name = filter_prev->data;
-		GString *sink_name = sink_at->data;
+		GString *filter_name = static_cast<GString *>(filter_prev->data);
+		GString *sink_name = static_cast<GString *>(sink_at->data);
 
 		ret = append_connect_arg(run_args, filter_name->str,
 			sink_name->str);
@@ -3311,7 +3317,8 @@ int create_implicit_component_args_from_auto_discovered_sources(
 
 	for (i = 0; i < len; i++) {
 		struct auto_source_discovery_result *res =
-			g_ptr_array_index(auto_disc->results, i);
+			static_cast<auto_source_discovery_result *>(
+				g_ptr_array_index(auto_disc->results, i));
 		uint64_t orig_indices_i, orig_indices_count;
 
 		g_free(cc_name);
@@ -3497,16 +3504,16 @@ enum bt_config_cli_args_status bt_config_convert_from_args(int argc,
 	bt_value *non_opts = NULL;
 	bt_value *non_opt_params = NULL;
 	bt_value *non_opt_loglevels = NULL;
-	struct implicit_component_args implicit_ctf_output_args = { 0 };
-	struct implicit_component_args implicit_lttng_live_args = { 0 };
-	struct implicit_component_args implicit_dummy_args = { 0 };
-	struct implicit_component_args implicit_text_args = { 0 };
-	struct implicit_component_args implicit_debug_info_args = { 0 };
-	struct implicit_component_args implicit_muxer_args = { 0 };
-	struct implicit_component_args implicit_trimmer_args = { 0 };
+	struct implicit_component_args implicit_ctf_output_args = {};
+	struct implicit_component_args implicit_lttng_live_args = {};
+	struct implicit_component_args implicit_dummy_args = {};
+	struct implicit_component_args implicit_text_args = {};
+	struct implicit_component_args implicit_debug_info_args = {};
+	struct implicit_component_args implicit_muxer_args = {};
+	struct implicit_component_args implicit_trimmer_args = {};
 	char error_buf[256] = { 0 };
 	size_t i;
-	struct bt_common_lttng_live_url_parts lttng_live_url_parts = { 0 };
+	struct bt_common_lttng_live_url_parts lttng_live_url_parts = {};
 	char *output = NULL;
 	struct auto_source_discovery auto_disc = { NULL };
 	GString *auto_disc_comp_name = NULL;
@@ -4428,7 +4435,8 @@ enum bt_config_cli_args_status bt_config_convert_from_args(int argc,
 			auto_disc_status = auto_discover_source_components(
 				non_opts, plugins, plugin_count,
 				auto_source_discovery_restrict_component_class_name,
-				*default_log_level, &auto_disc, interrupter);
+				static_cast<bt_logging_level>(*default_log_level),
+				&auto_disc, interrupter);
 
 			if (auto_disc_status != AUTO_SOURCE_DISCOVERY_STATUS_OK) {
 				if (auto_disc_status == AUTO_SOURCE_DISCOVERY_STATUS_INTERRUPTED) {
@@ -4508,7 +4516,8 @@ enum bt_config_cli_args_status bt_config_convert_from_args(int argc,
 		struct implicit_component_args *args;
 		int j;
 
-		args = discovered_source_args->pdata[i];
+		args = static_cast<implicit_component_args *>(
+			discovered_source_args->pdata[i]);
 
 		g_string_printf(auto_disc_comp_name, "auto-disc-%s", args->comp_arg->str);
 
@@ -4618,7 +4627,8 @@ enum bt_config_cli_args_status bt_config_convert_from_args(int argc,
 	 */
 	for (i = 0; i < discovered_source_args->len; i++) {
 		struct implicit_component_args *args =
-			discovered_source_args->pdata[i];
+			static_cast<implicit_component_args *>(
+				discovered_source_args->pdata[i]);
 
 		ret = append_run_args_for_implicit_component(args, run_args);
 		if (ret) {

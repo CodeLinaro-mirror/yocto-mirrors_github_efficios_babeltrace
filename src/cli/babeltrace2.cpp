@@ -4,8 +4,10 @@
  * Copyright 2010-2011 EfficiOS Inc. and Linux Foundation
  */
 
+/* clang-format off */
+
 #define BT_LOG_TAG "CLI"
-#include "logging.h"
+#include "logging.hpp"
 
 #include <babeltrace2/babeltrace.h>
 #include "common/common.h"
@@ -19,12 +21,12 @@
 #include <inttypes.h>
 #include <unistd.h>
 #include <signal.h>
-#include "babeltrace2-cfg.h"
-#include "babeltrace2-cfg-cli-args.h"
-#include "babeltrace2-cfg-cli-args-default.h"
-#include "babeltrace2-log-level.h"
-#include "babeltrace2-plugins.h"
-#include "babeltrace2-query.h"
+#include "babeltrace2-cfg.hpp"
+#include "babeltrace2-cfg-cli-args.hpp"
+#include "babeltrace2-cfg-cli-args-default.hpp"
+#include "babeltrace2-log-level.hpp"
+#include "babeltrace2-plugins.hpp"
+#include "babeltrace2-query.hpp"
 
 #define ENV_BABELTRACE_WARN_COMMAND_NAME_DIRECTORY_CLASH "BABELTRACE_CLI_WARN_COMMAND_NAME_DIRECTORY_CLASH"
 #define NSEC_PER_SEC	1000000000LL
@@ -111,7 +113,8 @@ int query(struct bt_config *cfg, const bt_component_class *comp_cls,
 		const char *obj, const bt_value *params,
 		const bt_value **user_result, const char **fail_reason)
 {
-	return cli_query(comp_cls, obj, params, cfg->log_level,
+	return cli_query(comp_cls, obj, params,
+		static_cast<bt_logging_level>(cfg->log_level),
 		the_interrupter, user_result, fail_reason);
 }
 
@@ -154,30 +157,33 @@ static
 const bt_component_class_source *find_source_component_class(
 		const char *plugin_name, const char *comp_class_name)
 {
-	return (const void *) find_component_class_from_plugin(
-		plugin_name, comp_class_name,
-		(plugin_borrow_comp_cls_func_t)
-			bt_plugin_borrow_source_component_class_by_name_const);
+	return static_cast<const bt_component_class_source *>(
+		find_component_class_from_plugin(
+			plugin_name, comp_class_name,
+			(plugin_borrow_comp_cls_func_t)
+				bt_plugin_borrow_source_component_class_by_name_const));
 }
 
 static
 const bt_component_class_filter *find_filter_component_class(
 		const char *plugin_name, const char *comp_class_name)
 {
-	return (const void *) find_component_class_from_plugin(
-		plugin_name, comp_class_name,
-		(plugin_borrow_comp_cls_func_t)
-			bt_plugin_borrow_filter_component_class_by_name_const);
+	return static_cast<const bt_component_class_filter *>(
+		find_component_class_from_plugin(
+			plugin_name, comp_class_name,
+			(plugin_borrow_comp_cls_func_t)
+				bt_plugin_borrow_filter_component_class_by_name_const));
 }
 
 static
 const bt_component_class_sink *find_sink_component_class(
 		const char *plugin_name, const char *comp_class_name)
 {
-	return (const void *) find_component_class_from_plugin(plugin_name,
-		comp_class_name,
-		(plugin_borrow_comp_cls_func_t)
-			bt_plugin_borrow_sink_component_class_by_name_const);
+	return static_cast<const bt_component_class_sink *>(
+		find_component_class_from_plugin(plugin_name,
+			comp_class_name,
+			(plugin_borrow_comp_cls_func_t)
+				bt_plugin_borrow_sink_component_class_by_name_const));
 }
 
 static
@@ -257,7 +263,7 @@ bt_value_map_foreach_entry_const_func_status collect_map_keys(
 		const bt_value *object __attribute__((unused)),
 		void *data)
 {
-	GPtrArray *map_keys = data;
+	GPtrArray *map_keys = static_cast<GPtrArray *>(data);
 
 	g_ptr_array_add(map_keys, (gpointer *) key);
 
@@ -390,7 +396,8 @@ void print_value_rec(FILE *fp, const bt_value *value, size_t indent)
 		g_ptr_array_sort(map_keys, g_ptr_array_sort_strings);
 
 		for (i = 0; i < map_keys->len; i++) {
-			const char *map_key = g_ptr_array_index(map_keys, i);
+			const char *map_key = static_cast<const char *>(
+				g_ptr_array_index(map_keys, i));
 			const bt_value *map_value;
 
 			map_value = bt_value_map_borrow_entry_value_const(value, map_key);
@@ -488,8 +495,9 @@ void print_cfg_run(struct bt_config *cfg)
 
 	for (i = 0; i < cfg->cmd_data.run.connections->len; i++) {
 		struct bt_config_connection *cfg_connection =
-			g_ptr_array_index(cfg->cmd_data.run.connections,
-				i);
+			static_cast<bt_config_connection *>(
+				g_ptr_array_index(cfg->cmd_data.run.connections,
+					i));
 
 		fprintf(stderr, "    %s%s%s -> %s%s%s\n",
 			cfg_connection->upstream_comp_name->str,
@@ -1047,7 +1055,8 @@ enum bt_cmd_status cmd_list_plugin_providers(void)
 
 	for (i = 0; i < sorted_providers->len; i++) {
 		const bt_plugin_provider *provider =
-			g_ptr_array_index(sorted_providers, i);
+			static_cast<const bt_plugin_provider *>(
+				g_ptr_array_index(sorted_providers, i));
 
 		printf("\n");
 		print_plugin_provider(provider);
@@ -1340,7 +1349,7 @@ struct trace_range {
 static
 guint port_id_hash(gconstpointer v)
 {
-	const struct port_id *id = v;
+	const struct port_id *id = static_cast<const struct port_id *>(v);
 
 	BT_ASSERT(id->instance_name);
 	BT_ASSERT(id->port_name);
@@ -1351,8 +1360,8 @@ guint port_id_hash(gconstpointer v)
 static
 gboolean port_id_equal(gconstpointer v1, gconstpointer v2)
 {
-	const struct port_id *id1 = v1;
-	const struct port_id *id2 = v2;
+	const struct port_id *id1 = static_cast<const struct port_id *>(v1);
+	const struct port_id *id2 = static_cast<const struct port_id *>(v2);
 
 	return strcmp(id1->instance_name, id2->instance_name) == 0 &&
 		strcmp(id1->port_name, id2->port_name) == 0;
@@ -1361,7 +1370,7 @@ gboolean port_id_equal(gconstpointer v1, gconstpointer v2)
 static
 void port_id_destroy(gpointer data)
 {
-	struct port_id *id = data;
+	struct port_id *id = static_cast<struct port_id *>(data);
 
 	free(id->instance_name);
 	free(id->port_name);
@@ -1624,7 +1633,8 @@ int cmd_run_ctx_connect_upstream_port_to_downstream_component(
 			ctx->connect_ports = false;
 			add_comp_status = bt_graph_add_filter_component(
 				ctx->graph, trimmer_class, trimmer_name,
-				trimmer_params, ctx->cfg->log_level,
+				trimmer_params,
+				static_cast<bt_logging_level>(ctx->cfg->log_level),
 				&trimmer);
 			bt_component_filter_get_ref(trimmer);
 			free(trimmer_name);
@@ -1765,8 +1775,9 @@ int cmd_run_ctx_connect_upstream_port(struct cmd_run_ctx *ctx,
 
 	for (i = 0; i < ctx->cfg->cmd_data.run.connections->len; i++) {
 		struct bt_config_connection *cfg_conn =
-			g_ptr_array_index(
-				ctx->cfg->cmd_data.run.connections, i);
+			static_cast<bt_config_connection *>(
+				g_ptr_array_index(
+					ctx->cfg->cmd_data.run.connections, i));
 
 		if (strcmp(cfg_conn->upstream_comp_name->str,
 				upstream_comp_name)) {
@@ -1846,7 +1857,8 @@ bt_graph_listener_func_status graph_source_output_port_added_listener(
 		const bt_component_source *component __attribute__((unused)),
 		const bt_port_output *port, void *data)
 {
-	return graph_output_port_added_listener(data, port);
+	return graph_output_port_added_listener(
+		static_cast<cmd_run_ctx *>(data), port);
 }
 
 static
@@ -1854,7 +1866,8 @@ bt_graph_listener_func_status graph_filter_output_port_added_listener(
 		const bt_component_filter *component __attribute__((unused)),
 		const bt_port_output *port, void *data)
 {
-	return graph_output_port_added_listener(data, port);
+	return graph_output_port_added_listener(
+		static_cast<cmd_run_ctx *>(data), port);
 }
 
 static
@@ -1934,7 +1947,7 @@ int append_descriptors_from_bt_config_component_array(
 
 	for (i = 0; i < component_configs->len; i++) {
 		struct bt_config_component *cfg_comp =
-			component_configs->pdata[i];
+			static_cast<bt_config_component *>(component_configs->pdata[i]);
 
 		ret = add_descriptor_to_component_descriptor_set(
 			comp_descr_set,
@@ -2020,7 +2033,8 @@ bt_get_greatest_operative_mip_version_status get_greatest_operative_mip_version(
 				bt_integer_range_set_unsigned_add_range(
 					mip_version_restriction, 0, 0);
 			if (add_range_status != BT_INTEGER_RANGE_SET_ADD_RANGE_STATUS_OK) {
-				status = (int) add_range_status;
+				status = static_cast<bt_get_greatest_operative_mip_version_status>(
+					add_range_status);
 				goto end;
 			}
 		}
@@ -2030,7 +2044,8 @@ bt_get_greatest_operative_mip_version_status get_greatest_operative_mip_version(
 				bt_integer_range_set_unsigned_add_range(
 					mip_version_restriction, 1, 1);
 			if (add_range_status != BT_INTEGER_RANGE_SET_ADD_RANGE_STATUS_OK) {
-				status = (int) add_range_status;
+				status = static_cast<bt_get_greatest_operative_mip_version_status>(
+					add_range_status);
 				goto end;
 			}
 		}
@@ -2447,7 +2462,8 @@ int cmd_run_ctx_create_components_from_config_components(
 
 	for (i = 0; i < cfg_components->len; i++) {
 		struct bt_config_component *cfg_comp =
-			g_ptr_array_index(cfg_components, i);
+			static_cast<bt_config_component *>(
+				g_ptr_array_index(cfg_components, i));
 		GQuark quark;
 
 		switch (cfg_comp->type) {
@@ -2485,24 +2501,33 @@ int cmd_run_ctx_create_components_from_config_components(
 		switch (cfg_comp->type) {
 		case BT_COMPONENT_CLASS_TYPE_SOURCE:
 			ret = bt_graph_add_source_component(ctx->graph,
-				comp_cls, cfg_comp->instance_name->str,
-				cfg_comp->params, cfg_comp->log_level,
-				(void *) &comp);
-			bt_component_source_get_ref(comp);
+				static_cast<const bt_component_class_source *>(comp_cls),
+				cfg_comp->instance_name->str,
+				cfg_comp->params,
+				static_cast<bt_logging_level>(cfg_comp->log_level),
+				reinterpret_cast<const bt_component_source **>(&comp));
+			bt_component_source_get_ref(
+				static_cast<const bt_component_source *>(comp));
 			break;
 		case BT_COMPONENT_CLASS_TYPE_FILTER:
 			ret = bt_graph_add_filter_component(ctx->graph,
-				comp_cls, cfg_comp->instance_name->str,
-				cfg_comp->params, cfg_comp->log_level,
-				(void *) &comp);
-			bt_component_filter_get_ref(comp);
+				static_cast<const bt_component_class_filter *>(comp_cls),
+				cfg_comp->instance_name->str,
+				cfg_comp->params,
+				static_cast<bt_logging_level>(cfg_comp->log_level),
+				reinterpret_cast<const bt_component_filter **>(&comp));
+			bt_component_filter_get_ref(
+				static_cast<const bt_component_filter *>(comp));
 			break;
 		case BT_COMPONENT_CLASS_TYPE_SINK:
 			ret = bt_graph_add_sink_component(ctx->graph,
-				comp_cls, cfg_comp->instance_name->str,
-				cfg_comp->params, cfg_comp->log_level,
-				(void *) &comp);
-			bt_component_sink_get_ref(comp);
+				static_cast<const bt_component_class_sink *>(comp_cls),
+				cfg_comp->instance_name->str,
+				cfg_comp->params,
+				static_cast<bt_logging_level>(cfg_comp->log_level),
+				reinterpret_cast<const bt_component_sink **>(&comp));
+			bt_component_sink_get_ref(
+				static_cast<const bt_component_sink *>(comp));
 			break;
 		default:
 			bt_common_abort();
@@ -2522,7 +2547,8 @@ int cmd_run_ctx_create_components_from_config_components(
 
 		if (ctx->stream_intersection_mode &&
 				cfg_comp->type == BT_COMPONENT_CLASS_TYPE_SOURCE) {
-			ret = set_stream_intersections(ctx, cfg_comp, comp_cls);
+			ret = set_stream_intersections(ctx, cfg_comp,
+				static_cast<const bt_component_class_source *>(comp_cls));
 			if (ret) {
 				BT_CLI_LOGE_APPEND_CAUSE(
 					"Cannot determine stream intersection of trace.");
@@ -2676,7 +2702,7 @@ static
 enum bt_cmd_status cmd_run(struct bt_config *cfg)
 {
 	enum bt_cmd_status cmd_status;
-	struct cmd_run_ctx ctx = { 0 };
+	struct cmd_run_ctx ctx = {};
 
 	/* Initialize the command's context and the graph object */
 	if (cmd_run_ctx_init(&ctx, cfg)) {
@@ -2790,7 +2816,7 @@ void warn_command_name_and_directory_clash(struct bt_config *cfg)
 	}
 
 	if (g_file_test(cfg->command_name,
-			G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR)) {
+			static_cast<GFileTest>(G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))) {
 		bt_log_write_printf(__FILE__, __func__, __LINE__,
 				BT_LOG_WARNING, BT_LOG_TAG,
 				"The `%s` command was executed. "

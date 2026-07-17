@@ -4,14 +4,16 @@
  * Copyright 2016-2019 EfficiOS Inc.
  */
 
+/* clang-format off */
+
 #define BT_LOG_TAG "CLI/QUERY"
-#include "logging.h"
+#include "logging.hpp"
 
 #include <babeltrace2/babeltrace.h>
 
 #include "common/common.h"
 
-#include "babeltrace2-query.h"
+#include "babeltrace2-query.hpp"
 
 static
 void set_fail_reason(const char **fail_reason, const char *reason)

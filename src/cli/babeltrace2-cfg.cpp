@@ -6,15 +6,17 @@
  * Babeltrace trace converter - parameter parsing
  */
 
+/* clang-format off */
+
 #include "common/common.h"
 #include <babeltrace2/babeltrace.h>
 #include <glib.h>
-#include "babeltrace2-cfg.h"
+#include "babeltrace2-cfg.hpp"
 
 static
 void destroy_gstring(void *data)
 {
-	g_string_free(data, TRUE);
+	g_string_free(static_cast<GString *>(data), TRUE);
 }
 
 /*
@@ -40,7 +42,7 @@ int bt_config_append_plugin_paths(
 	}
 
 	for (i = 0; i < dirs->len; i++) {
-		GString *dir = g_ptr_array_index(dirs, i);
+		GString *dir = static_cast<GString *>(g_ptr_array_index(dirs, i));
 
 		ret = bt_value_array_append_string_element(
 			plugin_paths, dir->str);

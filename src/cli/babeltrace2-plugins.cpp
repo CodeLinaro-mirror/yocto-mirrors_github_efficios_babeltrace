@@ -6,10 +6,12 @@
  * Babeltrace trace converter - CLI tool's configuration
  */
 
-#define BT_LOG_TAG "CLI/PLUGINS"
-#include "logging.h"
+/* clang-format off */
 
-#include "babeltrace2-plugins.h"
+#define BT_LOG_TAG "CLI/PLUGINS"
+#include "logging.hpp"
+
+#include "babeltrace2-plugins.hpp"
 
 #include <stdbool.h>
 #include <babeltrace2/babeltrace.h>
@@ -37,7 +39,8 @@ const bt_plugin *borrow_loaded_plugin_by_name(const char *name)
 	BT_LOGI("Finding plugin: name=\"%s\"", name);
 
 	for (i = 0; i < loaded_plugins->len; i++) {
-		plugin = g_ptr_array_index(loaded_plugins, i);
+		plugin = static_cast<const bt_plugin *>(
+			g_ptr_array_index(loaded_plugins, i));
 
 		if (strcmp(name, bt_plugin_get_name(plugin)) == 0) {
 			break;
@@ -69,7 +72,8 @@ const bt_plugin **borrow_loaded_plugins(void)
 const bt_plugin *borrow_loaded_plugin_by_index(size_t index)
 {
 	BT_ASSERT(index < loaded_plugins->len);
-	return g_ptr_array_index(loaded_plugins, index);
+	return static_cast<const bt_plugin *>(
+		g_ptr_array_index(loaded_plugins, index));
 }
 
 static

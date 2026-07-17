@@ -21,7 +21,7 @@ void bt_object_put_ref_no_null_check(const void *obj);
 static inline
 unsigned long long bt_object_get_ref_count(const struct bt_object *c_obj)
 {
-	struct bt_object *obj = (void *) c_obj;
+	struct bt_object *obj = (struct bt_object *) c_obj;
 
 	BT_ASSERT_DBG(obj);
 	BT_ASSERT_DBG(obj->is_shared);
@@ -31,7 +31,7 @@ unsigned long long bt_object_get_ref_count(const struct bt_object *c_obj)
 static inline
 struct bt_object *bt_object_borrow_parent(const struct bt_object *c_obj)
 {
-	struct bt_object *obj = (void *) c_obj;
+	struct bt_object *obj = (struct bt_object *) c_obj;
 
 	BT_ASSERT_DBG(obj);
 	BT_ASSERT_DBG(obj->is_shared);
@@ -41,7 +41,7 @@ struct bt_object *bt_object_borrow_parent(const struct bt_object *c_obj)
 static inline
 struct bt_object *bt_object_get_parent(const struct bt_object *c_obj)
 {
-	struct bt_object *obj = (void *) c_obj;
+	struct bt_object *obj = (struct bt_object *) c_obj;
 	struct bt_object *parent = bt_object_borrow_parent(obj);
 
 	if (parent) {
@@ -178,7 +178,7 @@ void bt_object_set_parent_is_owner_listener_func(struct bt_object *obj,
 static inline
 void bt_object_inc_ref_count(const struct bt_object *c_obj)
 {
-	struct bt_object *obj = (void *) c_obj;
+	struct bt_object *obj = (struct bt_object *) c_obj;
 
 	BT_ASSERT_DBG(obj);
 	BT_ASSERT_DBG(obj->is_shared);
@@ -189,7 +189,7 @@ void bt_object_inc_ref_count(const struct bt_object *c_obj)
 static inline
 void bt_object_get_ref_no_null_check_no_parent_check(const struct bt_object *c_obj)
 {
-	struct bt_object *obj = (void *) c_obj;
+	struct bt_object *obj = (struct bt_object *) c_obj;
 
 	BT_ASSERT_DBG(obj);
 	BT_ASSERT_DBG(obj->is_shared);
@@ -207,7 +207,7 @@ void bt_object_get_ref_no_null_check_no_parent_check(const struct bt_object *c_o
 static inline
 void bt_object_get_ref_no_null_check(const void *c_obj)
 {
-	struct bt_object *obj = (void *) c_obj;
+	struct bt_object *obj = (struct bt_object *) c_obj;
 
 	BT_ASSERT_DBG(obj);
 	BT_ASSERT_DBG(obj->is_shared);
@@ -234,7 +234,7 @@ void bt_object_get_ref_no_null_check(const void *c_obj)
 static inline
 void bt_object_put_ref_no_null_check(const void *c_obj)
 {
-	struct bt_object *obj = (void *) c_obj;
+	struct bt_object *obj = (struct bt_object *) c_obj;
 
 	BT_ASSERT_DBG(obj);
 	BT_ASSERT_DBG(obj->is_shared);
@@ -258,7 +258,7 @@ void bt_object_put_ref_no_null_check(const void *c_obj)
 static inline
 void bt_object_get_ref(const void *ptr)
 {
-	struct bt_object *obj = (void *) ptr;
+	struct bt_object *obj = (struct bt_object *) ptr;
 
 	if (G_UNLIKELY(!obj)) {
 		return;
@@ -271,7 +271,7 @@ void bt_object_get_ref(const void *ptr)
 static inline
 void bt_object_put_ref(const void *ptr)
 {
-	struct bt_object *obj = (void *) ptr;
+	struct bt_object *obj = (struct bt_object *) ptr;
 
 	if (G_UNLIKELY(!obj)) {
 		return;

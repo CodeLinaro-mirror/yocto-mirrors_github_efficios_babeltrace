@@ -6,8 +6,10 @@
  * Babeltrace trace converter - CLI tool's configuration
  */
 
-#ifndef BABELTRACE_CLI_BABELTRACE2_PLUGINS_H
-#define BABELTRACE_CLI_BABELTRACE2_PLUGINS_H
+/* clang-format off */
+
+#ifndef BABELTRACE_CLI_BABELTRACE2_PLUGINS_HPP
+#define BABELTRACE_CLI_BABELTRACE2_PLUGINS_HPP
 
 #include <babeltrace2/babeltrace.h>
 
@@ -22,4 +24,4 @@ const bt_plugin *borrow_loaded_plugin_by_index(size_t index);
 const bt_plugin *borrow_loaded_plugin_by_name(const char *name);
 
 
-#endif /* BABELTRACE_CLI_BABELTRACE2_PLUGINS_H */
+#endif /* BABELTRACE_CLI_BABELTRACE2_PLUGINS_HPP */

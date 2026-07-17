@@ -6,8 +6,10 @@
  * Babeltrace trace converter - CLI tool's configuration
  */
 
-#ifndef BABELTRACE_CLI_BABELTRACE2_CFG_H
-#define BABELTRACE_CLI_BABELTRACE2_CFG_H
+/* clang-format off */
+
+#ifndef BABELTRACE_CLI_BABELTRACE2_CFG_HPP
+#define BABELTRACE_CLI_BABELTRACE2_CFG_HPP
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -114,7 +116,8 @@ static inline
 struct bt_config_component *bt_config_get_component(GPtrArray *array,
 		size_t index)
 {
-	struct bt_config_component *comp = g_ptr_array_index(array, index);
+	struct bt_config_component *comp = static_cast<bt_config_component *>(
+		g_ptr_array_index(array, index));
 
 	bt_object_get_ref(comp);
 	return comp;
@@ -125,4 +128,4 @@ int bt_config_append_plugin_paths(bt_value *plugin_paths,
 
 void bt_config_connection_destroy(struct bt_config_connection *connection);
 
-#endif /* BABELTRACE_CLI_BABELTRACE2_CFG_H */
+#endif /* BABELTRACE_CLI_BABELTRACE2_CFG_HPP */

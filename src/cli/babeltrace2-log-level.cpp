@@ -4,10 +4,12 @@
  * Copyright 2019 Philippe Proulx <pproulx@efficios.com>
  */
 
-#define BT_LOG_TAG "CLI"
-#include "logging.h"
+/* clang-format off */
 
-#include "babeltrace2-log-level.h"
+#define BT_LOG_TAG "CLI"
+#include "logging.hpp"
+
+#include "babeltrace2-log-level.hpp"
 
 #include <stdlib.h>
 
@@ -52,7 +54,8 @@ void set_auto_log_levels(int *logging_level)
 	 * (through LIBBABELTRACE2_INIT_LOG_LEVEL), set it.
 	 */
 	if (!getenv("LIBBABELTRACE2_INIT_LOG_LEVEL")) {
-		bt_logging_set_global_level(*logging_level);
+		bt_logging_set_global_level(
+			static_cast<bt_logging_level>(*logging_level));
 	}
 
 	/*
@@ -60,7 +63,7 @@ void set_auto_log_levels(int *logging_level)
 	 * (through BABELTRACE_CLI_LOG_LEVEL), set it.
 	 */
 	if (!getenv(ENV_BABELTRACE_CLI_LOG_LEVEL)) {
-		bt_cli_log_level = *logging_level;
+		bt_cli_log_level = static_cast<bt_log_level>(*logging_level);
 	}
 
 	for (env_var_name = log_level_env_var_names; *env_var_name; env_var_name++) {
@@ -71,7 +74,8 @@ void set_auto_log_levels(int *logging_level)
 			 * Set module's default log level if not
 			 * explicitly specified.
 			 */
-			val[0] = bt_log_get_letter_from_level(*logging_level);
+			val[0] = bt_log_get_letter_from_level(
+				static_cast<bt_log_level>(*logging_level));
 			g_setenv(*env_var_name, val, 1);
 		}
 	}

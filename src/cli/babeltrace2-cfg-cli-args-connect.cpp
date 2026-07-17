@@ -4,14 +4,16 @@
  * Copyright 2017 Philippe Proulx <pproulx@efficios.com>
  */
 
+/* clang-format off */
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <babeltrace2/babeltrace.h>
 #include "common/common.h"
-#include "babeltrace2-cfg.h"
-#include "babeltrace2-cfg-cli-args-connect.h"
+#include "babeltrace2-cfg.hpp"
+#include "babeltrace2-cfg-cli-args-connect.hpp"
 
 static bool all_named_and_printable_in_array(GPtrArray *comps)
 {
@@ -19,7 +21,8 @@ static bool all_named_and_printable_in_array(GPtrArray *comps)
 	bool all_named_and_printable = true;
 
 	for (i = 0; i < comps->len; i++) {
-		struct bt_config_component *comp = g_ptr_array_index(comps, i);
+		struct bt_config_component *comp =
+			static_cast<bt_config_component *>(g_ptr_array_index(comps, i));
 
 		if (comp->instance_name->len == 0) {
 			all_named_and_printable = false;
@@ -279,7 +282,8 @@ static struct bt_config_component *find_component_in_array(GPtrArray *comps,
 	struct bt_config_component *found_comp = NULL;
 
 	for (i = 0; i < comps->len; i++) {
-		struct bt_config_component *comp = g_ptr_array_index(comps, i);
+		struct bt_config_component *comp =
+			static_cast<bt_config_component *>(g_ptr_array_index(comps, i));
 
 		if (strcmp(name, comp->instance_name->str) == 0) {
 			found_comp = comp;
@@ -324,7 +328,8 @@ static int validate_all_endpoints_exist(struct bt_config *cfg, char *error_buf,
 
 	for (i = 0; i < cfg->cmd_data.run.connections->len; i++) {
 		struct bt_config_connection *connection =
-			g_ptr_array_index(cfg->cmd_data.run.connections, i);
+			static_cast<bt_config_connection *>(
+				g_ptr_array_index(cfg->cmd_data.run.connections, i));
 		struct bt_config_component *comp;
 
 		comp = find_component(cfg, connection->upstream_comp_name->str);
@@ -364,7 +369,8 @@ static int validate_connection_directions(struct bt_config *cfg,
 
 	for (i = 0; i < cfg->cmd_data.run.connections->len; i++) {
 		struct bt_config_connection *connection =
-			g_ptr_array_index(cfg->cmd_data.run.connections, i);
+			static_cast<bt_config_connection *>(
+				g_ptr_array_index(cfg->cmd_data.run.connections, i));
 
 		src_comp = find_component(cfg,
 			connection->upstream_comp_name->str);
@@ -421,18 +427,21 @@ static int validate_no_cycles_rec(struct bt_config *cfg, GPtrArray *path,
 	const char *src_comp_name;
 
 	BT_ASSERT(path && path->len > 0);
-	src_comp_name = g_ptr_array_index(path, path->len - 1);
+	src_comp_name = static_cast<const char *>(
+		g_ptr_array_index(path, path->len - 1));
 
 	for (conn_i = 0; conn_i < cfg->cmd_data.run.connections->len; conn_i++) {
 		struct bt_config_connection *conn =
-			g_ptr_array_index(cfg->cmd_data.run.connections, conn_i);
+			static_cast<bt_config_connection *>(
+				g_ptr_array_index(cfg->cmd_data.run.connections, conn_i));
 
 		if (strcmp(conn->upstream_comp_name->str, src_comp_name) == 0) {
 			size_t path_i;
 
 			for (path_i = 0; path_i < path->len; path_i++) {
 				const char *comp_name =
-					g_ptr_array_index(path, path_i);
+					static_cast<const char *>(
+						g_ptr_array_index(path, path_i));
 
 				if (strcmp(comp_name, conn->downstream_comp_name->str) == 0) {
 					snprintf(error_buf, error_buf_size,
@@ -475,7 +484,8 @@ static int validate_no_cycles(struct bt_config *cfg, char *error_buf,
 
 	for (i = 0; i < cfg->cmd_data.run.connections->len; i++) {
 		struct bt_config_connection *conn =
-			g_ptr_array_index(cfg->cmd_data.run.connections, i);
+			static_cast<bt_config_connection *>(
+				g_ptr_array_index(cfg->cmd_data.run.connections, i));
 
 		g_ptr_array_index(path, 0) = conn->upstream_comp_name->str;
 		ret = validate_no_cycles_rec(cfg, path,
@@ -501,7 +511,8 @@ static int validate_all_components_connected_in_array(GPtrArray *comps,
 	size_t i;
 
 	for (i = 0; i < comps->len; i++) {
-		struct bt_config_component *comp = g_ptr_array_index(comps, i);
+		struct bt_config_component *comp =
+			static_cast<bt_config_component *>(g_ptr_array_index(comps, i));
 
 		if (!bt_value_map_has_entry(connected_components,
 				comp->instance_name->str)) {
@@ -531,7 +542,8 @@ static int validate_all_components_connected(struct bt_config *cfg,
 
 	for (i = 0; i < cfg->cmd_data.run.connections->len; i++) {
 		struct bt_config_connection *connection =
-			g_ptr_array_index(cfg->cmd_data.run.connections, i);
+			static_cast<bt_config_connection *>(
+				g_ptr_array_index(cfg->cmd_data.run.connections, i));
 
 		ret = bt_value_map_insert_entry(connected_components,
 			connection->upstream_comp_name->str, bt_value_null);
@@ -597,7 +609,8 @@ static int validate_no_duplicate_connection(struct bt_config *cfg,
 
 	for (i = 0; i < cfg->cmd_data.run.connections->len; i++) {
 		struct bt_config_connection *connection =
-			g_ptr_array_index(cfg->cmd_data.run.connections, i);
+			static_cast<bt_config_connection *>(
+				g_ptr_array_index(cfg->cmd_data.run.connections, i));
 
 		g_string_printf(flat_connection_name, "%s\x01%s\x01%s\x01%s",
 			connection->upstream_comp_name->str,
