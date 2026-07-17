@@ -265,7 +265,8 @@ public:
 
     bt2c::CStringView componentOutputPortName() const noexcept
     {
-        return bt_error_cause_message_iterator_actor_get_component_name(this->libObjPtr());
+        return bt_error_cause_message_iterator_actor_get_component_output_port_name(
+            this->libObjPtr());
     }
 
     bt2c::CStringView componentName() const noexcept
