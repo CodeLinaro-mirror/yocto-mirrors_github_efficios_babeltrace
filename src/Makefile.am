@@ -269,7 +269,7 @@ logging_liblogging_la_SOURCES = \
 
 param_parse_libparam_parse_la_SOURCES = \
 	param-parse/param-parse.cpp \
-	param-parse/param-parse.h
+	param-parse/param-parse.hpp
 
 so_handle_libso_handle_la_SOURCES = \
 	so-handle/so-handle.c \

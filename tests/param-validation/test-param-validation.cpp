@@ -9,12 +9,9 @@
 #include <babeltrace2/babeltrace.h>
 
 #include "cpp-common/bt2/value.hpp"
+#include "param-parse/param-parse.hpp"
 
 #include "plugins/common/param-validation/param-validation.h"
-
-extern "C" {
-#include "param-parse/param-parse.h"
-}
 
 #include "catch2/catch_test_macros.hpp"
 

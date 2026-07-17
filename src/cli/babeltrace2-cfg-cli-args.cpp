@@ -24,7 +24,7 @@
 #include "common/common.h"
 #include "common/version.h"
 #include "compat/compiler.h"
-#include "param-parse/param-parse.h"
+#include "param-parse/param-parse.hpp"
 
 #include "babeltrace2-cfg-cli-args-connect.hpp"
 #include "babeltrace2-cfg-cli-args.hpp"

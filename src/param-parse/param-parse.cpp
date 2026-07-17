@@ -23,7 +23,7 @@
 #include "cpp-common/bt2c/regex.hpp"
 #include "cpp-common/bt2c/str-scanner.hpp"
 
-#include "param-parse.h"
+#include "param-parse.hpp"
 
 namespace {
 
