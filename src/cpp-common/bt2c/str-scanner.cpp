@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <array>
+#include <cctype>
 #include <cmath>
 #include <string_view>
 
@@ -65,23 +65,47 @@ void StrScanner::_skipWhitespaces() noexcept
     }
 }
 
+namespace {
+
+/*
+ * Returns the value of the hexadecimal digit `ch`.
+ */
+unsigned int hexDigitVal(const char ch) noexcept
+{
+    BT_ASSERT_DBG(std::isxdigit(static_cast<unsigned char>(ch)));
+
+    if (ch >= '0' && ch <= '9') {
+        return static_cast<unsigned int>(ch - '0');
+    } else if (ch >= 'a' && ch <= 'f') {
+        return static_cast<unsigned int>(ch - 'a') + 10;
+    } else {
+        return static_cast<unsigned int>(ch - 'A') + 10;
+    }
+}
+
+} /* namespace */
+
 void StrScanner::_appendEscapedUnicodeChar(const Iter at)
 {
-    /* Create array of four hex characters */
-    std::array<char, 4> hexCpBuf;
+    /*
+     * Validate the four hex characters, converting them to an integral
+     * codepoint as we go.
+     *
+     * Because there are exactly four of them, `cp` can't be greater
+     * than 0xffff.
+     */
+    auto cp = 0U;
 
-    std::copy(at, at + 4, hexCpBuf.begin());
+    for (auto it = at; it != at + 4; ++it) {
+        const auto ch = *it;
 
-    /* Validate hex characters */
-    for (const auto ch : hexCpBuf) {
-        if (!std::isxdigit(ch)) {
+        if (!std::isxdigit(static_cast<unsigned char>(ch))) {
             BT_CPPLOGE_TEXT_LOC_APPEND_CAUSE_AND_THROW(
                 Error, this->loc(), "In `\\u` escape sequence: unexpected character `{:c}`.", ch);
         }
-    }
 
-    /* Convert hex characters to integral codepoint (always works) */
-    const auto cp = std::strtoull(hexCpBuf.data(), nullptr, 16);
+        cp = (cp << 4) | hexDigitVal(ch);
+    }
 
     /*
      * Append UTF-8 bytes from integral codepoint.
@@ -89,7 +113,7 @@ void StrScanner::_appendEscapedUnicodeChar(const Iter at)
      * See <https://en.wikipedia.org/wiki/UTF-8#Encoding>.
      */
     if (cp <= 0x7f) {
-        _mStrBuf.push_back(cp);
+        _mStrBuf.push_back(static_cast<char>(cp));
     } else if (cp <= 0x7ff) {
         _mStrBuf.push_back(static_cast<char>((cp >> 6) + 0xc0));
         _mStrBuf.push_back(static_cast<char>((cp & 0x3f) + 0x80));
@@ -97,9 +121,8 @@ void StrScanner::_appendEscapedUnicodeChar(const Iter at)
         /* Unsupported surrogate pairs */
         BT_CPPLOGE_TEXT_LOC_APPEND_CAUSE_AND_THROW(
             Error, this->loc(), "In `\\u` escape sequence: unsupported surrogate codepoint U+{:X}.",
-            static_cast<unsigned int>(cp));
+            cp);
     } else {
-        BT_ASSERT(cp <= 0xffff);
         _mStrBuf.push_back(static_cast<char>((cp >> 12) + 0xe0));
         _mStrBuf.push_back(static_cast<char>(((cp >> 6) & 0x3f) + 0x80));
         _mStrBuf.push_back(static_cast<char>((cp & 0x3f) + 0x80));
