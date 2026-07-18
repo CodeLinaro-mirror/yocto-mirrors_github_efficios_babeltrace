@@ -795,14 +795,12 @@ std::optional<ValT> StrScanner::_tryNegateConstInt(const unsigned long long ullV
         }
     }
 
-    /* Success: cast and negate if needed */
-    auto val = static_cast<ValT>(ullVal);
-
+    /* Success: negate if needed, then cast */
     if (negate) {
-        val *= static_cast<ValT>(-1);
+        return static_cast<ValT>(0ULL - ullVal);
     }
 
-    return val;
+    return static_cast<ValT>(ullVal);
 }
 
 template <typename ValT>
