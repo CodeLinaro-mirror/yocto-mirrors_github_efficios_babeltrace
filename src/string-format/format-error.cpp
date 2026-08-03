@@ -4,126 +4,120 @@
  * Copyright EfficiOS, Inc.
  */
 
-#define BT_LOG_OUTPUT_LEVEL ((enum bt_log_level) log_level)
-#define BT_LOG_TAG          "COMMON/FORMAT-ERROR"
-#include <logging/log.h>
-#include <stdint.h>
-#include <string-format/format-plugin-comp-cls-name.h>
+#include "cpp-common/bt2/wrap.hpp"
+#include "cpp-common/bt2c/glib-up.hpp"
+#include "string-format/format-plugin-comp-cls-name.hpp"
 
 #include "format-error.h"
+#include "format-error.hpp"
 
-gchar *format_bt_error_cause(const bt_error_cause *error_cause, unsigned int columns,
-                             bt_logging_level log_level, enum bt_common_color_when use_colors)
+namespace {
+
+bt2c::Logger createLogger(const bt2c::Logger& parentLogger)
 {
-    GString *str;
-    gchar *comp_cls_str = NULL;
-    GString *folded = NULL;
-    const auto codes = bt_common_color_get_codes(use_colors);
+    return bt2c::Logger {parentLogger, "COMMON/FORMAT-ERROR"};
+}
 
-    str = g_string_new(NULL);
-    BT_ASSERT(str);
+static std::string formatBtErrorCauseInt(const bt2::ConstErrorCause cause,
+                                         const unsigned int columns, const bt2c::Logger& logger,
+                                         const bt_common_color_when useColors)
+{
+    std::string str = "[";
+    const auto codes = bt_common_color_get_codes(useColors);
 
     /* Print actor name */
-    g_string_append_c(str, '[');
-    switch (bt_error_cause_get_actor_type(error_cause)) {
-    case BT_ERROR_CAUSE_ACTOR_TYPE_UNKNOWN:
-        g_string_append_printf(str, "%s%s%s", codes.bold,
-                               bt_error_cause_get_module_name(error_cause), codes.reset);
+    switch (cause.actorType()) {
+    case bt2::ErrorCauseActorType::Unknown:
+        fmt::format_to(std::back_inserter(str), "{}{}{}", codes.bold, cause.moduleName(),
+                       codes.reset);
         break;
-    case BT_ERROR_CAUSE_ACTOR_TYPE_COMPONENT:
-        comp_cls_str = format_plugin_comp_cls_opt(
-            bt_error_cause_component_actor_get_plugin_name(error_cause),
-            bt_error_cause_component_actor_get_component_class_name(error_cause),
-            bt_error_cause_component_actor_get_component_class_type(error_cause), use_colors);
-        BT_ASSERT(comp_cls_str);
 
-        g_string_append_printf(str, "%s%s%s: %s", codes.bold,
-                               bt_error_cause_component_actor_get_component_name(error_cause),
-                               codes.reset, comp_cls_str);
+    case bt2::ErrorCauseActorType::Component:
+    {
+        const auto compCause = cause.asComponent();
 
+        fmt::format_to(std::back_inserter(str), "{}{}{}: {}", codes.bold, compCause.componentName(),
+                       codes.reset,
+                       formatPluginCompClsOpt(compCause.pluginName(),
+                                              compCause.componentClassName(),
+                                              compCause.componentClassType(), useColors));
         break;
-    case BT_ERROR_CAUSE_ACTOR_TYPE_COMPONENT_CLASS:
-        comp_cls_str = format_plugin_comp_cls_opt(
-            bt_error_cause_component_class_actor_get_plugin_name(error_cause),
-            bt_error_cause_component_class_actor_get_component_class_name(error_cause),
-            bt_error_cause_component_class_actor_get_component_class_type(error_cause), use_colors);
-        BT_ASSERT(comp_cls_str);
+    }
 
-        g_string_append(str, comp_cls_str);
+    case bt2::ErrorCauseActorType::ComponentClass:
+    {
+        const auto compClsCause = cause.asComponentClass();
+
+        str += formatPluginCompClsOpt(compClsCause.pluginName(), compClsCause.componentClassName(),
+                                      compClsCause.componentClassType(), useColors);
         break;
-    case BT_ERROR_CAUSE_ACTOR_TYPE_MESSAGE_ITERATOR:
-        comp_cls_str = format_plugin_comp_cls_opt(
-            bt_error_cause_message_iterator_actor_get_plugin_name(error_cause),
-            bt_error_cause_message_iterator_actor_get_component_class_name(error_cause),
-            bt_error_cause_message_iterator_actor_get_component_class_type(error_cause),
-            use_colors);
-        BT_ASSERT(comp_cls_str);
+    }
 
-        g_string_append_printf(
-            str, "%s%s%s (%s%s%s): %s", codes.bold,
-            bt_error_cause_message_iterator_actor_get_component_name(error_cause), codes.reset,
-            codes.bold,
-            bt_error_cause_message_iterator_actor_get_component_output_port_name(error_cause),
-            codes.reset, comp_cls_str);
+    case bt2::ErrorCauseActorType::MessageIterator:
+    {
+        const auto msgIterCause = cause.asMessageIterator();
 
+        fmt::format_to(std::back_inserter(str), "{}{}{} ({}{}{}): {}", codes.bold,
+                       msgIterCause.componentName(), codes.reset, codes.bold,
+                       msgIterCause.componentOutputPortName(), codes.reset,
+                       formatPluginCompClsOpt(msgIterCause.pluginName(),
+                                              msgIterCause.componentClassName(),
+                                              msgIterCause.componentClassType(), useColors));
         break;
+    }
+
     default:
         bt_common_abort();
     }
 
     /* Print file name and line number */
-    g_string_append_printf(str, "] (%s%s%s%s:%s%" PRIu64 "%s)\n", codes.bold,
-                           codes.fg_bright_magenta, bt_error_cause_get_file_name(error_cause),
-                           codes.reset, codes.fg_green, bt_error_cause_get_line_number(error_cause),
-                           codes.reset);
+    fmt::format_to(std::back_inserter(str), "] ({}{}{}{}:{}{}{})\n", codes.bold,
+                   codes.fg_bright_magenta, cause.fileName(), codes.reset, codes.fg_green,
+                   cause.lineNumber(), codes.reset);
 
     /* Print message */
-    folded = bt_common_fold(bt_error_cause_get_message(error_cause), columns, 2);
+    const bt2c::GStringUP folded {bt_common_fold(cause.message(), columns, 2)};
+
     if (folded) {
-        g_string_append(str, folded->str);
-        g_string_free(folded, TRUE);
-        folded = NULL;
+        str += folded->str;
     } else {
-        BT_LOGE_STR("Could not fold string.");
-        g_string_append(str, bt_error_cause_get_message(error_cause));
+        BT_CPPLOGW_SPEC(logger, "Could not fold string.");
+        str += cause.message();
     }
 
-    g_free(comp_cls_str);
-
-    return g_string_free(str, FALSE);
+    return str;
 }
 
-gchar *format_bt_error(const bt_error *error, unsigned int columns, bt_logging_level log_level,
-                       enum bt_common_color_when use_colors)
+} /* namespace */
+
+std::string formatBtErrorCause(const bt2::ConstErrorCause cause, const unsigned int columns,
+                               const bt2c::Logger& parentLogger,
+                               const bt_common_color_when useColors)
 {
-    GString *str;
-    int64_t i;
-    gchar *error_cause_str = NULL;
-    const auto codes = bt_common_color_get_codes(use_colors);
+    return formatBtErrorCauseInt(cause, columns, createLogger(parentLogger), useColors);
+}
 
-    BT_ASSERT(error);
-    BT_ASSERT(bt_error_get_cause_count(error) > 0);
+std::string formatBtError(const bt2::ConstError error, const unsigned int columns,
+                          const bt2c::Logger& parentLogger, const bt_common_color_when useColors)
+{
+    BT_ASSERT(error.length() > 0);
 
-    str = g_string_new(NULL);
-    BT_ASSERT(str);
+    const auto logger = createLogger(parentLogger);
+    std::string str;
+    const auto codes = bt_common_color_get_codes(useColors);
 
     /* Reverse order: deepest (root) cause printed at the end */
-    for (i = bt_error_get_cause_count(error) - 1; i >= 0; i--) {
-        const bt_error_cause *cause = bt_error_borrow_cause_by_index(error, (uint64_t) i);
-        const char *prefix_fmt =
-            i == bt_error_get_cause_count(error) - 1 ? "%s%sERROR%s:    " : "%s%sCAUSED BY%s ";
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-        /* Print prefix */
-        g_string_append_printf(str, prefix_fmt, codes.bold, codes.fg_bright_red, codes.reset);
-#pragma GCC diagnostic pop
-
-        g_free(error_cause_str);
-        error_cause_str = format_bt_error_cause(cause, columns, log_level, use_colors);
-        BT_ASSERT(error_cause_str);
-
-        g_string_append(str, error_cause_str);
+    for (std::int64_t i = error.length() - 1; i >= 0; --i) {
+        /* Format prefix */
+        if (i < error.length() - 1) {
+            fmt::format_to(std::back_inserter(str), "{}{}CAUSED BY{} {}", codes.bold,
+                           codes.fg_bright_red, codes.reset,
+                           formatBtErrorCauseInt(error[i], columns, logger, useColors));
+        } else {
+            fmt::format_to(std::back_inserter(str), "{}{}ERROR{}:    {}", codes.bold,
+                           codes.fg_bright_red, codes.reset,
+                           formatBtErrorCauseInt(error[i], columns, logger, useColors));
+        }
 
         /*
          * Don't append a newline at the end, since that is used to
@@ -131,11 +125,39 @@ gchar *format_bt_error(const bt_error *error, unsigned int columns, bt_logging_l
          * at the end.
          */
         if (i > 0) {
-            g_string_append_c(str, '\n');
+            str += '\n';
         }
     }
 
-    g_free(error_cause_str);
+    return str;
+}
 
-    return g_string_free(str, FALSE);
+gchar *format_bt_error_cause(const bt_error_cause * const errorCause, const unsigned int columns,
+                             const bt_logging_level logLevel, const bt_common_color_when useColors)
+{
+    try {
+        return g_strdup(formatBtErrorCause(
+                            bt2::wrap(errorCause), columns,
+                            createLogger(bt2c::Logger {"BT2C", "DUMMY-PARENT-LOGGER",
+                                                       static_cast<bt2c::Logger::Level>(logLevel)}),
+                            useColors)
+                            .c_str());
+    } catch (const bt2c::MemoryError&) {
+        return nullptr;
+    }
+}
+
+gchar *format_bt_error(const bt_error * const error, const unsigned int columns,
+                       const bt_logging_level logLevel, const bt_common_color_when useColors)
+{
+    try {
+        return g_strdup(
+            formatBtError(bt2::wrap(error), columns,
+                          createLogger(bt2c::Logger {"BT2C", "DUMMY-PARENT-LOGGER",
+                                                     static_cast<bt2c::Logger::Level>(logLevel)}),
+                          useColors)
+                .c_str());
+    } catch (const bt2c::MemoryError&) {
+        return nullptr;
+    }
 }

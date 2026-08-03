@@ -278,8 +278,10 @@ so_handle_libso_handle_la_SOURCES = \
 string_format_libstring_format_la_SOURCES = \
 	string-format/format-plugin-comp-cls-name.cpp \
 	string-format/format-plugin-comp-cls-name.h \
+	string-format/format-plugin-comp-cls-name.hpp \
 	string-format/format-error.cpp \
-	string-format/format-error.h
+	string-format/format-error.h \
+	string-format/format-error.hpp
 
 plugins_common_muxing_libmuxing_la_SOURCES = \
 	plugins/common/muxing/muxing.cpp \

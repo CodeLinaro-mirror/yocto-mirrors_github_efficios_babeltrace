@@ -646,10 +646,14 @@ AC_SUBST([HAVE_VENDOR_PYTEST])
 # {fmt} library
 AE_IF_FEATURE_ENABLED([vendor-fmt], [
   AC_MSG_NOTICE([using in-tree {fmt}])
+  ENABLE_VENDOR_FMT=1
 ], [
   PKG_CHECK_MODULES([FMT], [fmt >= 10.1.1], [],
     [AC_MSG_ERROR([{fmt} >= 10.1.1 is required. Use ‘--enable-vendor-fmt’ to build and use the in-tree {fmt}.])])
+  ENABLE_VENDOR_FMT=0
 ])
+
+AC_SUBST([ENABLE_VENDOR_FMT])
 
 AS_IF([AE_IS_FEATURE_ENABLED([python-bindings]) || AE_IS_FEATURE_ENABLED([python-plugins])], [
   AS_IF([test "x$have_python_dev" = xno], [

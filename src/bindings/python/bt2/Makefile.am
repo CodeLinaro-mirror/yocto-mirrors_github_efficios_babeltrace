@@ -105,6 +105,15 @@ STATIC_LIBRARIES_DEPS = \
 	$(top_builddir)/src/py-common/libpy-common.la \
 	$(top_builddir)/src/string-format/libstring-format.la
 
+if ENABLE_VENDOR_FMT
+# fmt's CPPFLAGS are already in AM_CPPFLAGS, added by configure.
+# libfmt.la is passed to the build in setup.py.
+STATIC_LIBRARIES_DEPS += $(top_builddir)/src/cpp-common/vendor/fmt/libfmt.la
+else
+AM_CPPFLAGS += $(FMT_CFLAGS)
+AM_LDFLAGS += $(FMT_LIBS)
+endif
+
 GENERATED_BINDINGS_DEPS =	\
 	bt2/native_bt.cpp	\
 	bt2/version.py		\

@@ -186,20 +186,27 @@ class custom_build_ext(build_ext):
 
 
 def main():
+    use_vendor_fmt = "@ENABLE_VENDOR_FMT@" == "1"
+    extra_objects = [
+        "@top_builddir@/src/autodisc/.libs/libautodisc.a",
+        "@top_builddir@/src/logging/.libs/liblogging.a",
+        "@top_builddir@/src/common/.libs/libcommon.a",
+        "@top_builddir@/src/py-common/.libs/libpy-common.a",
+        "@top_builddir@/src/string-format/.libs/libstring-format.a",
+    ]
+    libraries = ["babeltrace2", "glib-2.0"]
+
+    if use_vendor_fmt:
+        extra_objects.append("@top_builddir@/src/cpp-common/vendor/fmt/.libs/libfmt.a")
+
     babeltrace_ext = Extension(
         "bt2._native_bt",
         sources=[
             "bt2/native_bt.cpp",
             cygpath_m("@srcdir@/bt2/logging.cpp"),
         ],
-        libraries=["babeltrace2", "glib-2.0"],
-        extra_objects=[
-            "@top_builddir@/src/autodisc/.libs/libautodisc.a",
-            "@top_builddir@/src/logging/.libs/liblogging.a",
-            "@top_builddir@/src/common/.libs/libcommon.a",
-            "@top_builddir@/src/py-common/.libs/libpy-common.a",
-            "@top_builddir@/src/string-format/.libs/libstring-format.a",
-        ],
+        libraries=libraries,
+        extra_objects=extra_objects,
     )
 
     dist = setup(

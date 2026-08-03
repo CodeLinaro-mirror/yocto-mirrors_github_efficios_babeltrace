@@ -4,78 +4,79 @@
  * Copyright EfficiOS, Inc.
  */
 
-#define BT_LOG_OUTPUT_LEVEL log_level
-#define BT_LOG_TAG          "COMMON/FORMAT-PLUGIN-COMP-CLS-NAME"
-#include <common/common.h>
-#include <logging/log.h>
+#include "cpp-common/bt2c/exc.hpp"
+#include "cpp-common/bt2c/fmt.hpp" /* IWYU pragma: keep */
+#include "cpp-common/bt2c/glib-up.hpp"
 
 #include "format-plugin-comp-cls-name.h"
+#include "format-plugin-comp-cls-name.hpp"
 
-static const char *component_type_str(bt_component_class_type type)
+namespace {
+
+const char *componentTypeStr(const bt2::ComponentClassType type)
 {
     switch (type) {
-    case BT_COMPONENT_CLASS_TYPE_SOURCE:
+    case bt2::ComponentClassType::Source:
         return "source";
-    case BT_COMPONENT_CLASS_TYPE_SINK:
+    case bt2::ComponentClassType::Sink:
         return "sink";
-    case BT_COMPONENT_CLASS_TYPE_FILTER:
+    case bt2::ComponentClassType::Filter:
         return "filter";
     default:
         return "(unknown)";
     }
 }
 
-gchar *format_plugin_comp_cls_opt(const char *plugin_name, const char *comp_cls_name,
-                                  bt_component_class_type type,
-                                  enum bt_common_color_when use_colors)
+} /* namespace */
+
+std::string formatPluginCompClsOpt(bt2c::CStringView pluginName, bt2c::CStringView compClsName,
+                                   const bt2::ComponentClassType type,
+                                   const bt_common_color_when useColors)
 {
-    GString *str;
-    GString *shell_plugin_name = NULL;
-    GString *shell_comp_cls_name = NULL;
-    gchar *ret;
-    const auto codes = bt_common_color_get_codes(use_colors);
+    const bt_common_color_codes codes = bt_common_color_get_codes(useColors);
+    auto str = fmt::format("'{}{}{}{}", codes.bold, codes.fg_bright_cyan, componentTypeStr(type),
+                           codes.fg_default);
+    const auto shellPluginName = std::invoke([pluginName] {
+        if (pluginName) {
+            const auto quoted = bt_common_shell_quote(pluginName, false);
 
-    str = g_string_new(NULL);
-    if (!str) {
-        goto end;
-    }
+            if (!quoted) {
+                throw bt2c::MemoryError {};
+            }
 
-    if (plugin_name) {
-        shell_plugin_name = bt_common_shell_quote(plugin_name, false);
-        if (!shell_plugin_name) {
-            goto end;
+            return bt2c::GStringUP {quoted};
+        } else {
+            return bt2c::GStringUP {};
         }
+    });
+
+    if (shellPluginName) {
+        fmt::format_to(std::back_inserter(str), ".{}{}{}", codes.fg_blue, shellPluginName->str,
+                       codes.fg_default);
     }
 
-    shell_comp_cls_name = bt_common_shell_quote(comp_cls_name, false);
-    if (!shell_comp_cls_name) {
-        goto end;
+    const bt2c::GStringUP shellCompClsName {bt_common_shell_quote(compClsName, false)};
+
+    if (!shellCompClsName) {
+        throw bt2c::MemoryError {};
     }
 
-    g_string_append_printf(str, "'%s%s%s%s", codes.bold, codes.fg_bright_cyan,
-                           component_type_str(type), codes.fg_default);
+    fmt::format_to(std::back_inserter(str), ".{}{}{}'", codes.fg_yellow, shellCompClsName->str,
+                   codes.reset);
 
-    if (shell_plugin_name) {
-        g_string_append_printf(str, ".%s%s%s", codes.fg_blue, shell_plugin_name->str,
-                               codes.fg_default);
+    return str;
+}
+
+gchar *format_plugin_comp_cls_opt(const char * const pluginName, const char * const compClsName,
+                                  const bt_component_class_type type,
+                                  const bt_common_color_when useColors)
+{
+    try {
+        return g_strdup(formatPluginCompClsOpt(pluginName, compClsName,
+                                               static_cast<bt2::ComponentClassType>(type),
+                                               useColors)
+                            .c_str());
+    } catch (const bt2c::MemoryError&) {
+        return nullptr;
     }
-
-    g_string_append_printf(str, ".%s%s%s'", codes.fg_yellow, shell_comp_cls_name->str, codes.reset);
-
-end:
-    if (shell_plugin_name) {
-        g_string_free(shell_plugin_name, TRUE);
-    }
-
-    if (shell_comp_cls_name) {
-        g_string_free(shell_comp_cls_name, TRUE);
-    }
-
-    if (str) {
-        ret = g_string_free(str, FALSE);
-    } else {
-        ret = NULL;
-    }
-
-    return ret;
 }
