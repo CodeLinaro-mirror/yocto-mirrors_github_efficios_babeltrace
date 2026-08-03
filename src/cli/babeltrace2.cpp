@@ -18,8 +18,8 @@
 #include "logging.hpp"
 
 #include "common/common.h"
-#include "string-format/format-error.h"
-#include "string-format/format-plugin-comp-cls-name.h"
+#include "string-format/format-error.hpp"
+#include "string-format/format-plugin-comp-cls-name.hpp"
 
 #include "babeltrace2-cfg-cli-args-default.hpp"
 #include "babeltrace2-cfg-cli-args.hpp"
@@ -394,14 +394,11 @@ static void print_value(FILE *fp, const bt_value *value, size_t indent)
 
 static void print_bt_config_component(struct bt_config_component *bt_config_component)
 {
-    gchar *comp_cls_str;
+    const auto compClsStr = formatPluginCompClsOpt(
+        bt_config_component->plugin_name->str, bt_config_component->comp_cls_name->str,
+        static_cast<bt2::ComponentClassType>(bt_config_component->type), BT_COMMON_COLOR_WHEN_AUTO);
 
-    comp_cls_str = format_plugin_comp_cls_opt(bt_config_component->plugin_name->str,
-                                              bt_config_component->comp_cls_name->str,
-                                              bt_config_component->type, BT_COMMON_COLOR_WHEN_AUTO);
-    BT_ASSERT(comp_cls_str);
-
-    fprintf(stderr, "    %s:\n", comp_cls_str);
+    fprintf(stderr, "    %s:\n", compClsStr.c_str());
 
     if (bt_config_component->instance_name->len > 0) {
         fprintf(stderr, "      Name: %s\n", bt_config_component->instance_name->str);
@@ -409,8 +406,6 @@ static void print_bt_config_component(struct bt_config_component *bt_config_comp
 
     fprintf(stderr, "      Parameters:\n");
     print_value(stderr, bt_config_component->params, 8);
-
-    g_free(comp_cls_str);
 }
 
 static void print_bt_config_components(GPtrArray *array)
@@ -671,21 +666,17 @@ static void print_component_class_help(const char *plugin_name, const bt_compone
     const char *comp_class_description = bt_component_class_get_description(comp_cls);
     const char *comp_class_help = bt_component_class_get_help(comp_cls);
     bt_component_class_type type = bt_component_class_get_type(comp_cls);
-    gchar *comp_cls_str;
+    const auto compClsStr = formatPluginCompClsOpt(plugin_name, comp_class_name,
+                                                   static_cast<bt2::ComponentClassType>(type),
+                                                   BT_COMMON_COLOR_WHEN_AUTO);
 
-    comp_cls_str =
-        format_plugin_comp_cls_opt(plugin_name, comp_class_name, type, BT_COMMON_COLOR_WHEN_AUTO);
-    BT_ASSERT(comp_cls_str);
-
-    printf("%s\n", comp_cls_str);
+    printf("%s\n", compClsStr.c_str());
     printf("  %sDescription%s: %s\n", bt_common_color_bold(), bt_common_color_reset(),
            comp_class_description ? comp_class_description : "(None)");
 
     if (comp_class_help) {
         printf("\n%s\n", comp_class_help);
     }
-
-    g_free(comp_cls_str);
 }
 
 static enum bt_cmd_status cmd_help(struct bt_config *cfg)
@@ -750,7 +741,6 @@ static void cmd_list_plugins_print_component_classes(
     spec_comp_cls_borrow_comp_cls_func_t spec_comp_cls_borrow_comp_cls_func)
 {
     uint64_t i;
-    gchar *comp_cls_str = NULL;
 
     if (count == 0) {
         printf("  %s%s component classes%s: (none)\n", bt_common_color_bold(), cc_type_name,
@@ -767,11 +757,10 @@ static void cmd_list_plugins_print_component_classes(
         const char *comp_class_name = bt_component_class_get_name(comp_class);
         const char *comp_class_description = bt_component_class_get_description(comp_class);
         bt_component_class_type type = bt_component_class_get_type(comp_class);
-
-        g_free(comp_cls_str);
-        comp_cls_str = format_plugin_comp_cls_opt(bt_plugin_get_name(plugin), comp_class_name, type,
-                                                  BT_COMMON_COLOR_WHEN_AUTO);
-        printf("    %s", comp_cls_str);
+        const auto compClsStr = formatPluginCompClsOpt(bt_plugin_get_name(plugin), comp_class_name,
+                                                       static_cast<bt2::ComponentClassType>(type),
+                                                       BT_COMMON_COLOR_WHEN_AUTO);
+        printf("    %s", compClsStr.c_str());
 
         if (comp_class_description) {
             printf(": %s", comp_class_description);
@@ -781,7 +770,7 @@ static void cmd_list_plugins_print_component_classes(
     }
 
 end:
-    g_free(comp_cls_str);
+    return;
 }
 
 static enum bt_cmd_status cmd_list_plugins(struct bt_config *cfg)
@@ -2552,7 +2541,7 @@ static void print_error_causes(void)
 {
     const bt_error *error = bt_current_thread_take_error();
     unsigned int columns;
-    gchar *error_str = NULL;
+    std::string errorStr;
 
     if (!error || bt_error_get_cause_count(error) == 0) {
         fprintf(stderr, "%s%sUnknown command-line error.%s\n", bt_common_color_bold(),
@@ -2572,18 +2561,17 @@ static void print_error_causes(void)
      */
     fputc('\n', stderr);
 
-    error_str = format_bt_error(error, columns, (bt_logging_level) bt_cli_log_level,
-                                BT_COMMON_COLOR_WHEN_AUTO);
-    BT_ASSERT(error_str);
+    errorStr = formatBtError(
+        bt2::ConstError {error}, columns,
+        bt2c::Logger("CLI", BT_LOG_TAG, static_cast<bt2c::Logger::Level>(bt_cli_log_level)),
+        BT_COMMON_COLOR_WHEN_AUTO);
 
-    fprintf(stderr, "%s\n", error_str);
+    fprintf(stderr, "%s\n", errorStr.c_str());
 
 end:
     if (error) {
         bt_error_release(error);
     }
-
-    g_free(error_str);
 }
 
 int main(int argc, const char **argv)

@@ -4,11 +4,9 @@
  * Copyright EfficiOS, Inc.
  */
 
-#include "cpp-common/bt2/wrap.hpp"
 #include "cpp-common/bt2c/glib-up.hpp"
 #include "string-format/format-plugin-comp-cls-name.hpp"
 
-#include "format-error.h"
 #include "format-error.hpp"
 
 namespace {
@@ -130,34 +128,4 @@ std::string formatBtError(const bt2::ConstError error, const unsigned int column
     }
 
     return str;
-}
-
-gchar *format_bt_error_cause(const bt_error_cause * const errorCause, const unsigned int columns,
-                             const bt_logging_level logLevel, const bt_common_color_when useColors)
-{
-    try {
-        return g_strdup(formatBtErrorCause(
-                            bt2::wrap(errorCause), columns,
-                            createLogger(bt2c::Logger {"BT2C", "DUMMY-PARENT-LOGGER",
-                                                       static_cast<bt2c::Logger::Level>(logLevel)}),
-                            useColors)
-                            .c_str());
-    } catch (const bt2c::MemoryError&) {
-        return nullptr;
-    }
-}
-
-gchar *format_bt_error(const bt_error * const error, const unsigned int columns,
-                       const bt_logging_level logLevel, const bt_common_color_when useColors)
-{
-    try {
-        return g_strdup(
-            formatBtError(bt2::wrap(error), columns,
-                          createLogger(bt2c::Logger {"BT2C", "DUMMY-PARENT-LOGGER",
-                                                     static_cast<bt2c::Logger::Level>(logLevel)}),
-                          useColors)
-                .c_str());
-    } catch (const bt2c::MemoryError&) {
-        return nullptr;
-    }
 }

@@ -8,7 +8,6 @@
 #include "cpp-common/bt2c/fmt.hpp" /* IWYU pragma: keep */
 #include "cpp-common/bt2c/glib-up.hpp"
 
-#include "format-plugin-comp-cls-name.h"
 #include "format-plugin-comp-cls-name.hpp"
 
 namespace {
@@ -65,18 +64,4 @@ std::string formatPluginCompClsOpt(bt2c::CStringView pluginName, bt2c::CStringVi
                    codes.reset);
 
     return str;
-}
-
-gchar *format_plugin_comp_cls_opt(const char * const pluginName, const char * const compClsName,
-                                  const bt_component_class_type type,
-                                  const bt_common_color_when useColors)
-{
-    try {
-        return g_strdup(formatPluginCompClsOpt(pluginName, compClsName,
-                                               static_cast<bt2::ComponentClassType>(type),
-                                               useColors)
-                            .c_str());
-    } catch (const bt2c::MemoryError&) {
-        return nullptr;
-    }
 }
