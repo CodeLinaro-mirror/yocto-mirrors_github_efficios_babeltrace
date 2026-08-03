@@ -4,8 +4,6 @@
  * Copyright (C) 2019 EfficiOS Inc. and Linux Foundation
  */
 
-/* clang-format off */
-
 #ifndef BABELTRACE_AUTODISC_AUTODISC_HPP
 #define BABELTRACE_AUTODISC_AUTODISC_HPP
 
@@ -19,43 +17,46 @@
 extern "C" {
 #endif
 
-struct auto_source_discovery {
-	/* Array of `struct auto_source_discovery_result *`. */
-	GPtrArray *results;
+struct auto_source_discovery
+{
+    /* Array of `struct auto_source_discovery_result *`. */
+    GPtrArray *results;
 };
 
 /* Value type of the `auto_source_discovery::results` array. */
 
-struct auto_source_discovery_result {
-	/*
-	 * `plugin_name` and `source_cc_name` are borrowed from the plugin and source
-	 * component class (which outlive this structure).
-	 */
-	const char *plugin_name;
-	const char *source_cc_name;
+struct auto_source_discovery_result
+{
+    /*
+     * `plugin_name` and `source_cc_name` are borrowed from the plugin and source
+     * component class (which outlive this structure).
+     */
+    const char *plugin_name;
+    const char *source_cc_name;
 
-	/*
-	 * `group` is owned by this structure.
-	 *
-	 * May be NULL, to mean "no group".
-	 */
-	gchar *group;
+    /*
+     * `group` is owned by this structure.
+     *
+     * May be NULL, to mean "no group".
+     */
+    gchar *group;
 
-	/* Array of input strings. */
-	bt_value *inputs;
+    /* Array of input strings. */
+    bt_value *inputs;
 
-	/*
-	 * Array of integers: indices of the original inputs that contributed
-	 * to this result.
-	 */
-	bt_value *original_input_indices;
+    /*
+     * Array of integers: indices of the original inputs that contributed
+     * to this result.
+     */
+    bt_value *original_input_indices;
 };
 
-typedef enum auto_source_discovery_status {
-	AUTO_SOURCE_DISCOVERY_STATUS_OK			= BT_FUNC_STATUS_OK,
-	AUTO_SOURCE_DISCOVERY_STATUS_ERROR		= BT_FUNC_STATUS_ERROR,
-	AUTO_SOURCE_DISCOVERY_STATUS_MEMORY_ERROR	= BT_FUNC_STATUS_MEMORY_ERROR,
-	AUTO_SOURCE_DISCOVERY_STATUS_INTERRUPTED	= BT_FUNC_STATUS_INTERRUPTED,
+typedef enum auto_source_discovery_status
+{
+    AUTO_SOURCE_DISCOVERY_STATUS_OK = BT_FUNC_STATUS_OK,
+    AUTO_SOURCE_DISCOVERY_STATUS_ERROR = BT_FUNC_STATUS_ERROR,
+    AUTO_SOURCE_DISCOVERY_STATUS_MEMORY_ERROR = BT_FUNC_STATUS_MEMORY_ERROR,
+    AUTO_SOURCE_DISCOVERY_STATUS_INTERRUPTED = BT_FUNC_STATUS_INTERRUPTED,
 } auto_source_discovery_status;
 
 int auto_source_discovery_init(struct auto_source_discovery *auto_disc);
@@ -78,14 +79,10 @@ void auto_source_discovery_fini(struct auto_source_discovery *auto_disc);
  */
 
 auto_source_discovery_status auto_discover_source_components(
-		const bt_value *inputs,
-		const bt_value *log_levels,
-		const bt_plugin **plugins,
-		size_t plugin_count,
-		const char *component_class_restrict,
-		enum bt_logging_level default_log_level,
-		struct auto_source_discovery *auto_disc,
-		const bt_interrupter *interrupter);
+    const bt_value *inputs, const bt_value *log_levels, const bt_plugin **plugins,
+    size_t plugin_count, const char *component_class_restrict,
+    enum bt_logging_level default_log_level, struct auto_source_discovery *auto_disc,
+    const bt_interrupter *interrupter);
 
 #ifdef __cplusplus
 }
