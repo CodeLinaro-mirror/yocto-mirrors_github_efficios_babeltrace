@@ -18,12 +18,10 @@ gchar *format_bt_error_cause(const bt_error_cause *error_cause, unsigned int col
     GString *str;
     gchar *comp_cls_str = NULL;
     GString *folded = NULL;
-    struct bt_common_color_codes codes;
+    const auto codes = bt_common_color_get_codes(use_colors);
 
     str = g_string_new(NULL);
     BT_ASSERT(str);
-
-    bt_common_color_get_codes(&codes, use_colors);
 
     /* Print actor name */
     g_string_append_c(str, '[');
@@ -101,15 +99,13 @@ gchar *format_bt_error(const bt_error *error, unsigned int columns, bt_logging_l
     GString *str;
     int64_t i;
     gchar *error_cause_str = NULL;
-    struct bt_common_color_codes codes;
+    const auto codes = bt_common_color_get_codes(use_colors);
 
     BT_ASSERT(error);
     BT_ASSERT(bt_error_get_cause_count(error) > 0);
 
     str = g_string_new(NULL);
     BT_ASSERT(str);
-
-    bt_common_color_get_codes(&codes, use_colors);
 
     /* Reverse order: deepest (root) cause printed at the end */
     for (i = bt_error_get_cause_count(error) - 1; i >= 0; i--) {

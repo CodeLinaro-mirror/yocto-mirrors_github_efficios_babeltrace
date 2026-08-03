@@ -33,7 +33,7 @@ gchar *format_plugin_comp_cls_opt(const char *plugin_name, const char *comp_cls_
     GString *shell_plugin_name = NULL;
     GString *shell_comp_cls_name = NULL;
     gchar *ret;
-    struct bt_common_color_codes codes;
+    const auto codes = bt_common_color_get_codes(use_colors);
 
     str = g_string_new(NULL);
     if (!str) {
@@ -51,8 +51,6 @@ gchar *format_plugin_comp_cls_opt(const char *plugin_name, const char *comp_cls_
     if (!shell_comp_cls_name) {
         goto end;
     }
-
-    bt_common_color_get_codes(&codes, use_colors);
 
     g_string_append_printf(str, "'%s%s%s%s", codes.bold, codes.fg_bright_cyan,
                            component_type_str(type), codes.fg_default);

@@ -174,7 +174,7 @@ WriterOpts writerOptsFromParams(const bt2::ConstMapValue params, const std::ostr
          * variables override the `color` parameter, as the manual
          * page promises.
          */
-        bt_common_color_get_codes(&opts.colorCodes, bt_common_color_when_from_param(paramWhen));
+        opts.colorCodes = bt_common_color_get_codes(bt_common_color_when_from_param(paramWhen));
     }
 
     /* Reverse logic here */
@@ -349,7 +349,7 @@ Comp::Comp(const bt2::SelfSinkComponent selfComp, const bt2::ConstMapValue param
      * Detect whether colors are enabled to pick the right
      * `Writer` specialization.
      *
-     * bt_common_color_get_codes() fills the structure with empty
+     * bt_common_color_get_codes() returns a structure with empty
      * strings when colors are disabled and with non-empty escape
      * sequences (for example, `reset` is `\033[0m`) otherwise.
      */

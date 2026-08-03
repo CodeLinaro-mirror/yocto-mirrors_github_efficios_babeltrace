@@ -665,22 +665,26 @@ enum bt_common_color_when bt_common_color_when_from_param(
 	return env_when == BT_COMMON_COLOR_WHEN_AUTO ? param_when : env_when;
 }
 
-void bt_common_color_get_codes(struct bt_common_color_codes *codes,
+struct bt_common_color_codes bt_common_color_get_codes(
 		enum bt_common_color_when use_colors)
 {
+	struct bt_common_color_codes codes;
+
 	if (use_colors == BT_COMMON_COLOR_WHEN_ALWAYS) {
-		*codes = color_codes;
+		codes = color_codes;
 	} else if (use_colors == BT_COMMON_COLOR_WHEN_NEVER) {
-		*codes = no_color_codes;
+		codes = no_color_codes;
 	} else {
 		BT_ASSERT(use_colors == BT_COMMON_COLOR_WHEN_AUTO);
 
 		if (bt_common_colors_supported()) {
-			*codes = color_codes;
+			codes = color_codes;
 		} else {
-			*codes = no_color_codes;
+			codes = no_color_codes;
 		}
 	}
+
+	return codes;
 }
 
 GString *bt_common_string_until(const char *input, const char *escapable_chars,

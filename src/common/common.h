@@ -491,14 +491,14 @@ struct bt_common_color_codes {
 
 /*!
 @brief
-    Sets \bt_p{*codes} to the text formatting ANSI escape codes to use
+    Returns the text formatting ANSI escape codes to use
     depending on \bt_p{when} and on the capabilities of the
     connected terminal, if any.
 
 To use terminal text formatting:
 
 -# Call this function
-   to fill \bt_p{*codes} to the correct ANSI escape codes
+   to get the correct ANSI escape codes
    depending on the context (the \bt_p{when} parameter as well as
    whether or not the connected terminal, if any, supports text
    formatting).
@@ -506,15 +506,14 @@ To use terminal text formatting:
    Example:
 
    @code{.c}
-   struct bt_common_color_codes my_codes;
-
-   bt_common_color_get_codes(&my_codes, BT_COMMON_COLOR_WHEN_AUTO);
+   struct bt_common_color_codes my_codes =
+       bt_common_color_get_codes(BT_COMMON_COLOR_WHEN_AUTO);
    @endcode
 
    \c my_codes will contain empty strings, which are safe to use, if
    there's no text formatting support.
 
--# Use the ANSI escape codes of \bt_p{*codes} when
+-# Use the returned ANSI escape codes when
    writing to the standard output/error stream, for example:
 
    @code{.c}
@@ -523,9 +522,6 @@ To use terminal text formatting:
           my_codes.fg_bright_green, my_value, my_codes.reset);
    @endcode
 
-@param[out] codes
-    This function sets \bt_p{*codes} to the
-    ANSI escape codes to use depending on the context.
 @param[in] when
     @parblock
     When to use terminal text formatting:
@@ -548,9 +544,10 @@ To use terminal text formatting:
     </dl>
     @endparblock
 
-@bt_pre_not_null{codes}
+@returns
+    The ANSI escape codes to use depending on the context.
 */
-void bt_common_color_get_codes(struct bt_common_color_codes *codes,
+struct bt_common_color_codes bt_common_color_get_codes(
 		enum bt_common_color_when when);
 
 /*!
@@ -586,7 +583,7 @@ The resolution rules are, in order:
   <dd>\bt_p{param_when}</dd>
 </dl>
 
-Pass the result to bt_common_color_get_codes() to fill
+Pass the result to bt_common_color_get_codes() to get
 a corresponding #bt_common_color_codes structure.
 
 @param[in] param_when

@@ -330,7 +330,7 @@ bt_component_class_initialize_method_status configure_details_comp(
 		 * environment variables override the `color`
 		 * parameter, as the manual page promises.
 		 */
-		bt_common_color_get_codes(&details_comp->cfg.color_codes,
+		details_comp->cfg.color_codes = bt_common_color_get_codes(
 			bt_common_color_when_from_param(param_when));
 	}
 
