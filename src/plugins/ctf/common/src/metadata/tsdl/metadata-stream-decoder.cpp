@@ -14,8 +14,7 @@
 
 #include "metadata-stream-decoder.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 const bt2c::DataLen MetadataStreamDecoder::_PktHeader::len = bt2c::DataLen::fromBytes(37);
 
@@ -324,5 +323,4 @@ std::string MetadataStreamDecoder::decode(const bt2c::ConstBytes buffer)
     }
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

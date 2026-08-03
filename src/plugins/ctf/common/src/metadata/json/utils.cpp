@@ -10,8 +10,7 @@
 
 #include "utils.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 bt2::MapValue::Shared bt2ValueOfObj(const bt2c::JsonObjVal& jsonObjVal, const std::string& key)
 {
@@ -38,5 +37,4 @@ std::string absFieldLocStr(const FieldLoc& fieldLoc, const FieldLoc::Items::cons
     return ss.str();
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

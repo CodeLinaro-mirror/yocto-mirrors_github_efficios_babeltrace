@@ -9,8 +9,7 @@
 #include "../../../metadata/json-strings.hpp"
 #include "validate-scope-fc-roles.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 namespace {
 
 const char *validScopeNamesForRole(const UIntFieldRole role) noexcept
@@ -208,5 +207,4 @@ void validateScopeFcRoles(const Fc& fc, const UIntFieldRoles& allowedRoles,
     fc.accept(validator);
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

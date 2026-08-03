@@ -16,8 +16,7 @@
 
 #include "../../metadata/ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Packet information of a metadata stream.
@@ -202,7 +201,6 @@ private:
     std::optional<_MetadataStreamType> _mStreamType;
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_TSDL_METADATA_STREAM_DECODER_HPP */

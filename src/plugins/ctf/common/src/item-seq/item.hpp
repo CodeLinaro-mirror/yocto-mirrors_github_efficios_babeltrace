@@ -19,8 +19,7 @@
 #include "../metadata/ctf-ir.hpp"
 #include "item-visitor.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 class ItemSeqIter;
 
@@ -3026,7 +3025,6 @@ inline const VariantFieldWithUIntSelEndItem& Item::asVariantFieldWithUIntSelEnd(
     return static_cast<const VariantFieldWithUIntSelEndItem&>(*this);
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_ITEM_SEQ_ITEM_HPP */

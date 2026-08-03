@@ -14,8 +14,7 @@
 #include "metadata-stream-parser.hpp"
 #include "normalize-clk-offset.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 const char * const lttngUserAttrsNs = "lttng.org,2009";
 
@@ -1991,5 +1990,4 @@ void MetadataStreamParser::_finalizeTraceCls()
     }
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

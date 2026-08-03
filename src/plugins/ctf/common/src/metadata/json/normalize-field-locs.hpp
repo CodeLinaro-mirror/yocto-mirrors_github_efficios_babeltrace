@@ -11,8 +11,7 @@
 
 #include "../ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Converts all the relative field locations in `scopeFc` into absolute
@@ -31,7 +30,6 @@ namespace src {
  */
 void normalizeFieldLocs(Fc& scopeFc, Scope scope, const bt2c::Logger& parentLogger);
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_JSON_NORMALIZE_FIELD_LOCS_HPP */

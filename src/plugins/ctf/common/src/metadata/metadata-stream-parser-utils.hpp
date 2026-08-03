@@ -15,8 +15,7 @@
 #include "../clk-cls-cfg.hpp"
 #include "metadata-stream-parser.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Returns the major CTF version (1 or 2) of the metadata stream
@@ -62,7 +61,6 @@ parseMetadataStream(bt2::OptionalBorrowedObject<bt2::SelfComponent> selfComp,
                     const ClkClsCfg& clkClsCfg, bt2c::ConstBytes buffer,
                     const bt2c::Logger& parentLogger);
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_METADATA_STREAM_PARSER_UTILS_HPP */

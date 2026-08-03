@@ -21,8 +21,7 @@
 #include "metadata/ctf-ir.hpp"
 #include "msg-iter.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 using namespace bt2c::literals::datalen;
 
@@ -924,5 +923,4 @@ bt2::ConstMessage::Shared MsgIter::_releaseNextMsg()
     return msg;
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

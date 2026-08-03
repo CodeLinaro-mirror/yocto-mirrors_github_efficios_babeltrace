@@ -34,8 +34,7 @@ struct field_path_elem
     struct fs_sink_ctf_field_class *parent_fc;
 };
 
-namespace ctf {
-namespace sink {
+namespace ctf::sink {
 
 struct TraceIrToCtfIrCtx
 {
@@ -83,8 +82,7 @@ struct TraceIrToCtfIrCtx
     bool apply_tc_cpu_id_workaround;
 };
 
-} /* namespace sink */
-} /* namespace ctf */
+} /* namespace ctf::sink */
 
 static inline struct field_path_elem *cur_path_stack_at(ctf::sink::TraceIrToCtfIrCtx *ctx,
                                                         uint64_t i)

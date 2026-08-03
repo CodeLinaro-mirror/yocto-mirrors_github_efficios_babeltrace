@@ -7,8 +7,7 @@
 #ifndef BABELTRACE_PLUGINS_CTF_COMMON_METADATA_JSON_STRINGS_HPP
 #define BABELTRACE_PLUGINS_CTF_COMMON_METADATA_JSON_STRINGS_HPP
 
-namespace ctf {
-namespace jsonstr {
+namespace ctf::jsonstr {
 
 inline constexpr auto accuracy = "accuracy";
 inline constexpr auto align = "alignment";
@@ -124,7 +123,6 @@ inline constexpr auto varLenSInt = "variable-length-signed-integer";
 inline constexpr auto varLenUInt = "variable-length-unsigned-integer";
 inline constexpr auto version = "version";
 
-} /* namespace jsonstr */
-} /* namespace ctf */
+} /* namespace ctf::jsonstr */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_METADATA_JSON_STRINGS_HPP */

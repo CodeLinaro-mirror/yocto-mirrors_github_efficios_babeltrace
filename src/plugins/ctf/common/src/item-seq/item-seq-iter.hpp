@@ -55,8 +55,7 @@
 #define CTF_SRC_ITEM_SEQ_ITER_CPPLOGT(_fmt, ...)                                                   \
     BT_CPPLOGT(("At {} bits: " _fmt), *this->_headOffsetInItemSeq(), ##__VA_ARGS__)
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 class ItemSeqIter;
 
@@ -4336,7 +4335,6 @@ ReadFixedLenIntFuncRet<SignednessV> readFixedLenInt(const ItemSeqIter& iter,
 }
 
 } /* namespace internal */
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_ITEM_SEQ_ITEM_SEQ_ITER_HPP */

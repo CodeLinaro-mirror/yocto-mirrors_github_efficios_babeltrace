@@ -15,8 +15,7 @@
 #include "fs-sink-ctf-meta.hpp"
 #include "translate-ctf-ir-to-tsdl.hpp"
 
-namespace ctf {
-namespace sink {
+namespace ctf::sink {
 
 struct CtfIrToTsdlCtx
 {
@@ -24,8 +23,7 @@ struct CtfIrToTsdlCtx
     GString *tsdl;
 };
 
-} /* namespace sink */
-} /* namespace ctf */
+} /* namespace ctf::sink */
 
 static inline void append_indent(ctf::sink::CtfIrToTsdlCtx *ctx)
 {

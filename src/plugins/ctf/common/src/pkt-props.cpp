@@ -8,8 +8,7 @@
 #include "../../common/src/item-seq/logging-item-visitor.hpp"
 #include "pkt-props.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 namespace {
 
 struct ReadPacketPropertiesItemVisitor final : public ItemVisitor
@@ -66,5 +65,4 @@ PktProps readPktProps(const TraceCls& traceCls, Medium::UP medium, const bt2c::D
     return visitor.props;
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

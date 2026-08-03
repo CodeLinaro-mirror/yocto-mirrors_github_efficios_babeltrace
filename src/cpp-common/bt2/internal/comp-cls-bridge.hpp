@@ -21,8 +21,7 @@
 #include "../self-message-iterator.hpp"
 #include "../value.hpp"
 
-namespace bt2 {
-namespace internal {
+namespace bt2::internal {
 
 constexpr bt2c::CStringView unhandledExcLogStr() noexcept
 {
@@ -468,7 +467,6 @@ public:
     }
 };
 
-} /* namespace internal */
-} /* namespace bt2 */
+} /* namespace bt2::internal */
 
 #endif /* BABELTRACE_CPP_COMMON_BT2_INTERNAL_COMP_CLS_BRIDGE_HPP */

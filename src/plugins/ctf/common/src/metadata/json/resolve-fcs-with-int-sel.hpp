@@ -11,8 +11,7 @@
 
 #include "../ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Replaces all the field classes within `scopeFc` having the type
@@ -34,7 +33,6 @@ void resolveFcsWithIntSel(Fc& scopeFc, Scope scope, const Fc *pktHeaderFc, const
                           const Fc *specEventRecordCtxFc, const Fc *eventRecordPayloadFc,
                           const bt2c::Logger& logger);
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_JSON_RESOLVE_FCS_WITH_INT_SEL_HPP */

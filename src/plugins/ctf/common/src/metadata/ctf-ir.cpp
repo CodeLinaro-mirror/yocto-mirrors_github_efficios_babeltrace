@@ -9,8 +9,7 @@
 
 #include "ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 namespace internal {
 
 void DependentFcMixin::keyFcs(FcSet keyFcs)
@@ -877,5 +876,4 @@ std::unique_ptr<TraceCls> createTraceCls(std::optional<std::string> ns,
                                       std::move(pktHeaderFc), std::move(attrs));
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

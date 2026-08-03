@@ -12,8 +12,7 @@
 #include "metadata-stream-parser-utils.hpp"
 #include "tsdl/ctf-1-metadata-stream-parser.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 MetadataStreamMajorVersion getMetadataStreamMajorVersion(const bt2c::ConstBytes buffer) noexcept
 {
@@ -61,5 +60,4 @@ parseMetadataStream(const bt2::OptionalBorrowedObject<bt2::SelfComponent> selfCo
     }
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

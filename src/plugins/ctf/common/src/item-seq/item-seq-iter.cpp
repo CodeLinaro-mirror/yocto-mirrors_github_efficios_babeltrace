@@ -11,8 +11,7 @@
 #include "item-seq-iter.hpp"
 #include "item.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 using namespace bt2c::literals::datalen;
 
@@ -2490,5 +2489,4 @@ ItemSeqIter::_handleReadFixedLenMetadataStreamUuidByteUIntFieldBa8State()
     return _StateHandlingReaction::Stop;
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

@@ -18,8 +18,7 @@
 #include "metadata-stream-decoder.hpp"
 #include "scanner.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * CTF 1 metadata stream (TSDL) parser.
@@ -282,7 +281,6 @@ private:
     MetadataStreamDecoder _mStreamDecoder;
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_TSDL_CTF_1_METADATA_STREAM_PARSER_HPP */

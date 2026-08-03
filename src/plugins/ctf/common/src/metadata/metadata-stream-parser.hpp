@@ -18,8 +18,7 @@
 #include "../clk-cls-cfg.hpp"
 #include "ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 enum class MetadataStreamMajorVersion
 {
@@ -150,7 +149,6 @@ private:
     bt2::OptionalBorrowedObject<bt2::SelfComponent> _mSelfComp;
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_METADATA_STREAM_PARSER_HPP */

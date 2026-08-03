@@ -14,8 +14,7 @@
 #include "cpp-common/bt2c/json-val.hpp"
 #include "cpp-common/bt2c/logging.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * CTF 2 JSON integer range value requirement.
@@ -167,7 +166,7 @@ namespace internal {
 
 class Ctf2JsonAnyFragmentValReqImpl;
 
-}
+} /* namespace internal */
 
 /*
  * CTF 2 JSON (any) fragment value requirement.
@@ -200,7 +199,6 @@ private:
     std::unique_ptr<const internal::Ctf2JsonAnyFragmentValReqImpl> _mImpl;
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_JSON_VAL_REQ_HPP */

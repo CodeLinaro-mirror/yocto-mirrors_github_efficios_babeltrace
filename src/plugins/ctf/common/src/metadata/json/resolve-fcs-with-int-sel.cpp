@@ -12,8 +12,7 @@
 #include "key-fc-types.hpp"
 #include "resolve-fcs-with-int-sel.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 namespace {
 
 SIntRangeSet sIntRangeSetFromUIntRangeSet(const UIntRangeSet& uIntRanges)
@@ -195,5 +194,4 @@ void resolveFcsWithIntSel(Fc& scopeFc, const Scope scope, const Fc * const pktHe
     scopeFc.accept(resolver);
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

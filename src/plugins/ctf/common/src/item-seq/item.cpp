@@ -6,8 +6,7 @@
 
 #include "item.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 Item::Item(const Type type) noexcept
     : _mType {type}
@@ -535,5 +534,4 @@ void OptionalFieldWithSIntSelEndItem::accept(ItemVisitor& visitor) const
     visitor.visit(*this);
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

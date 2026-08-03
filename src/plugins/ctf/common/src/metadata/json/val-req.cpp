@@ -16,8 +16,7 @@
 #include "../../../metadata/json-strings.hpp"
 #include "val-req.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 namespace {
 
 /*
@@ -2550,5 +2549,4 @@ void Ctf2JsonAnyFragmentValReq::_validate(const bt2c::JsonVal& jsonVal) const
     _mImpl->validate(jsonVal);
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

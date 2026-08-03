@@ -14,8 +14,7 @@
 
 #include "../ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /* clang-format off */
 
@@ -54,7 +53,6 @@ KeyFcTypes keyFcTypes(const Fc& scopeFc, Scope scope, const Fc *pktHeaderFc, con
                       const Fc *specEventRecordCtxFc, const Fc *eventRecordPayloadFc,
                       const bt2c::Logger& parentLogger);
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_JSON_KEY_FC_TYPES_HPP */

@@ -6,8 +6,7 @@
 
 #include "normalize-clk-offset.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 std::pair<long long, unsigned long long> normalizeClkOffset(long long offsetSeconds,
                                                             unsigned long long offsetCycles,
@@ -23,5 +22,4 @@ std::pair<long long, unsigned long long> normalizeClkOffset(long long offsetSeco
     return std::pair {offsetSeconds, offsetCycles};
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

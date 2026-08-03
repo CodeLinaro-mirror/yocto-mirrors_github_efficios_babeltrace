@@ -400,8 +400,7 @@ inline DataLen operator*(const DataLen len, const unsigned long long mul) noexce
  *
  *     const auto bufSize = 64_MiBytes + 8_KiBits;
  */
-namespace literals {
-namespace datalen {
+namespace literals::datalen {
 
 /*!
 @brief
@@ -531,8 +530,7 @@ inline DataLen operator"" _GiBytes(const unsigned long long val) noexcept
     return DataLen::fromBytes(safeMul(val, 1024ULL * 1024 * 1024));
 }
 
-} /* namespace datalen */
-} /* namespace literals */
+} /* namespace literals::datalen */
 } /* namespace bt2c */
 
 #endif /* BABELTRACE_CPP_COMMON_BT2C_DATA_LEN_HPP */

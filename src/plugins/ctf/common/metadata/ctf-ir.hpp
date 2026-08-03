@@ -24,8 +24,7 @@
 
 #include "int-range-set.hpp"
 
-namespace ctf {
-namespace ir {
+namespace ctf::ir {
 
 /*
  * This is the common CTF IR API, that is, the intermediate
@@ -4710,7 +4709,6 @@ struct DefUserMixins
     };
 };
 
-} /* namespace ir */
-} /* namespace ctf */
+} /* namespace ctf::ir */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_METADATA_CTF_IR_HPP */

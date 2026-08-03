@@ -26,8 +26,7 @@
 #include "utils.hpp"
 #include "validate-scope-fc-roles.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 Ctf2MetadataStreamParser::Ctf2MetadataStreamParser(
     const bt2::OptionalBorrowedObject<bt2::SelfComponent> selfComp, const ClkClsCfg& clkClsCfg,
@@ -811,5 +810,4 @@ Fc::UP Ctf2MetadataStreamParser::_dataStreamClsScopeFcOfJsonVal(
                                    pktCtxFc, eventRecordHeaderFc, commonEventRecordCtxFc);
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

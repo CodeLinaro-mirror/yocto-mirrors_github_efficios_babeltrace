@@ -8,8 +8,7 @@
 
 #include "medium.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 Buf::Buf(const std::uint8_t * const addr, const bt2c::DataLen size) noexcept
     : _mAddr {addr},
@@ -25,5 +24,4 @@ Buf Buf::slice(const bt2c::DataLen offset) const noexcept
     return Buf {_mAddr + offset.bytes(), _mSize - offset};
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

@@ -9,8 +9,7 @@
 
 #include <utility>
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Normalizes `offsetSeconds` and `offsetCycles` so that the cycle part
@@ -20,7 +19,6 @@ std::pair<long long, unsigned long long> normalizeClkOffset(long long offsetSeco
                                                             unsigned long long offsetCycles,
                                                             unsigned long long freq) noexcept;
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_NORMALIZE_CLK_OFFSET_HPP */

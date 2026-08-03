@@ -13,8 +13,7 @@
 
 #include "cpp-common/bt2c/aliases.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Null (U+0000) codepoint finder.
@@ -119,7 +118,6 @@ private:
     std::size_t _mCodeUnitBufLen = 0;
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_NULL_CP_FINDER_HPP */

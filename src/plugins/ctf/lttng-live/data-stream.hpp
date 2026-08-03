@@ -15,9 +15,7 @@ struct lttng_live_stream_iterator *
 lttng_live_stream_iterator_create(struct lttng_live_session *session, uint64_t ctf_trace_id,
                                   uint64_t stream_id);
 
-namespace ctf {
-namespace src {
-namespace live {
+namespace ctf::src::live {
 
 struct CtfLiveMedium : Medium
 {
@@ -37,9 +35,7 @@ private:
     std::vector<uint8_t> _mBuf;
 };
 
-} /* namespace live */
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src::live */
 
 lttng_live_iterator_status
 lttng_live_stream_iterator_create_msg_iter(lttng_live_stream_iterator *liveStreamIter);

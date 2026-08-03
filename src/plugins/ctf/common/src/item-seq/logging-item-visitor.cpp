@@ -16,8 +16,7 @@
 #include "item.hpp"
 #include "logging-item-visitor.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 LoggingItemVisitor::LoggingItemVisitor(const bt2c::Logger& parentLogger)
     : LoggingItemVisitor {"Processing item", parentLogger}
@@ -516,5 +515,4 @@ void LoggingItemVisitor::_log(const Item& item, const std::ostringstream& extra)
     BT_CPPLOGT("{}: type={}{}", _mIntro, wise_enum::to_string(item.type()), extra.str());
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

@@ -24,9 +24,7 @@
 
 using namespace bt2c::literals::datalen;
 
-namespace ctf {
-namespace src {
-namespace live {
+namespace ctf::src::live {
 
 Buf CtfLiveMedium::buf(bt2c::DataLen requestedOffsetInStream, bt2c::DataLen minSize)
 {
@@ -90,9 +88,7 @@ Buf CtfLiveMedium::buf(bt2c::DataLen requestedOffsetInStream, bt2c::DataLen minS
     return buf;
 }
 
-} /* namespace live */
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src::live */
 
 lttng_live_iterator_status
 lttng_live_stream_iterator_create_msg_iter(lttng_live_stream_iterator *liveStreamIter)

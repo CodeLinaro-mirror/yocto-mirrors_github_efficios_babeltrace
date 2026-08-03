@@ -14,8 +14,7 @@
 #include "ctf-2-fc-builder.hpp"
 #include "val-req.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * CTF 2 metadata stream (JSON text sequence) parser.
@@ -275,7 +274,6 @@ private:
     Ctf2FcBuilder _mFcBuilder;
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_JSON_CTF_2_METADATA_STREAM_PARSER_HPP */

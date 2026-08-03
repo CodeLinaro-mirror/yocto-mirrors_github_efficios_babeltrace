@@ -12,8 +12,7 @@
 
 #include "normalize-field-locs.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 namespace {
 
 /*
@@ -251,5 +250,4 @@ void normalizeFieldLocs(Fc& scopeFc, const Scope scope, const bt2c::Logger& pare
     scopeFc.accept(normalizer);
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

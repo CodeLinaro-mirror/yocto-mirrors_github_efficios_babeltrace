@@ -182,9 +182,7 @@ int ctf_fs_component_create_ctf_fs_trace(struct ctf_fs_component *ctf_fs,
                                          bt2::ConstArrayValue pathsValue, const char *traceName,
                                          bt2::OptionalBorrowedObject<bt2::SelfComponent> selfComp);
 
-namespace ctf {
-namespace src {
-namespace fs {
+namespace ctf::src::fs {
 
 /* `src.ctf.fs` parameters */
 
@@ -200,9 +198,7 @@ struct Parameters
     ClkClsCfg clkClsCfg;
 };
 
-} /* namespace fs */
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src::fs */
 
 /*
  * Read and validate parameters taken by the src.ctf.fs plugin.

@@ -15,8 +15,7 @@
 #include "item-seq/medium.hpp"
 #include "metadata/ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 struct PktProps final
 {
@@ -39,7 +38,6 @@ struct PktProps final
 PktProps readPktProps(const TraceCls& traceCls, Medium::UP medium, bt2c::DataLen pktOffset,
                       const bt2c::Logger& parentLogger);
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_PKT_PROPS_HPP */

@@ -16,8 +16,7 @@
 #include "../../../metadata/json-strings.hpp"
 #include "../ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Returns the object of the JSON object value `jsonObjVal` having the
@@ -91,7 +90,6 @@ inline const char *scopeStr(const Scope scope) noexcept
  */
 std::string absFieldLocStr(const FieldLoc& fieldLoc, FieldLoc::Items::const_iterator end);
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_JSON_UTILS_HPP */

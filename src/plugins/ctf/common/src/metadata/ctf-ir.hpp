@@ -19,8 +19,7 @@
 
 #include "../../metadata/ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * This is the CTF IR API specific to source component classes.
@@ -1312,7 +1311,6 @@ createTraceCls(std::optional<std::string> ns = std::nullopt,
                bt2::ConstMapValue::Shared env = bt2::ConstMapValue::Shared {},
                Fc::UP pktHeaderFc = nullptr, OptAttrs attrs = OptAttrs {});
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_CTF_IR_HPP */

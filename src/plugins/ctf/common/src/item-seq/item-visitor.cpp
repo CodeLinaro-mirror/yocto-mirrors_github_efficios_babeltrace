@@ -7,8 +7,7 @@
 #include "item-visitor.hpp"
 #include "item.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 void ItemVisitor::visit(const Item&)
 {
@@ -324,5 +323,4 @@ void ItemVisitor::visit(const OptionalFieldWithUIntSelEndItem& item)
     this->visit(static_cast<const OptionalFieldEndItem&>(item));
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

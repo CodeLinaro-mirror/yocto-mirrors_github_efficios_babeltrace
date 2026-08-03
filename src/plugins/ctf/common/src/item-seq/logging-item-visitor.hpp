@@ -15,8 +15,7 @@
 #include "item-visitor.hpp"
 #include "item.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * An item visitor which logs information (with the `BT_LOG_TRACE`
@@ -90,7 +89,6 @@ private:
     bt2c::Logger _mLogger;
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_ITEM_SEQ_LOGGING_ITEM_VISITOR_HPP */

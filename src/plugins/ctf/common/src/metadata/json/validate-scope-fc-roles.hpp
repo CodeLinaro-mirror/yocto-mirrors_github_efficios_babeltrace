@@ -11,8 +11,7 @@
 
 #include "../ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Validates that:
@@ -29,7 +28,6 @@ namespace src {
 void validateScopeFcRoles(const Fc& fc, const UIntFieldRoles& allowedRoles,
                           bool allowMetadataStreamUuidRole, const bt2c::Logger& parentLogger);
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_JSON_VALIDATE_SCOPE_FC_ROLES_HPP */

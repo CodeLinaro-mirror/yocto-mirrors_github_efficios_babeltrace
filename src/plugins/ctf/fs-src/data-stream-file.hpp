@@ -181,9 +181,7 @@ ctf_fs_ds_file::UP ctf_fs_ds_file_create(const char *path, const bt2c::Logger& p
 std::optional<ctf_fs_ds_index> ctf_fs_ds_file_build_index(const ctf_fs_ds_file_info& file_info,
                                                           const ctf::src::TraceCls& traceCls);
 
-namespace ctf {
-namespace src {
-namespace fs {
+namespace ctf::src::fs {
 
 struct Medium : public ctf::src::Medium
 {
@@ -204,8 +202,6 @@ private:
     ctf_fs_ds_file::UP _mCurrentDsFile;
 };
 
-} /* namespace fs */
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src::fs */
 
 #endif /* BABELTRACE_PLUGINS_CTF_FS_SRC_DATA_STREAM_FILE_HPP */

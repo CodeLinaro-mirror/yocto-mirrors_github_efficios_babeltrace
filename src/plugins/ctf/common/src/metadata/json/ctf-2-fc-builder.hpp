@@ -16,8 +16,7 @@
 
 #include "../ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Field class builder for CTF 2.
@@ -91,7 +90,6 @@ private:
     bt2c::Logger _mLogger;
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_JSON_CTF_2_FC_BUILDER_HPP */

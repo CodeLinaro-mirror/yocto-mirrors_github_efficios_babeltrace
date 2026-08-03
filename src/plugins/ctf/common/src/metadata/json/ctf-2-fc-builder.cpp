@@ -16,8 +16,7 @@
 #include "ctf-2-fc-builder.hpp"
 #include "utils.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 namespace {
 
 /*
@@ -580,5 +579,4 @@ Fc::UP Ctf2FcBuilder::_fcFromJsonVariantFc(const bt2c::JsonObjVal& jsonFc, OptAt
     }
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

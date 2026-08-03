@@ -421,9 +421,7 @@ ctf_fs_ds_file::UP ctf_fs_ds_file_create(const char *path, const bt2c::Logger& p
     return ds_file;
 }
 
-namespace ctf {
-namespace src {
-namespace fs {
+namespace ctf::src::fs {
 
 Medium::Medium(const ctf_fs_ds_index& index, const bt2c::Logger& parentLogger)
     : _mIndex(index),
@@ -552,9 +550,7 @@ ctf::src::Buf Medium::buf(const bt2c::DataLen requestedOffsetInStream, const bt2
     return buf;
 }
 
-} /* namespace fs */
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src::fs */
 
 std::optional<ctf_fs_ds_index> ctf_fs_ds_file_build_index(const ctf_fs_ds_file_info& fileInfo,
                                                           const ctf::src::TraceCls& traceCls)

@@ -7,8 +7,7 @@
 #ifndef BABELTRACE_PLUGINS_CTF_COMMON_SRC_ITEM_SEQ_ITEM_VISITOR_HPP
 #define BABELTRACE_PLUGINS_CTF_COMMON_SRC_ITEM_SEQ_ITEM_VISITOR_HPP
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 class ArrayFieldBeginItem;
 class ArrayFieldEndItem;
@@ -146,7 +145,6 @@ public:
     virtual void visit(const VarLenUIntFieldItem&);
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_ITEM_SEQ_ITEM_VISITOR_HPP */

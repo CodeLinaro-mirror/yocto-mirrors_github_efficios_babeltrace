@@ -19,8 +19,7 @@
 #include "key-fc-types.hpp"
 #include "utils.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 namespace {
 
 /*
@@ -591,5 +590,4 @@ KeyFcTypes keyFcTypes(const Fc& scopeFc, const Scope scope, const Fc * const pkt
     return finder.takeKeyFcTypes();
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

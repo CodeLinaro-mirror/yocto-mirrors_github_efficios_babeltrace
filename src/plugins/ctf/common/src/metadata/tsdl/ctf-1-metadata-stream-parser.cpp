@@ -17,8 +17,7 @@
 #include "../ctf-ir.hpp"
 #include "ctf-1-metadata-stream-parser.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 namespace {
 
 DispBase
@@ -725,5 +724,4 @@ Ctf1MetadataStreamParser::parse(const bt2::OptionalBorrowedObject<bt2::SelfCompo
     return {parser.releaseTraceCls(), parser.metadataStreamUuid(), MetadataStreamMajorVersion::V1};
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

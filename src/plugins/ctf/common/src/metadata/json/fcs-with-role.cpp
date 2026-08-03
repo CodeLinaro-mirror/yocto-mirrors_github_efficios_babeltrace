@@ -8,8 +8,7 @@
 
 #include "fcs-with-role.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 namespace {
 
 /*
@@ -133,5 +132,4 @@ std::unordered_set<const Fc *> fcsWithRole(const Fc& fc, const UIntFieldRoles& r
     return finder.takeFcs();
 }
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */

@@ -12,8 +12,7 @@
 
 #include "cpp-common/bt2c/data-len.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Data buffer: address and size.
@@ -130,7 +129,6 @@ public:
     virtual Buf buf(bt2c::DataLen offset, bt2c::DataLen minSize) = 0;
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_ITEM_SEQ_MEDIUM_HPP */

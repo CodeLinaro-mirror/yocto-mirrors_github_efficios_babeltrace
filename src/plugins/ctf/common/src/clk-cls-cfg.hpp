@@ -9,8 +9,7 @@
 
 #include <cstdint>
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 struct ClkClsCfg final
 {
@@ -19,7 +18,6 @@ struct ClkClsCfg final
     bool forceOriginIsUnixEpoch = false;
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_CLK_CLS_CFG_HPP */

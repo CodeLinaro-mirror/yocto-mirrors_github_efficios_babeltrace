@@ -23,8 +23,7 @@
 #include "metadata/ctf-ir.hpp"
 #include "null-cp-finder.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Various quirks that a CTF message iterator can work around.
@@ -604,7 +603,6 @@ private:
     LoggingItemVisitor _mLoggingVisitor;
 };
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_MSG_ITER_HPP */

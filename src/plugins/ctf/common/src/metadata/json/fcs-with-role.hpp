@@ -11,8 +11,7 @@
 
 #include "../ctf-ir.hpp"
 
-namespace ctf {
-namespace src {
+namespace ctf::src {
 
 /*
  * Returns a set of all the field classes having at least one role
@@ -23,7 +22,6 @@ namespace src {
 std::unordered_set<const Fc *> fcsWithRole(const Fc& fc, const UIntFieldRoles& roles,
                                            bool withMetadataStreamUuidRole);
 
-} /* namespace src */
-} /* namespace ctf */
+} /* namespace ctf::src */
 
 #endif /* BABELTRACE_PLUGINS_CTF_COMMON_SRC_METADATA_JSON_FCS_WITH_ROLE_HPP */
