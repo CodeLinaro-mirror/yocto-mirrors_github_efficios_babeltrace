@@ -12,63 +12,63 @@ import bt_tests_cli_utils as btu_cli
     [
         pytest.param(
             "a=null,b=nul,c=NULL",
-            "{a=None, b=None, c=None}",
+            "a=null, b=null, c=null",
             id="null",
         ),
         pytest.param(
             "a=true,b=TRUE,c=yes,d=YES,e=false,f=FALSE,g=no,h=NO",
-            "{a=True, b=True, c=True, d=True, e=False, f=False, g=False, h=False}",
+            "a=yes, b=yes, c=yes, d=yes, e=no, f=no, g=no, h=no",
             id="bool",
         ),
         pytest.param(
             "a=0b110, b=022, c=22, d=0x22",
-            "{a=6, b=18, c=22, d=34}",
+            "a=6, b=18, c=22, d=34",
             id="signed-integer",
         ),
         pytest.param(
             "a=+0b110, b=+022, c=+22, d=+0x22",
-            "{a=6u, b=18u, c=22u, d=34u}",
+            "a=+6, b=+18, c=+22, d=+34",
             id="unsigned-integer",
         ),
         pytest.param(
             'a="avril lavigne", b=patata, c="This\\"is\\\\escaped"',
-            '{a=avril lavigne, b=patata, c=This"is\\escaped}',
+            'a="avril lavigne", b="patata", c="This"is\\escaped"',
             id="string",
         ),
         pytest.param(
             "a=1.234, b=17., c=.28, d=-18.28",
-            "{a=1.2340000, b=17.0000000, c=0.2800000, d=-18.2800000}",
+            "a=1.2340000, b=17.0000000, c=0.2800000, d=-18.2800000",
             id="float",
         ),
         pytest.param(
             "a=10.5e6, b=10.5E6, c=10.5e-6, d=10.5E-6, e=10.5e+6, f=10.5E+6",
-            "{a=10500000.0000000, b=10500000.0000000, c=0.0000105, d=0.0000105, "
-            "e=10500000.0000000, f=10500000.0000000}",
+            "a=10500000.0000000, b=10500000.0000000, c=0.0000105, d=0.0000105, "
+            "e=10500000.0000000, f=10500000.0000000",
             id="float-scientific-notation",
         ),
         pytest.param(
             'a=[1, [["hi",]]]',
-            "{a=[1, [[hi]]]}",
+            'a=[1, [["hi"]]]',
             id="array",
         ),
         pytest.param(
             'a=4,a={},b={salut="la gang",comment="ca va",oh={x=2}}',
-            "{a={}, b={comment=ca va, oh={x=2}, salut=la gang}}",
+            'a={}, b={comment="ca va", oh={x=2}, salut="la gang"}',
             id="map",
         ),
         pytest.param(
             "a=3.14.15, b=00:11:22:33:44:55, c=192.168.0.1:8080, d=1.0",
-            "{a=3.14.15, b=00:11:22:33:44:55, c=192.168.0.1:8080, d=1.0000000}",
+            'a="3.14.15", b="00:11:22:33:44:55", c="192.168.0.1:8080", d=1.0000000',
             id="unquoted-string-value-looking-like-a-number",
         ),
         pytest.param(
             "a=123abc, b=42dogs",
-            "{a=123abc, b=42dogs}",
+            'a="123abc", b="42dogs"',
             id="unquoted-string-value-starting-with-a-digit",
         ),
         pytest.param(
             "a=/dev/null, b=user@example.com, c=key=value",
-            "{a=/dev/null, b=user@example.com, c=key=value}",
+            'a="/dev/null", b="user@example.com", c="key=value"',
             id="unquoted-string-value-with-special-characters",
         ),
     ],

@@ -4,7 +4,7 @@
 #
 
 import bt2
-from cli_params_to_string import to_string
+import bt_tests_cli_utils as btu_cli
 
 
 @bt2.plugin_component_class
@@ -16,7 +16,7 @@ class SourceWithQueryThatPrintsParams(
         if obj == "please-fail":
             raise ValueError("catastrophic failure")
 
-        return f"{obj}:{to_string(params)}"
+        return f"{obj}:{btu_cli.cli_params_from_obj(params)}"
 
 
 bt2.register_plugin(__name__, "query")

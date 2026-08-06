@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 Philippe Proulx <pproulx@efficios.com>
 # SPDX-License-Identifier: MIT
 
-# pyright: strict, reportMissingTypeStubs=false
+# pyright: strict, reportMissingTypeStubs=false, reportPrivateUsage=false
 
 import os
 import typing
@@ -11,42 +11,65 @@ import textwrap
 import subprocess
 from typing import Any, Dict, List, Union, Optional
 
+import bt2
 import bt_tests_utils as btu
 
 _logger = logging.getLogger(__name__)
 
 
+# Anything cli_params_from_obj() below can format.
+CliParamsObj = typing.Union[
+    bt2._ValueConst,
+    bool,
+    int,
+    float,
+    str,
+    List["CliParamsObj"],
+    Dict[str, "CliParamsObj"],
+    None,
+]
+
+
 # Formats `obj` as a `babeltrace2` CLI `--params` value string.
 #
-# `obj` may be `None`, a boolean, a number, a string, a list, or
-# a dictionary.
-#
 # This function doesn't escape special characters in strings.
-def cli_params_from_obj(obj: Any, is_root: bool = True) -> str:
+def cli_params_from_obj(obj: CliParamsObj, is_root: bool = True) -> str:
     if obj is None:
         return "null"
-    elif isinstance(obj, bool):
+
+    if isinstance(obj, bool) or isinstance(obj, bt2._BoolValueConst):
         return "yes" if obj else "no"
-    elif isinstance(obj, int):
+
+    if (isinstance(obj, int) and obj >= 0) or isinstance(
+        obj, bt2._UnsignedIntegerValueConst
+    ):
         # Prefix non-negative integers with `+` so the CLI parameter
         # parser builds an unsigned integer value (the bare `N` form
         # produces a signed integer).
-        return f"+{obj}" if obj >= 0 else str(obj)
-    elif isinstance(obj, float):
+        return f"+{obj}"
+
+    if isinstance(obj, int) or isinstance(obj, bt2._SignedIntegerValueConst):
         return str(obj)
-    elif isinstance(obj, str):
+
+    if isinstance(obj, float) or isinstance(obj, bt2._RealValueConst):
+        return f"{float(obj):.7f}"
+
+    if isinstance(obj, str) or isinstance(obj, bt2._StringValueConst):
         return f'"{obj}"'
-    elif isinstance(obj, list):
-        return f"[{', '.join((cli_params_from_obj(item, False) for item in typing.cast(List[Any], obj)))}]"
-    elif isinstance(obj, dict):
+
+    if isinstance(obj, list) or isinstance(obj, bt2._ArrayValueConst):
+        return f"[{', '.join((cli_params_from_obj(item, False) for item in obj))}]"
+
+    if isinstance(obj, dict) or isinstance(obj, bt2._MapValueConst):
+        # Since this is used by tests that expect an exact string, sort the
+        # entries by key to make the output stable.
         items = ", ".join(
-            f"{k}={cli_params_from_obj(v, False)}"
-            for k, v in typing.cast(Dict[str, Any], obj).items()
+            f"{k}={cli_params_from_obj(v, False)}" for k, v in sorted(obj.items())
         )
 
         return items if is_root else f"{{{items}}}"
-    else:
-        assert False
+
+    raise TypeError("Unexpected type", type(obj))
 
 
 # `babeltrace2` CLI parameters to be passed to `run_cli()`.
