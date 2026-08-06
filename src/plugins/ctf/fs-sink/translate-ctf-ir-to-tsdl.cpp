@@ -623,63 +623,63 @@ static void append_event_class(ctf::sink::CtfIrToTsdlCtx *ctx, struct fs_sink_ct
     append_end_block_semi_nl_nl(ctx);
 }
 
+static void append_clock_class(ctf::sink::CtfIrToTsdlCtx *ctx, struct fs_sink_ctf_clock_class *cc)
+{
+    const char *descr;
+    int64_t offset_seconds;
+    uint64_t offset_cycles;
+    bt_uuid uuid;
+
+    append_indent(ctx);
+    g_string_append(ctx->tsdl, "clock {\n");
+    ctx->indent_level++;
+    BT_ASSERT(cc->name->len > 0);
+    append_indent(ctx);
+    g_string_append_printf(ctx->tsdl, "name = %s;\n", cc->name->str);
+    descr = bt_clock_class_get_description(cc->ir_cc);
+    if (descr) {
+        append_indent(ctx);
+        g_string_append(ctx->tsdl, "description = ");
+        append_quoted_string(ctx, descr);
+        g_string_append(ctx->tsdl, ";\n");
+    }
+
+    append_indent(ctx);
+    g_string_append_printf(ctx->tsdl, "freq = %" PRIu64 ";\n",
+                           bt_clock_class_get_frequency(cc->ir_cc));
+    append_indent(ctx);
+    g_string_append_printf(ctx->tsdl, "precision = %" PRIu64 ";\n",
+                           bt_clock_class_get_precision(cc->ir_cc));
+    bt_clock_class_get_offset(cc->ir_cc, &offset_seconds, &offset_cycles);
+    append_indent(ctx);
+    g_string_append_printf(ctx->tsdl, "offset_s = %" PRId64 ";\n", offset_seconds);
+    append_indent(ctx);
+    g_string_append_printf(ctx->tsdl, "offset = %" PRIu64 ";\n", offset_cycles);
+    append_indent(ctx);
+    g_string_append(ctx->tsdl, "absolute = ");
+
+    if (bt_clock_class_origin_is_unix_epoch(cc->ir_cc)) {
+        g_string_append(ctx->tsdl, "true");
+    } else {
+        g_string_append(ctx->tsdl, "false");
+    }
+
+    g_string_append(ctx->tsdl, ";\n");
+    uuid = bt_clock_class_get_uuid(cc->ir_cc);
+    if (uuid) {
+        append_indent(ctx);
+        g_string_append(ctx->tsdl, "uuid = ");
+        append_uuid(ctx, uuid);
+        g_string_append(ctx->tsdl, ";\n");
+    }
+
+    /* End clock class */
+    append_end_block_semi_nl_nl(ctx);
+}
+
 static void append_stream_class(ctf::sink::CtfIrToTsdlCtx *ctx, struct fs_sink_ctf_stream_class *sc)
 {
     uint64_t i;
-
-    /* Default clock class */
-    if (sc->default_clock_class) {
-        const char *descr;
-        int64_t offset_seconds;
-        uint64_t offset_cycles;
-        bt_uuid uuid;
-
-        append_indent(ctx);
-        g_string_append(ctx->tsdl, "clock {\n");
-        ctx->indent_level++;
-        BT_ASSERT(sc->default_clock_class_name->len > 0);
-        append_indent(ctx);
-        g_string_append_printf(ctx->tsdl, "name = %s;\n", sc->default_clock_class_name->str);
-        descr = bt_clock_class_get_description(sc->default_clock_class);
-        if (descr) {
-            append_indent(ctx);
-            g_string_append(ctx->tsdl, "description = ");
-            append_quoted_string(ctx, descr);
-            g_string_append(ctx->tsdl, ";\n");
-        }
-
-        append_indent(ctx);
-        g_string_append_printf(ctx->tsdl, "freq = %" PRIu64 ";\n",
-                               bt_clock_class_get_frequency(sc->default_clock_class));
-        append_indent(ctx);
-        g_string_append_printf(ctx->tsdl, "precision = %" PRIu64 ";\n",
-                               bt_clock_class_get_precision(sc->default_clock_class));
-        bt_clock_class_get_offset(sc->default_clock_class, &offset_seconds, &offset_cycles);
-        append_indent(ctx);
-        g_string_append_printf(ctx->tsdl, "offset_s = %" PRId64 ";\n", offset_seconds);
-        append_indent(ctx);
-        g_string_append_printf(ctx->tsdl, "offset = %" PRIu64 ";\n", offset_cycles);
-        append_indent(ctx);
-        g_string_append(ctx->tsdl, "absolute = ");
-
-        if (bt_clock_class_origin_is_unix_epoch(sc->default_clock_class)) {
-            g_string_append(ctx->tsdl, "true");
-        } else {
-            g_string_append(ctx->tsdl, "false");
-        }
-
-        g_string_append(ctx->tsdl, ";\n");
-        uuid = bt_clock_class_get_uuid(sc->default_clock_class);
-        if (uuid) {
-            append_indent(ctx);
-            g_string_append(ctx->tsdl, "uuid = ");
-            append_uuid(ctx, uuid);
-            g_string_append(ctx->tsdl, ";\n");
-        }
-
-        /* End clock class */
-        append_end_block_semi_nl_nl(ctx);
-    }
 
     /* Stream class */
     append_indent(ctx);
@@ -707,14 +707,14 @@ static void append_stream_class(ctf::sink::CtfIrToTsdlCtx *ctx, struct fs_sink_c
         append_indent(ctx);
         append_integer_field_class_from_props(
             ctx, 64, 8, false, BT_FIELD_CLASS_INTEGER_PREFERRED_DISPLAY_BASE_DECIMAL,
-            sc->default_clock_class_name->str, "timestamp_begin", true);
+            sc->default_clock_class->name->str, "timestamp_begin", true);
     }
 
     if (sc->packets_have_ts_end) {
         append_indent(ctx);
         append_integer_field_class_from_props(
             ctx, 64, 8, false, BT_FIELD_CLASS_INTEGER_PREFERRED_DISPLAY_BASE_DECIMAL,
-            sc->default_clock_class_name->str, "timestamp_end", true);
+            sc->default_clock_class->name->str, "timestamp_end", true);
     }
 
     if (sc->has_discarded_events) {
@@ -756,9 +756,9 @@ static void append_stream_class(ctf::sink::CtfIrToTsdlCtx *ctx, struct fs_sink_c
 
     if (sc->default_clock_class) {
         append_indent(ctx);
-        append_integer_field_class_from_props(ctx, 64, 8, false,
-                                              BT_FIELD_CLASS_INTEGER_PREFERRED_DISPLAY_BASE_DECIMAL,
-                                              sc->default_clock_class_name->str, "timestamp", true);
+        append_integer_field_class_from_props(
+            ctx, 64, 8, false, BT_FIELD_CLASS_INTEGER_PREFERRED_DISPLAY_BASE_DECIMAL,
+            sc->default_clock_class->name->str, "timestamp", true);
     }
 
     /* End event header field class */
@@ -882,6 +882,11 @@ void translate_trace_ctf_ir_to_tsdl(struct fs_sink_ctf_trace *trace, GString *ts
 
         /* End trace class environment */
         append_end_block_semi_nl_nl(&ctx);
+    }
+
+    /* Clock classes */
+    for (i = 0; i < trace->clock_classes->len; i++) {
+        append_clock_class(&ctx, (fs_sink_ctf_clock_class *) trace->clock_classes->pdata[i]);
     }
 
     /* Stream classes and their event classes */

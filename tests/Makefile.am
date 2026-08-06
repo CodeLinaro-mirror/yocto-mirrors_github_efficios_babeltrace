@@ -127,6 +127,7 @@ EXTRA_DIST = \
 	plugins/sink.ctf.fs/succeed/trace-meta-variant-same-with-underscore-ctf1.expect \
 	plugins/sink.ctf.fs/succeed/trace-meta-variant-two-underscores-ctf1.expect \
 	plugins/sink.ctf.fs/test_assume_single_trace.py \
+	plugins/sink.ctf.fs/test_clock_classes.py \
 	plugins/sink.ctf.fs/test_create_lttng_index.py \
 	plugins/sink.ctf.fs/test_stream_names.py \
 	plugins/sink.ctf.fs/test_tc_workaround.py \

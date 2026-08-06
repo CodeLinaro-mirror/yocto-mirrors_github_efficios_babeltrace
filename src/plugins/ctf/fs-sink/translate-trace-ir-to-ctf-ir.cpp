@@ -1662,42 +1662,79 @@ end:
     return ret;
 }
 
-static bool default_clock_class_name_exists(struct fs_sink_ctf_trace *trace, const char *name)
+static bool clock_class_name_exists(struct fs_sink_ctf_trace *trace, const char *name)
 {
-    bool exists = false;
     uint64_t i;
 
-    for (i = 0; i < trace->stream_classes->len; i++) {
-        struct fs_sink_ctf_stream_class *sc =
-            (fs_sink_ctf_stream_class *) trace->stream_classes->pdata[i];
+    for (i = 0; i < trace->clock_classes->len; i++) {
+        struct fs_sink_ctf_clock_class *cc =
+            (fs_sink_ctf_clock_class *) trace->clock_classes->pdata[i];
 
-        if (sc->default_clock_class_name->len == 0) {
-            /* No default clock class */
-            continue;
-        }
-
-        if (strcmp(sc->default_clock_class_name->str, name) == 0) {
-            exists = true;
-            goto end;
+        if (strcmp(cc->name->str, name) == 0) {
+            return true;
         }
     }
 
-end:
-    return exists;
+    return false;
 }
 
-static void make_unique_default_clock_class_name(struct fs_sink_ctf_stream_class *sc)
+/*
+ * Returns a name based on `base_name` which no clock class of the trace
+ * `trace` currently has, appending a numeric suffix to `base_name` if
+ * needed.
+ */
+static std::string unique_clock_class_name(struct fs_sink_ctf_trace *trace,
+                                           const std::string& base_name)
 {
+    std::string name = base_name;
     unsigned int suffix = 0;
 
-    std::string name = "default";
-
-    while (default_clock_class_name_exists(sc->trace, name.c_str())) {
-        name = "default" + std::to_string(suffix);
+    while (clock_class_name_exists(trace, name.c_str())) {
+        name = base_name + std::to_string(suffix);
         suffix++;
     }
 
-    g_string_assign(sc->default_clock_class_name, name.c_str());
+    return name;
+}
+
+/*
+ * Returns the clock class of the trace `trace` to use for the IR clock
+ * class `ir_cc`, creating it if needed.
+ *
+ * Any two stream classes having the same default IR clock class share a
+ * single clock class so that the metadata stream writers only write
+ * it once.
+ */
+static struct fs_sink_ctf_clock_class *borrow_or_create_clock_class(struct fs_sink_comp *fs_sink,
+                                                                    struct fs_sink_ctf_trace *trace,
+                                                                    const bt_clock_class *ir_cc)
+{
+    uint64_t i;
+
+    /* Look for an existing clock class for `ir_cc` */
+    for (i = 0; i < trace->clock_classes->len; i++) {
+        struct fs_sink_ctf_clock_class *cc =
+            (fs_sink_ctf_clock_class *) trace->clock_classes->pdata[i];
+
+        if (cc->ir_cc == ir_cc) {
+            return cc;
+        }
+    }
+
+    /*
+     * None: create one, using the name of `ir_cc` when it's usable,
+     * or a generated one otherwise.
+     */
+    std::string base_name = "default";
+
+    if (const auto ir_name = bt_clock_class_get_name(ir_cc)) {
+        if (fs_sink->ctf_version == 2 || ist_valid_identifier(ir_name)) {
+            base_name = ir_name;
+        }
+    }
+
+    return fs_sink_ctf_clock_class_create(trace, ir_cc,
+                                          unique_clock_class_name(trace, base_name).c_str());
 }
 
 static int translate_stream_class(struct fs_sink_comp *fs_sink, struct fs_sink_ctf_trace *trace,
@@ -1713,26 +1750,9 @@ static int translate_stream_class(struct fs_sink_comp *fs_sink, struct fs_sink_c
     *out_sc = fs_sink_ctf_stream_class_create(trace, ir_sc);
     BT_ASSERT(*out_sc);
 
-    /* Set default clock class's protected name, if any */
-    if ((*out_sc)->default_clock_class) {
-        if (const auto name = bt_clock_class_get_name((*out_sc)->default_clock_class)) {
-            /* Try original name, protected (TSDL) */
-            g_string_assign((*out_sc)->default_clock_class_name, "");
-
-            if (fs_sink->ctf_version == 1 && must_protect_identifier(name)) {
-                g_string_assign((*out_sc)->default_clock_class_name, "_");
-            }
-
-            g_string_assign((*out_sc)->default_clock_class_name, name);
-            if (fs_sink->ctf_version == 1 &&
-                !ist_valid_identifier((*out_sc)->default_clock_class_name->str)) {
-                /* Invalid: create a new name */
-                make_unique_default_clock_class_name(*out_sc);
-            }
-        } else {
-            /* No name: create a name */
-            make_unique_default_clock_class_name(*out_sc);
-        }
+    /* Set the default clock class, if any */
+    if (const auto ir_cc = bt_stream_class_borrow_default_clock_class_const(ir_sc)) {
+        (*out_sc)->default_clock_class = borrow_or_create_clock_class(fs_sink, trace, ir_cc);
     }
 
     ctx.cur_sc = *out_sc;

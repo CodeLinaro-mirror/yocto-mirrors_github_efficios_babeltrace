@@ -738,8 +738,7 @@ nljson jsonDataStreamClsFromFs(const fs_sink_ctf_stream_class& fsStreamCls)
         tryAddIdentityProps(jsonDataStreamCls, irStreamCls);
 
         if (fsStreamCls.default_clock_class) {
-            BT_ASSERT(fsStreamCls.default_clock_class_name);
-            jsonDataStreamCls[jsonstr::defClkClsId] = fsStreamCls.default_clock_class_name->str;
+            jsonDataStreamCls[jsonstr::defClkClsId] = fsStreamCls.default_clock_class->name->str;
         }
 
         tryAddAttrsProp(jsonDataStreamCls, irStreamCls);
@@ -892,17 +891,19 @@ void translate_trace_ctf_ir_to_json(fs_sink_ctf_trace * const trace, GString * c
     /* Trace class */
     appendFragment(jsonTraceClsFromFs(*trace), *metadataStream);
 
-    /* Clock classes, data stream classes, event record classes */
+    /* Clock classes */
+    for (auto clkClsIdx = 0U; clkClsIdx < trace->clock_classes->len; ++clkClsIdx) {
+        auto& fsClkCls =
+            *static_cast<const fs_sink_ctf_clock_class *>(trace->clock_classes->pdata[clkClsIdx]);
+
+        appendFragment(jsonClkClsFromIr(bt2::wrap(fsClkCls.ir_cc), fsClkCls.name->str),
+                       *metadataStream);
+    }
+
+    /* Data stream classes and event record classes */
     for (auto streamClsIdx = 0U; streamClsIdx < trace->stream_classes->len; ++streamClsIdx) {
         auto& fsStreamCls = *static_cast<const fs_sink_ctf_stream_class *>(
             trace->stream_classes->pdata[streamClsIdx]);
-
-        /* Default clock class, if any */
-        if (fsStreamCls.default_clock_class) {
-            appendFragment(jsonClkClsFromIr(bt2::wrap(fsStreamCls.default_clock_class),
-                                            fsStreamCls.default_clock_class_name->str),
-                           *metadataStream);
-        }
 
         /* Data stream class */
         appendFragment(jsonDataStreamClsFromFs(fsStreamCls), *metadataStream);

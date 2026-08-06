@@ -257,6 +257,27 @@ struct fs_sink_ctf_event_class
 
 struct fs_sink_ctf_trace;
 
+struct fs_sink_ctf_clock_class
+{
+    /*
+     * Weak.
+     *
+     * Two or more stream classes may share this very clock class,
+     * having this IR clock class as their default one.
+     */
+    const bt_clock_class *ir_cc;
+
+    /*
+     * Name of this clock class, unique amongst the names of the clock
+     * classes of the same trace.
+     *
+     * This is what the metadata stream writers use as the `name`
+     * property of a TSDL `clock` block (CTF 1.8) or as the `id`
+     * property of a clock class fragment (CTF 2).
+     */
+    GString *name;
+};
+
 struct fs_sink_ctf_stream_class
 {
     /* Weak */
@@ -265,10 +286,9 @@ struct fs_sink_ctf_stream_class
     /* Weak */
     const bt_stream_class *ir_sc;
 
-    /* Weak */
-    const bt_clock_class *default_clock_class;
+    /* Weak (owned by `trace` above) */
+    struct fs_sink_ctf_clock_class *default_clock_class;
 
-    GString *default_clock_class_name;
     bool has_packets;
     bool packets_have_ts_begin;
     bool packets_have_ts_end;
@@ -301,6 +321,9 @@ struct fs_sink_ctf_trace
     const bt_trace_class *ir_tc;
 
     bt_uuid_t uuid;
+
+    /* Array of `struct fs_sink_ctf_clock_class *` (owned by this) */
+    GPtrArray *clock_classes;
 
     /* Array of `struct fs_sink_ctf_stream_class *` (owned by this) */
     GPtrArray *stream_classes;
@@ -881,6 +904,41 @@ static inline void fs_sink_ctf_event_class_destroy(struct fs_sink_ctf_event_clas
     g_free(ec);
 }
 
+static inline void fs_sink_ctf_clock_class_destroy(struct fs_sink_ctf_clock_class *cc)
+{
+    if (!cc) {
+        return;
+    }
+
+    if (cc->name) {
+        g_string_free(cc->name, TRUE);
+        cc->name = NULL;
+    }
+
+    g_free(cc);
+}
+
+/*
+ * Creates a clock class named `name` for the IR clock class `ir_cc`,
+ * adds it to the trace `trace`, and returns it.
+ */
+static inline struct fs_sink_ctf_clock_class *
+fs_sink_ctf_clock_class_create(struct fs_sink_ctf_trace *trace, const bt_clock_class *ir_cc,
+                               const char *name)
+{
+    struct fs_sink_ctf_clock_class *cc = g_new0(struct fs_sink_ctf_clock_class, 1);
+
+    BT_ASSERT(trace);
+    BT_ASSERT(ir_cc);
+    BT_ASSERT(name);
+    BT_ASSERT(cc);
+    cc->ir_cc = ir_cc;
+    cc->name = g_string_new(name);
+    BT_ASSERT(cc->name);
+    g_ptr_array_add(trace->clock_classes, cc);
+    return cc;
+}
+
 static inline struct fs_sink_ctf_stream_class *
 fs_sink_ctf_stream_class_create(struct fs_sink_ctf_trace *trace, const bt_stream_class *ir_sc)
 {
@@ -891,9 +949,6 @@ fs_sink_ctf_stream_class_create(struct fs_sink_ctf_trace *trace, const bt_stream
     BT_ASSERT(sc);
     sc->trace = trace;
     sc->ir_sc = ir_sc;
-    sc->default_clock_class = bt_stream_class_borrow_default_clock_class_const(ir_sc);
-    sc->default_clock_class_name = g_string_new(NULL);
-    BT_ASSERT(sc->default_clock_class_name);
     sc->event_classes =
         g_ptr_array_new_with_free_func((GDestroyNotify) fs_sink_ctf_event_class_destroy);
     BT_ASSERT(sc->event_classes);
@@ -923,11 +978,6 @@ static inline void fs_sink_ctf_stream_class_destroy(struct fs_sink_ctf_stream_cl
 {
     if (!sc) {
         return;
-    }
-
-    if (sc->default_clock_class_name) {
-        g_string_free(sc->default_clock_class_name, TRUE);
-        sc->default_clock_class_name = NULL;
     }
 
     if (sc->event_classes) {
@@ -964,6 +1014,11 @@ static inline void fs_sink_ctf_trace_destroy(struct fs_sink_ctf_trace *trace)
         trace->stream_classes = NULL;
     }
 
+    if (trace->clock_classes) {
+        g_ptr_array_free(trace->clock_classes, TRUE);
+        trace->clock_classes = NULL;
+    }
+
     g_free(trace);
 }
 
@@ -977,6 +1032,9 @@ static inline struct fs_sink_ctf_trace *fs_sink_ctf_trace_create(const bt_trace 
 
     trace->ir_trace = ir_trace;
     trace->ir_tc = bt_trace_borrow_class_const(ir_trace);
+    trace->clock_classes =
+        g_ptr_array_new_with_free_func((GDestroyNotify) fs_sink_ctf_clock_class_destroy);
+    BT_ASSERT(trace->clock_classes);
     trace->stream_classes =
         g_ptr_array_new_with_free_func((GDestroyNotify) fs_sink_ctf_stream_class_destroy);
     BT_ASSERT(trace->stream_classes);
