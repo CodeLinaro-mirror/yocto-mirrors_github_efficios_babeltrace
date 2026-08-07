@@ -396,12 +396,6 @@ static int ctf_visitor_field_class_declarator(int depth, struct ctf_node *node,
                 return -EINVAL;
             }
         }
-        if (node->u.field_class_declarator.bitfield_len) {
-            ret = _ctf_visitor_semantic_check(depth + 1,
-                                              node->u.field_class_declarator.bitfield_len, logger);
-            if (ret)
-                return ret;
-        }
         break;
     }
     case TYPEDEC_UNKNOWN:
@@ -411,6 +405,14 @@ static int ctf_visitor_field_class_declarator(int depth, struct ctf_node *node,
                                         (int) node->u.field_class_declarator.type);
         return -EINVAL;
     }
+
+    if (node->u.field_class_declarator.bitfield_len) {
+        ret = _ctf_visitor_semantic_check(depth + 1, node->u.field_class_declarator.bitfield_len,
+                                          logger);
+        if (ret)
+            return ret;
+    }
+
     depth--;
     return 0;
 
