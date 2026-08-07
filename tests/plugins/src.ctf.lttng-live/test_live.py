@@ -3,36 +3,11 @@
 
 import pathlib
 import tempfile
-import contextlib
 
 import bt2
 import mctf
 import pytest
 import bt_tests_utils as btu
-from lttng_live_server import LttngLiveServerProcess
-
-
-@pytest.fixture(scope="module")
-def test_data_dir():
-    return btu.this_src_dir(__file__)
-
-
-# Context manager that creates and starts a faux LTTng live server
-# process, waiting up to 10 seconds for it to finish on exit.
-@contextlib.contextmanager
-def _lttng_live_server(*args, **kwargs):
-    server = LttngLiveServerProcess.from_config_file(*args, **kwargs)
-    server.start()
-
-    try:
-        yield server
-    finally:
-        server.wait(timeout=10)
-
-        if server.is_alive:
-            # Server might still be alive if the test errored out
-            # without cleanly closing the connection: just close it.
-            server.close()
 
 
 # Attach to a live session, output with `sink.text.details`, and assert
@@ -122,24 +97,25 @@ def test_list_sessions(
     live_comp_cls,
     ctf_traces_dir,
     test_data_dir,
+    start_lttng_live_server,
     session_config,
     max_minor_version,
     expected_sessions,
 ):
-    with _lttng_live_server(
+    server = start_lttng_live_server(
         str(test_data_dir / session_config),
         trace_path_prefix=str(ctf_traces_dir),
         max_minor_version=max_minor_version,
-    ) as server:
-        results = bt2.QueryExecutor(
-            live_comp_cls, "sessions", {"url": server.base_url}
-        ).query()
-        expected = [
-            {**session, "url": server.session_url(session["session-name"])}
-            for session in expected_sessions
-        ]
+    )
+    results = bt2.QueryExecutor(
+        live_comp_cls, "sessions", {"url": server.base_url}
+    ).query()
+    expected = [
+        {**session, "url": server.session_url(session["session-name"])}
+        for session in expected_sessions
+    ]
 
-        assert results == expected
+    assert results == expected
 
 
 # Attach and consume data from various sessions.
@@ -276,6 +252,7 @@ def test_attach(
     live_comp_cls,
     ctf_traces_dir,
     test_data_dir,
+    start_lttng_live_server,
     session_config,
     expected_file,
     session_name,
@@ -283,18 +260,18 @@ def test_attach(
     max_minor_version,
     max_query_data_response_size,
 ):
-    with _lttng_live_server(
+    server = start_lttng_live_server(
         str(test_data_dir / session_config),
         trace_path_prefix=str(ctf_traces_dir),
         max_minor_version=max_minor_version,
         max_query_data_response_size=max_query_data_response_size,
-    ) as server:
-        _convert_attach(
-            live_comp_cls,
-            server.session_url(session_name),
-            test_data_dir / expected_file,
-            mip_version,
-        )
+    )
+    _convert_attach(
+        live_comp_cls,
+        server.session_url(session_name),
+        test_data_dir / expected_file,
+        mip_version,
+    )
 
 
 # Compare the `sink.text.details` output of `src.ctf.fs` and
@@ -310,7 +287,12 @@ def test_attach(
     ],
 )
 def test_compare_to_ctf_fs(
-    live_comp_cls, details_comp_cls, ctf_traces_dir, test_data_dir, session_config
+    live_comp_cls,
+    details_comp_cls,
+    ctf_traces_dir,
+    test_data_dir,
+    start_lttng_live_server,
+    session_config,
 ):
     details_params = {"with-trace-name": False, "with-stream-name": False}
 
@@ -329,39 +311,45 @@ def test_compare_to_ctf_fs(
 
         expected = output_path.read_text(encoding="utf-8")
 
-    with _lttng_live_server(
+    server = start_lttng_live_server(
         str(test_data_dir / session_config),
         trace_path_prefix=str(ctf_traces_dir),
         max_minor_version=4,
-    ) as server:
-        _convert_attach(
-            live_comp_cls,
-            server.session_url("multi-domains"),
-            expected,
-            0,
-            details_params,
-        )
+    )
+    _convert_attach(
+        live_comp_cls,
+        server.session_url("multi-domains"),
+        expected,
+        0,
+        details_params,
+    )
 
 
 # Split metadata, where the new metadata requires additional stored
 # value slots in CTF message iterators.
-def test_stored_values(live_comp_cls, ctf_traces_dir, test_data_dir, materialize_mctf):
+def test_stored_values(
+    live_comp_cls,
+    ctf_traces_dir,
+    test_data_dir,
+    start_lttng_live_server,
+    materialize_mctf,
+):
     # `materialize_mctf` materializes into `<cache>/<N>/stored-values/`,
     # therefore the parent directory is a valid prefix containing just
     # one session.
-    with _lttng_live_server(
+    server = start_lttng_live_server(
         str(test_data_dir / "stored-values.json"),
         trace_path_prefix=str(
             materialize_mctf(ctf_traces_dir / "1/live/stored-values.mctf").path.parent
         ),
         max_minor_version=4,
-    ) as server:
-        _convert_attach(
-            live_comp_cls,
-            server.session_url("stored-values"),
-            test_data_dir / "stored-values.expect",
-            0,
-        )
+    )
+    _convert_attach(
+        live_comp_cls,
+        server.session_url("stored-values"),
+        test_data_dir / "stored-values.expect",
+        0,
+    )
 
 
 # Announce a new stream while an existing stream is inactive.
@@ -369,7 +357,7 @@ def test_stored_values(live_comp_cls, ctf_traces_dir, test_data_dir, materialize
 # This requires the LTTng live consumer to check for new announced
 # streams when it receives inactivity beacons.
 def test_new_stream_during_inactivity(
-    live_comp_cls, ctf_traces_dir, test_data_dir, tmp_path
+    live_comp_cls, ctf_traces_dir, test_data_dir, start_lttng_live_server, tmp_path
 ):
     # Generate test traces from `.mctf` files.
     #
@@ -386,42 +374,49 @@ def test_new_stream_during_inactivity(
         False,
     )
 
-    with _lttng_live_server(
+    server = start_lttng_live_server(
         str(test_data_dir / "new-streams.json"),
         trace_path_prefix=str(tmp_path / "new-streams"),
         max_minor_version=4,
-    ) as server:
-        _convert_attach(
-            live_comp_cls,
-            server.session_url("new-streams"),
-            test_data_dir / "new-streams.expect",
-            0,
-        )
+    )
+    _convert_attach(
+        live_comp_cls,
+        server.session_url("new-streams"),
+        test_data_dir / "new-streams.expect",
+        0,
+    )
 
 
 # Test that the component correctly handles invalid metadata sent by
 # the relay.
-def test_invalid_metadata(live_comp_cls, dummy_comp_cls, ctf_traces_dir, test_data_dir):
-    with _lttng_live_server(
+def test_invalid_metadata(
+    live_comp_cls,
+    dummy_comp_cls,
+    ctf_traces_dir,
+    test_data_dir,
+    start_lttng_live_server,
+):
+    server = start_lttng_live_server(
         str(test_data_dir / "invalid-metadata.json"),
         trace_path_prefix=str(ctf_traces_dir),
         max_minor_version=4,
-    ) as server:
-        with pytest.raises(bt2._Error) as exc_info:
-            btu.convert(
-                bt2.ComponentSpec(
-                    live_comp_cls,
-                    {
-                        "inputs": [server.session_url("invalid-metadata")],
-                        "session-not-found-action": "end",
-                    },
-                ),
-                btu.SinkComponentSpec(dummy_comp_cls),
-            )
+    )
 
-        # Close server now to avoid waiting for the timeout since the
-        # client didn't disconnect cleanly.
-        server.close()
+    with pytest.raises(bt2._Error) as exc_info:
+        btu.convert(
+            bt2.ComponentSpec(
+                live_comp_cls,
+                {
+                    "inputs": [server.session_url("invalid-metadata")],
+                    "session-not-found-action": "end",
+                },
+            ),
+            btu.SinkComponentSpec(dummy_comp_cls),
+        )
 
-        assert "At line 12 in metadata stream: syntax error" in str(exc_info.value)
-        assert 'token="perchaude"' in str(exc_info.value)
+    # Close server now to avoid waiting for the timeout since the
+    # client didn't disconnect cleanly.
+    server.close()
+
+    assert "At line 12 in metadata stream: syntax error" in str(exc_info.value)
+    assert 'token="perchaude"' in str(exc_info.value)
