@@ -456,6 +456,22 @@ static struct ctf_node *make_node(struct ctf_scanner *scanner,
 	return node;
 }
 
+/*
+ * Turn `node` into a `TYPEDEC_NESTED` field class declarator wrapping
+ * `child`.
+ *
+ * All readers of a nested declarator walk its `length` list, so
+ * initialize it here, together with setting the type, so that no
+ * construction site can forget to.
+ */
+static void set_field_class_declarator_nested(struct ctf_node *node,
+					      struct ctf_node *child)
+{
+	node->u.field_class_declarator.type = TYPEDEC_NESTED;
+	node->u.field_class_declarator.u.nested.field_class_declarator = child;
+	BT_INIT_LIST_HEAD(&node->u.field_class_declarator.u.nested.length);
+}
+
 static int reparent_ctf_expression(struct ctf_node *node,
 				   struct ctf_node *parent)
 {
@@ -740,8 +756,7 @@ static int reparent_field_class_declarator(struct ctf_node *node,
 {
 	switch (parent->type) {
 	case NODE_TYPE_DECLARATOR:
-		parent->u.field_class_declarator.type = TYPEDEC_NESTED;
-		parent->u.field_class_declarator.u.nested.field_class_declarator = node;
+		set_field_class_declarator_nested(parent, node);
 		break;
 	case NODE_STRUCT_OR_VARIANT_DECLARATION:
 		_bt_list_splice_tail(&node->tmp_head, &parent->u.struct_or_variant_declaration.field_class_declarators);
@@ -2369,22 +2384,18 @@ direct_abstract_declarator:
 	|	CTF_LPAREN abstract_declarator CTF_RPAREN
 		{
 			$$ = make_node(scanner, NODE_TYPE_DECLARATOR);
-			$$->u.field_class_declarator.type = TYPEDEC_NESTED;
-			$$->u.field_class_declarator.u.nested.field_class_declarator = $2;
+			set_field_class_declarator_nested($$, $2);
 		}
 	|	direct_abstract_declarator CTF_LSBRAC unary_expression CTF_RSBRAC
 		{
 			$$ = make_node(scanner, NODE_TYPE_DECLARATOR);
-			$$->u.field_class_declarator.type = TYPEDEC_NESTED;
-			$$->u.field_class_declarator.u.nested.field_class_declarator = $1;
-			BT_INIT_LIST_HEAD(&($$)->u.field_class_declarator.u.nested.length);
+			set_field_class_declarator_nested($$, $1);
 			_bt_list_splice_tail(&($3)->tmp_head, &($$)->u.field_class_declarator.u.nested.length);
 		}
 	|	direct_abstract_declarator CTF_LSBRAC CTF_RSBRAC
 		{
 			$$ = make_node(scanner, NODE_TYPE_DECLARATOR);
-			$$->u.field_class_declarator.type = TYPEDEC_NESTED;
-			$$->u.field_class_declarator.u.nested.field_class_declarator = $1;
+			set_field_class_declarator_nested($$, $1);
 			$$->u.field_class_declarator.u.nested.abstract_array = 1;
 		}
 	;
@@ -2419,22 +2430,18 @@ direct_alias_abstract_declarator:
 	|	CTF_LPAREN alias_abstract_declarator CTF_RPAREN
 		{
 			$$ = make_node(scanner, NODE_TYPE_DECLARATOR);
-			$$->u.field_class_declarator.type = TYPEDEC_NESTED;
-			$$->u.field_class_declarator.u.nested.field_class_declarator = $2;
+			set_field_class_declarator_nested($$, $2);
 		}
 	|	direct_alias_abstract_declarator CTF_LSBRAC unary_expression CTF_RSBRAC
 		{
 			$$ = make_node(scanner, NODE_TYPE_DECLARATOR);
-			$$->u.field_class_declarator.type = TYPEDEC_NESTED;
-			$$->u.field_class_declarator.u.nested.field_class_declarator = $1;
-			BT_INIT_LIST_HEAD(&($$)->u.field_class_declarator.u.nested.length);
+			set_field_class_declarator_nested($$, $1);
 			_bt_list_splice_tail(&($3)->tmp_head, &($$)->u.field_class_declarator.u.nested.length);
 		}
 	|	direct_alias_abstract_declarator CTF_LSBRAC CTF_RSBRAC
 		{
 			$$ = make_node(scanner, NODE_TYPE_DECLARATOR);
-			$$->u.field_class_declarator.type = TYPEDEC_NESTED;
-			$$->u.field_class_declarator.u.nested.field_class_declarator = $1;
+			set_field_class_declarator_nested($$, $1);
 			$$->u.field_class_declarator.u.nested.abstract_array = 1;
 		}
 	;
@@ -2459,15 +2466,12 @@ direct_declarator:
 	|	CTF_LPAREN declarator CTF_RPAREN
 		{
 			$$ = make_node(scanner, NODE_TYPE_DECLARATOR);
-			$$->u.field_class_declarator.type = TYPEDEC_NESTED;
-			$$->u.field_class_declarator.u.nested.field_class_declarator = $2;
+			set_field_class_declarator_nested($$, $2);
 		}
 	|	direct_declarator CTF_LSBRAC unary_expression CTF_RSBRAC
 		{
 			$$ = make_node(scanner, NODE_TYPE_DECLARATOR);
-			$$->u.field_class_declarator.type = TYPEDEC_NESTED;
-			$$->u.field_class_declarator.u.nested.field_class_declarator = $1;
-			BT_INIT_LIST_HEAD(&($$)->u.field_class_declarator.u.nested.length);
+			set_field_class_declarator_nested($$, $1);
 			_bt_list_splice_tail(&($3)->tmp_head, &($$)->u.field_class_declarator.u.nested.length);
 		}
 	;
@@ -2493,15 +2497,12 @@ direct_field_class_declarator:
 	|	CTF_LPAREN field_class_declarator CTF_RPAREN
 		{
 			$$ = make_node(scanner, NODE_TYPE_DECLARATOR);
-			$$->u.field_class_declarator.type = TYPEDEC_NESTED;
-			$$->u.field_class_declarator.u.nested.field_class_declarator = $2;
+			set_field_class_declarator_nested($$, $2);
 		}
 	|	direct_field_class_declarator CTF_LSBRAC unary_expression CTF_RSBRAC
 		{
 			$$ = make_node(scanner, NODE_TYPE_DECLARATOR);
-			$$->u.field_class_declarator.type = TYPEDEC_NESTED;
-			$$->u.field_class_declarator.u.nested.field_class_declarator = $1;
-			BT_INIT_LIST_HEAD(&($$)->u.field_class_declarator.u.nested.length);
+			set_field_class_declarator_nested($$, $1);
 			_bt_list_splice_tail(&($3)->tmp_head, &($$)->u.field_class_declarator.u.nested.length);
 		}
 	;
