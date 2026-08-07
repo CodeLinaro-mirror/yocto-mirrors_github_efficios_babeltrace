@@ -361,6 +361,7 @@ EXTRA_DIST = \
 	plugins/src.ctf.fs/fail/data/ctf-2-pkt-content-len-gt-pkt-total-len.mctf \
 	plugins/src.ctf.fs/fail/data/ctf-2-pkt-total-len-not-multiple-of-8.mctf \
 	plugins/src.ctf.fs/fail/data/ctf-2-unknown-data-stream-cls-id.mctf \
+	plugins/src.ctf.fs/fail/metadata/ctf-1.8-bitfield-array-declarator.mctf \
 	plugins/src.ctf.fs/fail/README.adoc \
 	plugins/src.ctf.fs/field/conftest.py \
 	plugins/src.ctf.fs/field/ctf-1.8-fail-mixed-byte-order-unaligned-be-le.mp \

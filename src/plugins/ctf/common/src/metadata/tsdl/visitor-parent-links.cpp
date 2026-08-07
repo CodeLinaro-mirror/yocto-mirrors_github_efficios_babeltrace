@@ -132,7 +132,7 @@ static int ctf_visitor_field_class_declarator(int depth, struct ctf_node *node,
             }
         }
         if (node->u.field_class_declarator.bitfield_len) {
-            node->u.field_class_declarator.bitfield_len = node;
+            node->u.field_class_declarator.bitfield_len->parent = node;
             ret = ctf_visitor_parent_links(depth + 1, node->u.field_class_declarator.bitfield_len,
                                            logger);
             if (ret)
