@@ -1567,11 +1567,29 @@ lttng_live_get_stream_bytes(struct lttng_live_msg_iter *lttng_live_msg_iter,
         LTTNG_VIEWER_GET_PACKET, static_cast<lttng_viewer_get_packet_return_code>(rp_status));
     switch (rp_status) {
     case LTTNG_VIEWER_GET_PACKET_OK:
-        req_len = be32toh(rp.len);
+    {
+        *recv_len = be32toh(rp.len);
+
         BT_CPPLOGD_SPEC(viewer_connection->logger,
                         "Got packet from relay daemon: response={}, packet-len={}",
-                        static_cast<lttng_viewer_get_packet_return_code>(rp_status), req_len);
-        break;
+                        static_cast<lttng_viewer_get_packet_return_code>(rp_status), *recv_len);
+
+        if (*recv_len == 0 || *recv_len > req_len) {
+            BT_CPPLOGE_APPEND_CAUSE_SPEC(viewer_connection->logger,
+                                         "Invalid data packet length from relay daemon: "
+                                         "requested-len={}, reply-len={}",
+                                         req_len, *recv_len);
+            return LTTNG_LIVE_GET_STREAM_BYTES_STATUS_ERROR;
+        }
+
+        viewer_status = lttng_live_recv(viewer_connection, buf, *recv_len);
+        if (viewer_status != LTTNG_LIVE_VIEWER_STATUS_OK) {
+            viewer_handle_recv_status(viewer_status, "get data packet");
+            return viewer_status_to_lttng_live_get_stream_bytes_status(viewer_status);
+        }
+
+        return LTTNG_LIVE_GET_STREAM_BYTES_STATUS_OK;
+    }
     case LTTNG_VIEWER_GET_PACKET_RETRY:
         /* Unimplemented by relay daemon */
         return LTTNG_LIVE_GET_STREAM_BYTES_STATUS_AGAIN;
@@ -1606,19 +1624,6 @@ lttng_live_get_stream_bytes(struct lttng_live_msg_iter *lttng_live_msg_iter,
                                      "Received get_data_packet response: unknown ({})", rp_status);
         return LTTNG_LIVE_GET_STREAM_BYTES_STATUS_ERROR;
     }
-
-    if (req_len == 0) {
-        return LTTNG_LIVE_GET_STREAM_BYTES_STATUS_ERROR;
-    }
-
-    viewer_status = lttng_live_recv(viewer_connection, buf, req_len);
-    if (viewer_status != LTTNG_LIVE_VIEWER_STATUS_OK) {
-        viewer_handle_recv_status(viewer_status, "get data packet");
-        return viewer_status_to_lttng_live_get_stream_bytes_status(viewer_status);
-    }
-    *recv_len = req_len;
-
-    return LTTNG_LIVE_GET_STREAM_BYTES_STATUS_OK;
 }
 
 /*

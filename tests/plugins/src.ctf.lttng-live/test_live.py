@@ -463,3 +463,27 @@ def test_attach_bad_session_list_reply(
         {"inputs": [server.session_url("trace-with-index")]},
         bad_v215_session_list_reply_case.expected_msg,
     )
+
+
+# Attach to a session on a relay that over-delivers data packet bytes:
+# it announces (and sends) more bytes than the client requested.
+def test_data_packet_len_too_large(
+    live_comp_cls,
+    dummy_comp_cls,
+    ctf_traces_dir,
+    test_data_dir,
+    start_lttng_live_server,
+):
+    server = start_lttng_live_server(
+        str(test_data_dir / "base.json"),
+        trace_path_prefix=str(ctf_traces_dir),
+        extra_data_response_len=64,
+        max_minor_version=4,
+    )
+    _convert_attach_expect_error(
+        live_comp_cls,
+        dummy_comp_cls,
+        server,
+        {"inputs": [server.session_url("trace-with-index")]},
+        "Invalid data packet length from relay daemon",
+    )

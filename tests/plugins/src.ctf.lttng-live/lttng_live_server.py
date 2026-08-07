@@ -1500,6 +1500,7 @@ class _LttngLiveViewerSession:
         viewer_session_id: int,
         tracing_session_descriptors: Iterable[LttngTracingSessionDescriptor],
         max_query_data_response_size: Optional[int],
+        extra_data_response_len: Optional[int],
     ):
         self._viewer_session_id = viewer_session_id
         self._ts_states: Dict[int, _LttngLiveViewerSessionTracingSessionState] = {}
@@ -1511,6 +1512,7 @@ class _LttngLiveViewerSession:
             ],
         ] = {}
         self._max_query_data_response_size = max_query_data_response_size
+        self._extra_data_response_len = extra_data_response_len
         total_stream_infos = 0
 
         for ts_descr in tracing_session_descriptors:
@@ -1714,6 +1716,14 @@ class _LttngLiveViewerSession:
             _logger.info(fmt.format(cmd.req_length, data_response_length))
 
         data = stream_state.stream.get_data(cmd.offset, data_response_length)
+
+        if self._extra_data_response_len:
+            # Emulate a relay daemon which announces and sends more data
+            # than the client requested.
+            data += b"A" * self._extra_data_response_len
+            fmt = 'Over-delivering "get data stream packet data" command: req-length={} actual response size={}'
+            _logger.info(fmt.format(cmd.req_length, len(data)))
+
         status = _LttngLiveViewerGetDataStreamPacketDataReply.Status.OK
         return _LttngLiveViewerGetDataStreamPacketDataReply(status, data, False, False)
 
@@ -1828,6 +1838,7 @@ class LttngLiveServer:
         self,
         tracing_session_descriptors: Iterable[LttngTracingSessionDescriptor],
         max_query_data_response_size: Optional[int] = None,
+        extra_data_response_len: Optional[int] = None,
         override_hostname_len: Optional[int] = None,
         override_session_name_len: Optional[int] = None,
         override_trace_format: Optional[int] = None,
@@ -1841,6 +1852,9 @@ class LttngLiveServer:
             _logger.info(
                 f"  Maximum response data query size: `{max_query_data_response_size}`"
             )
+
+        if extra_data_response_len is not None:
+            _logger.info(f"  Extra response data length: `{extra_data_response_len}`")
 
         if override_hostname_len is not None:
             _logger.info(
@@ -1875,6 +1889,7 @@ class LttngLiveServer:
 
         self._ts_descriptors = list(tracing_session_descriptors)
         self._max_query_data_response_size = max_query_data_response_size
+        self._extra_data_response_len = extra_data_response_len
         self._max_minor_version = max_minor_version
         self._codec = _LttngLiveViewerProtocolCodec(
             override_hostname_len, override_session_name_len, override_trace_format
@@ -1988,7 +2003,10 @@ class LttngLiveServer:
         # Create viewer session (arbitrary ID 23)
         _logger.info(f"LTTng live viewer connected: version={cmd.major}.{cmd.minor}")
         viewer_session = _LttngLiveViewerSession(
-            23, self._ts_descriptors, self._max_query_data_response_size
+            23,
+            self._ts_descriptors,
+            self._max_query_data_response_size,
+            self._extra_data_response_len,
         )
 
         # Set our effective minor version
@@ -2053,6 +2071,7 @@ class LttngLiveServer:
         sessions_filename: str,
         trace_path_prefix: Optional[str] = None,
         max_query_data_response_size: Optional[int] = None,
+        extra_data_response_len: Optional[int] = None,
         override_hostname_len: Optional[int] = None,
         override_session_name_len: Optional[int] = None,
         override_trace_format: Optional[int] = None,
@@ -2065,6 +2084,7 @@ class LttngLiveServer:
         return cls(
             descriptors,
             max_query_data_response_size=max_query_data_response_size,
+            extra_data_response_len=extra_data_response_len,
             override_hostname_len=override_hostname_len,
             override_session_name_len=override_session_name_len,
             override_trace_format=override_trace_format,
@@ -2107,6 +2127,7 @@ def _lttng_live_server_process_target(
     sessions_filename: str,
     trace_path_prefix: Optional[str],
     max_query_data_response_size: Optional[int],
+    extra_data_response_len: Optional[int],
     override_hostname_len: Optional[int],
     override_session_name_len: Optional[int],
     override_trace_format: Optional[int],
@@ -2119,6 +2140,7 @@ def _lttng_live_server_process_target(
         sessions_filename,
         trace_path_prefix,
         max_query_data_response_size,
+        extra_data_response_len,
         override_hostname_len,
         override_session_name_len,
         override_trace_format,
@@ -2152,6 +2174,7 @@ class LttngLiveServerProcess:
         sessions_filename: str,
         trace_path_prefix: Optional[str] = None,
         max_query_data_response_size: Optional[int] = None,
+        extra_data_response_len: Optional[int] = None,
         override_hostname_len: Optional[int] = None,
         override_session_name_len: Optional[int] = None,
         override_trace_format: Optional[int] = None,
@@ -2161,6 +2184,7 @@ class LttngLiveServerProcess:
         self._sessions_filename = sessions_filename
         self._trace_path_prefix = trace_path_prefix
         self._max_query_data_response_size = max_query_data_response_size
+        self._extra_data_response_len = extra_data_response_len
         self._override_hostname_len = override_hostname_len
         self._override_session_name_len = override_session_name_len
         self._override_trace_format = override_trace_format
@@ -2216,6 +2240,7 @@ class LttngLiveServerProcess:
                 self._sessions_filename,
                 self._trace_path_prefix,
                 self._max_query_data_response_size,
+                self._extra_data_response_len,
                 self._override_hostname_len,
                 self._override_session_name_len,
                 self._override_trace_format,
@@ -2260,6 +2285,7 @@ class LttngLiveServerProcess:
         sessions_filename: str,
         trace_path_prefix: Optional[str] = None,
         max_query_data_response_size: Optional[int] = None,
+        extra_data_response_len: Optional[int] = None,
         override_hostname_len: Optional[int] = None,
         override_session_name_len: Optional[int] = None,
         override_trace_format: Optional[int] = None,
@@ -2270,6 +2296,7 @@ class LttngLiveServerProcess:
             sessions_filename,
             trace_path_prefix,
             max_query_data_response_size,
+            extra_data_response_len,
             override_hostname_len,
             override_session_name_len,
             override_trace_format,
@@ -2405,6 +2432,12 @@ if __name__ == "__main__":
         help="The maximum size of control data response in bytes.",
     )
     parser.add_argument(
+        "--extra-data-response-len",
+        type=int,
+        help="Number of extra filler bytes to append to each data packet response, "
+        "to emulate a relay daemon sending more data than requested.",
+    )
+    parser.add_argument(
         "--override-hostname-len",
         type=int,
         help="Override the configured session hostname on the wire (2.15 protocol) "
@@ -2454,6 +2487,7 @@ if __name__ == "__main__":
         args.sessions_filename,
         args.trace_path_prefix,
         args.max_query_data_response_size,
+        args.extra_data_response_len,
         args.override_hostname_len,
         args.override_session_name_len,
         args.override_trace_format,
