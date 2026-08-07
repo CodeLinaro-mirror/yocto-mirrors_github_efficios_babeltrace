@@ -2282,7 +2282,18 @@ struct_or_variant_declarator:
 		declarator
 		{	$$ = $1;	}
 	|	CTF_COLON unary_expression
-		{	$$ = $2;	}
+		{
+			/*
+			 * Unnamed bitfield: build a declarator without an
+			 * identifier for it, so that what we return is a
+			 * `NODE_TYPE_DECLARATOR`, like the other rules.
+			 */
+			$$ = make_node(scanner, NODE_TYPE_DECLARATOR);
+			$$->u.field_class_declarator.type = TYPEDEC_ID;
+			/* id is NULL */
+			if (set_parent_node($2, $$))
+				reparent_error(scanner, "struct_or_variant_declarator");
+		}
 	|	declarator CTF_COLON unary_expression
 		{
 			$$ = $1;
