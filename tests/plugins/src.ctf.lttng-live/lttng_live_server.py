@@ -526,8 +526,19 @@ class _LttngLiveViewerProtocolCodec:
     _COMMAND_HEADER_STRUCT_FMT = "QII"
     _COMMAND_HEADER_SIZE_BYTES = struct.calcsize(_COMMAND_HEADER_STRUCT_FMT)
 
-    def __init__(self):
+    # When `override_hostname_len` (resp. `override_session_name_len`)
+    # is set, override the configured session hostname (resp. session
+    # name) on the wire (v2.15 protocol) with that many filler bytes,
+    # the announced length being their count, to emulate a relay
+    # sending a bogus (zero or oversized) length.
+    def __init__(
+        self,
+        override_hostname_len: Optional[int] = None,
+        override_session_name_len: Optional[int] = None,
+    ):
         self._server_minor_version: Optional[int] = None
+        self._override_hostname_len = override_hostname_len
+        self._override_session_name_len = override_session_name_len
 
     def _unpack(self, fmt: str, data: bytes, offset: int = 0):
         fmt = f"!{fmt}"
@@ -657,14 +668,23 @@ class _LttngLiveViewerProtocolCodec:
                     data += self._encode_zero_padded_str(info.name, 255)
                 else:
                     # v2.15 protocol: variable-length strings + trace format
+                    hostname_bytes = info.hostname.encode()
+                    name_bytes = info.name.encode()
+
+                    if self._override_hostname_len is not None:
+                        hostname_bytes = b"A" * self._override_hostname_len
+
+                    if self._override_session_name_len is not None:
+                        name_bytes = b"A" * self._override_session_name_len
+
                     data += self._pack(
                         "III",
-                        len(info.hostname),
-                        len(info.name),
+                        len(hostname_bytes),
+                        len(name_bytes),
                         0 if info.trace_format == _LttngLiveTraceFormat.CTF_V1_8 else 1,
                     )
-                    data += info.hostname.encode()
-                    data += info.name.encode()
+                    data += hostname_bytes
+                    data += name_bytes
         elif type(reply) is _LttngLiveViewerAttachToTracingSessionReply:
             data = self._pack("II", reply.status, len(reply.stream_infos))
 
@@ -1795,6 +1815,8 @@ class LttngLiveServer:
         self,
         tracing_session_descriptors: Iterable[LttngTracingSessionDescriptor],
         max_query_data_response_size: Optional[int] = None,
+        override_hostname_len: Optional[int] = None,
+        override_session_name_len: Optional[int] = None,
         max_minor_version: int = 10,
         port: Optional[int] = None,
     ):
@@ -1804,6 +1826,16 @@ class LttngLiveServer:
         if max_query_data_response_size is not None:
             _logger.info(
                 f"  Maximum response data query size: `{max_query_data_response_size}`"
+            )
+
+        if override_hostname_len is not None:
+            _logger.info(
+                f"  Session hostname override length: `{override_hostname_len}`"
+            )
+
+        if override_session_name_len is not None:
+            _logger.info(
+                f"  Session name override length: `{override_session_name_len}`"
             )
 
         for ts_descr in tracing_session_descriptors:
@@ -1827,7 +1859,9 @@ class LttngLiveServer:
         self._ts_descriptors = list(tracing_session_descriptors)
         self._max_query_data_response_size = max_query_data_response_size
         self._max_minor_version = max_minor_version
-        self._codec = _LttngLiveViewerProtocolCodec()
+        self._codec = _LttngLiveViewerProtocolCodec(
+            override_hostname_len, override_session_name_len
+        )
 
         # Bind and listen now so port is immediately available and
         # connections can be accepted as soon as serve() is called.
@@ -2002,6 +2036,8 @@ class LttngLiveServer:
         sessions_filename: str,
         trace_path_prefix: Optional[str] = None,
         max_query_data_response_size: Optional[int] = None,
+        override_hostname_len: Optional[int] = None,
+        override_session_name_len: Optional[int] = None,
         max_minor_version: int = 10,
         port: Optional[int] = None,
     ) -> "LttngLiveServer":
@@ -2011,6 +2047,8 @@ class LttngLiveServer:
         return cls(
             descriptors,
             max_query_data_response_size=max_query_data_response_size,
+            override_hostname_len=override_hostname_len,
+            override_session_name_len=override_session_name_len,
             max_minor_version=max_minor_version,
             port=port,
         )
@@ -2050,6 +2088,8 @@ def _lttng_live_server_process_target(
     sessions_filename: str,
     trace_path_prefix: Optional[str],
     max_query_data_response_size: Optional[int],
+    override_hostname_len: Optional[int],
+    override_session_name_len: Optional[int],
     max_minor_version: int,
     port: Optional[int],
     info_queue: "multiprocessing.Queue[tuple[int, Dict[str, str]]]",
@@ -2059,6 +2099,8 @@ def _lttng_live_server_process_target(
         sessions_filename,
         trace_path_prefix,
         max_query_data_response_size,
+        override_hostname_len,
+        override_session_name_len,
         max_minor_version,
         port,
     )
@@ -2089,12 +2131,16 @@ class LttngLiveServerProcess:
         sessions_filename: str,
         trace_path_prefix: Optional[str] = None,
         max_query_data_response_size: Optional[int] = None,
+        override_hostname_len: Optional[int] = None,
+        override_session_name_len: Optional[int] = None,
         max_minor_version: int = 10,
         port: Optional[int] = None,
     ):
         self._sessions_filename = sessions_filename
         self._trace_path_prefix = trace_path_prefix
         self._max_query_data_response_size = max_query_data_response_size
+        self._override_hostname_len = override_hostname_len
+        self._override_session_name_len = override_session_name_len
         self._max_minor_version = max_minor_version
         self._port = port
         self._process: Optional[multiprocessing.Process] = None
@@ -2147,6 +2193,8 @@ class LttngLiveServerProcess:
                 self._sessions_filename,
                 self._trace_path_prefix,
                 self._max_query_data_response_size,
+                self._override_hostname_len,
+                self._override_session_name_len,
                 self._max_minor_version,
                 self._port,
                 info_queue,
@@ -2188,6 +2236,8 @@ class LttngLiveServerProcess:
         sessions_filename: str,
         trace_path_prefix: Optional[str] = None,
         max_query_data_response_size: Optional[int] = None,
+        override_hostname_len: Optional[int] = None,
+        override_session_name_len: Optional[int] = None,
         max_minor_version: int = 10,
         port: Optional[int] = None,
     ) -> "LttngLiveServerProcess":
@@ -2195,6 +2245,8 @@ class LttngLiveServerProcess:
             sessions_filename,
             trace_path_prefix,
             max_query_data_response_size,
+            override_hostname_len,
+            override_session_name_len,
             max_minor_version,
             port,
         )
@@ -2327,6 +2379,18 @@ if __name__ == "__main__":
         help="The maximum size of control data response in bytes.",
     )
     parser.add_argument(
+        "--override-hostname-len",
+        type=int,
+        help="Override the configured session hostname on the wire (2.15 protocol) "
+        "with this many filler bytes, to emulate a relay daemon announcing a bogus "
+        "length.",
+    )
+    parser.add_argument(
+        "--override-session-name-len",
+        type=int,
+        help="Like `--override-hostname-len`, but for the session name.",
+    )
+    parser.add_argument(
         "--trace-path-prefix",
         type=str,
         help="Prefix to prepend to the trace paths of session configurations.",
@@ -2357,6 +2421,8 @@ if __name__ == "__main__":
         args.sessions_filename,
         args.trace_path_prefix,
         args.max_query_data_response_size,
+        args.override_hostname_len,
+        args.override_session_name_len,
         args.server_max_minor_version,
         args.port,
     )

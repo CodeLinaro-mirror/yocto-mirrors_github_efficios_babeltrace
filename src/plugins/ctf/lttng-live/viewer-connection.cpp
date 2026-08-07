@@ -47,6 +47,13 @@
                                      bt_socket_errormsg(), ##__VA_ARGS__);                         \
     } while (0)
 
+/*
+ * There is no fixed maximum for hostname and session name lengths
+ * in the 2.15 protocol, but we also don't want to receive and
+ * allocate nonsensical values, hence this arbitrary limit.
+ */
+constexpr auto v2_15_arbitraryMaxLen = 64u * 1024;
+
 static inline enum lttng_live_iterator_status
 viewer_status_to_live_iterator_status(enum lttng_live_viewer_status viewer_status)
 {
@@ -678,11 +685,15 @@ live_viewer_connection_list_sessions(struct live_viewer_connection *viewer_conne
 
     sessions_count = be32toh(list.sessions_count);
     for (i = 0; i < sessions_count; i++) {
-        std::vector<char> recvBuf;
+        std::vector<char> recvBuf(sizeof(lttng_viewer_session_common));
 
-        recvBuf.resize(sizeof(LttngViewerSession) + LTTNG_VIEWER_HOST_NAME_MAX +
-                       LTTNG_VIEWER_NAME_MAX + 1024);
-        auto& lSession = reinterpret_cast<LttngViewerSession&>(*recvBuf.data());
+        /*
+         * The `recvBuf` contents can move as it's being resized, so avoid
+         * re-using the pointer to data across resizes.
+         */
+        auto recvBufAsSession = [&recvBuf]() -> LttngViewerSession& {
+            return *reinterpret_cast<LttngViewerSession *>(recvBuf.data());
+        };
 
         /* Receive common part */
         viewer_status =
@@ -695,11 +706,12 @@ live_viewer_connection_list_sessions(struct live_viewer_connection *viewer_conne
             throw bt2c::TryAgain {};
         }
 
-        auto at = recvBuf.data() + sizeof(lttng_viewer_session_common);
+        auto at = recvBuf.size();
 
         /* Receive remaining parts */
         if (viewer_connection->minor < LTTNG_LIVE_MINOR_15) {
-            viewer_status = lttng_live_recv(viewer_connection, at,
+            recvBuf.resize(sizeof(lttng_viewer_session_v2_4));
+            viewer_status = lttng_live_recv(viewer_connection, &recvBuf[at],
                                             sizeof(lttng_viewer_session_v2_4) -
                                                 sizeof(lttng_viewer_session_common));
 
@@ -712,11 +724,12 @@ live_viewer_connection_list_sessions(struct live_viewer_connection *viewer_conne
             }
 
             /* Ensure null termination */
-            lSession.v2_4.hostname[LTTNG_VIEWER_HOST_NAME_MAX - 1] = '\0';
-            lSession.v2_4.session_name[LTTNG_VIEWER_NAME_MAX - 1] = '\0';
+            recvBufAsSession().v2_4.hostname[LTTNG_VIEWER_HOST_NAME_MAX - 1] = '\0';
+            recvBufAsSession().v2_4.session_name[LTTNG_VIEWER_NAME_MAX - 1] = '\0';
         } else {
             /* Receive fixed-length part */
-            viewer_status = lttng_live_recv(viewer_connection, at,
+            recvBuf.resize(sizeof(lttng_viewer_session_v2_15));
+            viewer_status = lttng_live_recv(viewer_connection, &recvBuf[at],
                                             sizeof(lttng_viewer_session_v2_15) -
                                                 sizeof(lttng_viewer_session_common));
 
@@ -728,7 +741,7 @@ live_viewer_connection_list_sessions(struct live_viewer_connection *viewer_conne
                 throw bt2c::TryAgain {};
             }
 
-            if (const auto traceFmt = be32toh(lSession.v2_15.trace_format);
+            if (const auto traceFmt = be32toh(recvBufAsSession().v2_15.trace_format);
                 traceFmt != LTTNG_LIVE_TRACE_FORMAT_CTF_V1_8 &&
                 traceFmt != LTTNG_LIVE_TRACE_FORMAT_CTF_V2_0) {
                 BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
@@ -736,11 +749,42 @@ live_viewer_connection_list_sessions(struct live_viewer_connection *viewer_conne
                     "Unknown trace format in session (v2.15 protocol): trace-format={}", traceFmt);
             }
 
-            at = recvBuf.data() + sizeof(lttng_viewer_session_v2_15);
+            const auto hostnameLen = be32toh(recvBufAsSession().v2_15.hostname_len);
+            const auto sessionNameLen = be32toh(recvBufAsSession().v2_15.session_name_len);
+
+            if (hostnameLen == 0) {
+                BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
+                    viewer_connection->logger, bt2::Error,
+                    "Session hostname length is zero (v2.15 protocol)");
+            }
+
+            if (hostnameLen > v2_15_arbitraryMaxLen) {
+                BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
+                    viewer_connection->logger, bt2::Error,
+                    "Session hostname length is greater than arbitrary max (v2.15 protocol): "
+                    "length={}, max={}",
+                    hostnameLen, v2_15_arbitraryMaxLen);
+            }
+
+            if (sessionNameLen == 0) {
+                BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
+                    viewer_connection->logger, bt2::Error,
+                    "Session name length is zero (v2.15 protocol)");
+            }
+
+            if (sessionNameLen > v2_15_arbitraryMaxLen) {
+                BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
+                    viewer_connection->logger, bt2::Error,
+                    "Session name length is greater than arbitrary max (v2.15 protocol): "
+                    "length={}, max={}",
+                    sessionNameLen, v2_15_arbitraryMaxLen);
+            }
+
+            at = recvBuf.size();
+            recvBuf.resize(at + hostnameLen + sessionNameLen);
 
             /* Receive hostname */
-            viewer_status =
-                lttng_live_recv(viewer_connection, at, be32toh(lSession.v2_15.hostname_len));
+            viewer_status = lttng_live_recv(viewer_connection, &recvBuf[at], hostnameLen);
 
             if (viewer_status == LTTNG_LIVE_VIEWER_STATUS_ERROR) {
                 BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
@@ -750,11 +794,10 @@ live_viewer_connection_list_sessions(struct live_viewer_connection *viewer_conne
                 throw bt2c::TryAgain {};
             }
 
-            at += be32toh(lSession.v2_15.hostname_len);
+            at += hostnameLen;
 
             /* Receive session name */
-            viewer_status =
-                lttng_live_recv(viewer_connection, at, be32toh(lSession.v2_15.session_name_len));
+            viewer_status = lttng_live_recv(viewer_connection, &recvBuf[at], sessionNameLen);
 
             if (viewer_status == LTTNG_LIVE_VIEWER_STATUS_ERROR) {
                 BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
@@ -765,7 +808,8 @@ live_viewer_connection_list_sessions(struct live_viewer_connection *viewer_conne
             }
         }
 
-        if (list_append_session(*result, viewer_connection->url, lSession, viewer_connection)) {
+        if (list_append_session(*result, viewer_connection->url, recvBufAsSession(),
+                                viewer_connection)) {
             BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(viewer_connection->logger, bt2::Error,
                                                    "Error appending session");
         }
@@ -806,11 +850,10 @@ lttng_live_query_session_ids(struct lttng_live_msg_iter *lttng_live_msg_iter)
 
     sessions_count = be32toh(list.sessions_count);
     for (i = 0; i < sessions_count; i++) {
-        std::vector<char> recvBuf;
-
-        recvBuf.resize(sizeof(LttngViewerSession) + LTTNG_VIEWER_HOST_NAME_MAX +
-                       LTTNG_VIEWER_NAME_MAX + 1024);
-        auto& lSession = reinterpret_cast<LttngViewerSession&>(*recvBuf.data());
+        std::vector<char> recvBuf(sizeof(lttng_viewer_session_common));
+        auto recvBufAsSession = [&recvBuf]() -> LttngViewerSession& {
+            return *reinterpret_cast<LttngViewerSession *>(recvBuf.data());
+        };
 
         /* Receive common part */
         status =
@@ -821,11 +864,12 @@ lttng_live_query_session_ids(struct lttng_live_msg_iter *lttng_live_msg_iter)
             return status;
         }
 
-        auto at = recvBuf.data() + sizeof(lttng_viewer_session_common);
+        auto at = recvBuf.size();
 
         /* Receive remaining parts */
         if (viewer_connection->minor < LTTNG_LIVE_MINOR_15) {
-            status = lttng_live_recv(viewer_connection, at,
+            recvBuf.resize(sizeof(lttng_viewer_session_v2_4));
+            status = lttng_live_recv(viewer_connection, &recvBuf[at],
                                      sizeof(lttng_viewer_session_v2_4) -
                                          sizeof(lttng_viewer_session_common));
 
@@ -834,11 +878,12 @@ lttng_live_query_session_ids(struct lttng_live_msg_iter *lttng_live_msg_iter)
                 return status;
             }
 
-            lSession.v2_4.hostname[LTTNG_VIEWER_HOST_NAME_MAX - 1] = '\0';
-            lSession.v2_4.session_name[LTTNG_VIEWER_NAME_MAX - 1] = '\0';
+            recvBufAsSession().v2_4.hostname[LTTNG_VIEWER_HOST_NAME_MAX - 1] = '\0';
+            recvBufAsSession().v2_4.session_name[LTTNG_VIEWER_NAME_MAX - 1] = '\0';
         } else {
             /* Receive fixed-length part */
-            status = lttng_live_recv(viewer_connection, at,
+            recvBuf.resize(sizeof(lttng_viewer_session_v2_15));
+            status = lttng_live_recv(viewer_connection, &recvBuf[at],
                                      sizeof(lttng_viewer_session_v2_15) -
                                          sizeof(lttng_viewer_session_common));
 
@@ -848,7 +893,7 @@ lttng_live_query_session_ids(struct lttng_live_msg_iter *lttng_live_msg_iter)
                 return status;
             }
 
-            if (const auto traceFmt = be32toh(lSession.v2_15.trace_format);
+            if (const auto traceFmt = be32toh(recvBufAsSession().v2_15.trace_format);
                 traceFmt != LTTNG_LIVE_TRACE_FORMAT_CTF_V1_8 &&
                 traceFmt != LTTNG_LIVE_TRACE_FORMAT_CTF_V2_0) {
                 viewer_handle_recv_status(status,
@@ -856,21 +901,54 @@ lttng_live_query_session_ids(struct lttng_live_msg_iter *lttng_live_msg_iter)
                 return status;
             }
 
-            at = recvBuf.data() + sizeof(lttng_viewer_session_v2_15);
+            const auto hostnameLen = be32toh(recvBufAsSession().v2_15.hostname_len);
+            const auto sessionNameLen = be32toh(recvBufAsSession().v2_15.session_name_len);
+
+            if (hostnameLen == 0) {
+                BT_CPPLOGE_APPEND_CAUSE_SPEC(viewer_connection->logger,
+                                             "Session hostname length is zero (v2.15 protocol)");
+                return LTTNG_LIVE_VIEWER_STATUS_ERROR;
+            }
+
+            if (hostnameLen > v2_15_arbitraryMaxLen) {
+                BT_CPPLOGE_APPEND_CAUSE_SPEC(
+                    viewer_connection->logger,
+                    "Session hostname length is greater than arbitrary max (v2.15 protocol): "
+                    "length={}, max={}",
+                    hostnameLen, v2_15_arbitraryMaxLen);
+                return LTTNG_LIVE_VIEWER_STATUS_ERROR;
+            }
+
+            if (sessionNameLen == 0) {
+                BT_CPPLOGE_APPEND_CAUSE_SPEC(viewer_connection->logger,
+                                             "Session name length is zero (v2.15 protocol)");
+                return LTTNG_LIVE_VIEWER_STATUS_ERROR;
+            }
+
+            if (sessionNameLen > v2_15_arbitraryMaxLen) {
+                BT_CPPLOGE_APPEND_CAUSE_SPEC(
+                    viewer_connection->logger,
+                    "Session name length is greater than arbitrary max (v2.15 protocol): "
+                    "length={}, max={}",
+                    sessionNameLen, v2_15_arbitraryMaxLen);
+                return LTTNG_LIVE_VIEWER_STATUS_ERROR;
+            }
+
+            at = recvBuf.size();
+            recvBuf.resize(at + hostnameLen + sessionNameLen);
 
             /* Receive hostname */
-            status = lttng_live_recv(viewer_connection, at, be32toh(lSession.v2_15.hostname_len));
+            status = lttng_live_recv(viewer_connection, &recvBuf[at], hostnameLen);
 
             if (status != LTTNG_LIVE_VIEWER_STATUS_OK) {
                 viewer_handle_recv_status(status, "session reply (hostname, v2.15 protocol)");
                 return status;
             }
 
-            at += be32toh(lSession.v2_15.hostname_len);
+            at += hostnameLen;
 
             /* Receive session name */
-            status =
-                lttng_live_recv(viewer_connection, at, be32toh(lSession.v2_15.session_name_len));
+            status = lttng_live_recv(viewer_connection, &recvBuf[at], sessionNameLen);
 
             if (status != LTTNG_LIVE_VIEWER_STATUS_OK) {
                 viewer_handle_recv_status(status, "session reply (session name, v2.15 protocol)");
@@ -878,6 +956,7 @@ lttng_live_query_session_ids(struct lttng_live_msg_iter *lttng_live_msg_iter)
             }
         }
 
+        auto& lSession = recvBufAsSession();
         session_id = lSession.id();
 
         BT_CPPLOGI_SPEC(viewer_connection->logger,

@@ -39,6 +39,32 @@ def _convert_attach(
     )
 
 
+# Attach to a live session with the `src_params` source parameters,
+# expecting the graph to fail with an error containing each string of
+# `expected_msgs`.
+#
+# Closes `server` before asserting anything.
+def _convert_attach_expect_error(
+    live_comp_cls,
+    dummy_comp_cls,
+    server,
+    src_params,
+    *expected_msgs,
+):
+    with pytest.raises(bt2._Error) as exc_info:
+        btu.convert(
+            bt2.ComponentSpec(live_comp_cls, src_params),
+            btu.SinkComponentSpec(dummy_comp_cls),
+        )
+
+    # Close server now to avoid waiting for the timeout since the
+    # client didn't disconnect cleanly.
+    server.close()
+
+    for expected_msg in expected_msgs:
+        assert expected_msg in str(exc_info.value)
+
+
 # Test the basic listing of sessions.
 #
 # Ensure that a multi-domain trace is seen as a single session.
@@ -401,22 +427,39 @@ def test_invalid_metadata(
         trace_path_prefix=str(ctf_traces_dir),
         max_minor_version=4,
     )
+    _convert_attach_expect_error(
+        live_comp_cls,
+        dummy_comp_cls,
+        server,
+        {
+            "inputs": [server.session_url("invalid-metadata")],
+            "session-not-found-action": "end",
+        },
+        "At line 12 in metadata stream: syntax error",
+        'token="perchaude"',
+    )
 
-    with pytest.raises(bt2._Error) as exc_info:
-        btu.convert(
-            bt2.ComponentSpec(
-                live_comp_cls,
-                {
-                    "inputs": [server.session_url("invalid-metadata")],
-                    "session-not-found-action": "end",
-                },
-            ),
-            btu.SinkComponentSpec(dummy_comp_cls),
-        )
 
-    # Close server now to avoid waiting for the timeout since the
-    # client didn't disconnect cleanly.
-    server.close()
-
-    assert "At line 12 in metadata stream: syntax error" in str(exc_info.value)
-    assert 'token="perchaude"' in str(exc_info.value)
+# Connect to a relay that returns a bad session list.
+# See `bad_v215_session_list_reply_case()` for the various cases.
+def test_attach_bad_session_list_reply(
+    live_comp_cls,
+    dummy_comp_cls,
+    ctf_traces_dir,
+    test_data_dir,
+    start_lttng_live_server,
+    bad_v215_session_list_reply_case,
+):
+    server = start_lttng_live_server(
+        str(test_data_dir / "base.json"),
+        trace_path_prefix=str(ctf_traces_dir),
+        max_minor_version=15,
+        **bad_v215_session_list_reply_case.server_options,
+    )
+    _convert_attach_expect_error(
+        live_comp_cls,
+        dummy_comp_cls,
+        server,
+        {"inputs": [server.session_url("trace-with-index")]},
+        bad_v215_session_list_reply_case.expected_msg,
+    )

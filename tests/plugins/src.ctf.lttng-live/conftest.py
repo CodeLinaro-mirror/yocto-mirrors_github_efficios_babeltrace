@@ -25,6 +25,53 @@ def test_data_dir():
     return btu.this_src_dir(__file__)
 
 
+# A case for the validation of a session within a v2.15 protocol session
+# list reply: the server options making it announce a bogus session
+# (zero or oversized hostname/name length), paired with the error
+# message substring the client is expected to produce when rejecting it.
+class _BadV215SessionListReplyCase(typing.NamedTuple):
+    server_options: typing.Dict[str, int]
+    expected_msg: str
+
+
+@pytest.fixture(
+    params=[
+        pytest.param(
+            _BadV215SessionListReplyCase(
+                {"override_hostname_len": 0},
+                "Session hostname length is zero",
+            ),
+            id="hostname-zero",
+        ),
+        pytest.param(
+            _BadV215SessionListReplyCase(
+                {"override_hostname_len": 64 * 1024 + 1},
+                "Session hostname length is greater than arbitrary max",
+            ),
+            id="hostname-too-long",
+        ),
+        pytest.param(
+            _BadV215SessionListReplyCase(
+                {"override_session_name_len": 0},
+                "Session name length is zero",
+            ),
+            id="session-name-zero",
+        ),
+        pytest.param(
+            _BadV215SessionListReplyCase(
+                {"override_session_name_len": 64 * 1024 + 1},
+                "Session name length is greater than arbitrary max",
+            ),
+            id="session-name-too-long",
+        ),
+    ]
+)
+def bad_v215_session_list_reply_case(
+    request: pytest.FixtureRequest,
+) -> _BadV215SessionListReplyCase:
+    return request.param
+
+
 # Factory fixture: call it like
 # LttngLiveServerProcess.from_config_file() to create and start a faux
 # LTTng live server process.
