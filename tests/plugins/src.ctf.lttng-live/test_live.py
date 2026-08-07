@@ -131,14 +131,13 @@ def test_list_sessions(
         trace_path_prefix=str(ctf_traces_dir),
         max_minor_version=max_minor_version,
     ) as server:
-        execu = bt2.QueryExecutor(live_comp_cls, "sessions", {"url": server.base_url})
-        results = execu.query()
-        expected = []
-
-        for session in expected_sessions:
-            session = dict(session)
-            session["url"] = server.session_url(session["session-name"])
-            expected.append(session)
+        results = bt2.QueryExecutor(
+            live_comp_cls, "sessions", {"url": server.base_url}
+        ).query()
+        expected = [
+            {**session, "url": server.session_url(session["session-name"])}
+            for session in expected_sessions
+        ]
 
         assert results == expected
 
@@ -311,7 +310,7 @@ def test_attach(
     ],
 )
 def test_compare_to_ctf_fs(
-    live_comp_cls, ctf_traces_dir, test_data_dir, session_config
+    live_comp_cls, details_comp_cls, ctf_traces_dir, test_data_dir, session_config
 ):
     details_params = {"with-trace-name": False, "with-stream-name": False}
 
@@ -319,13 +318,13 @@ def test_compare_to_ctf_fs(
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = pathlib.Path(temp_dir) / "output.txt"
 
-        text_plugin = btu.plugin_by_name("text")
-        sink_spec = btu.SinkComponentSpec(
-            text_plugin.sink_component_classes["details"],
-            {"path": str(output_path), "color": "never", **details_params},
-        )
         btu.convert(
-            ctf_traces_dir / "1/succeed/multi-domains", sink_spec, mip_version=0
+            ctf_traces_dir / "1/succeed/multi-domains",
+            btu.SinkComponentSpec(
+                details_comp_cls,
+                {"path": str(output_path), "color": "never", **details_params},
+            ),
+            mip_version=0,
         )
 
         expected = output_path.read_text(encoding="utf-8")
@@ -402,26 +401,23 @@ def test_new_stream_during_inactivity(
 
 # Test that the component correctly handles invalid metadata sent by
 # the relay.
-def test_invalid_metadata(live_comp_cls, ctf_traces_dir, test_data_dir):
+def test_invalid_metadata(live_comp_cls, dummy_comp_cls, ctf_traces_dir, test_data_dir):
     with _lttng_live_server(
         str(test_data_dir / "invalid-metadata.json"),
         trace_path_prefix=str(ctf_traces_dir),
         max_minor_version=4,
     ) as server:
-        src_spec = bt2.ComponentSpec(
-            live_comp_cls,
-            {
-                "inputs": [server.session_url("invalid-metadata")],
-                "session-not-found-action": "end",
-            },
-        )
-        text_plugin = btu.plugin_by_name("text")
-        sink_spec = btu.SinkComponentSpec(
-            text_plugin.sink_component_classes["details"], {"color": "never"}
-        )
-
         with pytest.raises(bt2._Error) as exc_info:
-            btu.convert(src_spec, sink_spec)
+            btu.convert(
+                bt2.ComponentSpec(
+                    live_comp_cls,
+                    {
+                        "inputs": [server.session_url("invalid-metadata")],
+                        "session-not-found-action": "end",
+                    },
+                ),
+                btu.SinkComponentSpec(dummy_comp_cls),
+            )
 
         # Close server now to avoid waiting for the timeout since the
         # client didn't disconnect cleanly.
