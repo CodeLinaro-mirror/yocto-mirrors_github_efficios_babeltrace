@@ -73,7 +73,7 @@ pytestdebug.log
 
 # Generated `ctf` plugin lexer/parser files
 /src/plugins/ctf/common/src/metadata/tsdl/lexer.cpp
-/src/plugins/ctf/common/src/metadata/tsdl/parser.*pp
+/src/plugins/ctf/common/src/metadata/tsdl/parser.[ch]pp
 /src/plugins/ctf/common/src/metadata/tsdl/parser.output
 
 # Generated test files
