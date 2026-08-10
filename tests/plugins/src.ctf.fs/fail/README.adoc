@@ -1,19 +1,30 @@
 // SPDX-FileCopyrightText: 2026 Philippe Proulx <pproulx@efficios.com>
 // SPDX-License-Identifier: CC-BY-4.0
 
-= `src.ctf.fs` structural data stream decoding failure tests
+= `src.ctf.fs` failure tests
 Philippe Proulx
 :toc: left
 
 This directory holds data-driven tests which verify that the
-`src.ctf.fs` component _gracefully fails_ on malformed CTF data
-streams, producing the expected error message.
+`src.ctf.fs` component _gracefully fails_ on malformed CTF traces,
+producing the expected error message.
 
-These tests target the _structure_ of the trace: packet headers, packet
-contexts, data stream/event class IDs, packet boundaries, and similar
-data stream-level concerns. They do **not** cover the decoding of
-individual CTF fields; see
+The tests live in two subdirectories, depending on which stream they
+target:
+
+`data`::
+    Tests which target the _structure_ of the data streams: packet
+    headers, packet contexts, data stream/event class IDs, packet
+    boundaries, and similar data stream-level concerns.
++
+They do **not** cover the decoding of individual CTF fields; see
 `tests/plugins/src.ctf.fs/field` for those.
+
+`metadata`::
+    Tests which target the metadata stream, that is, cases which
+    `src.ctf.fs` must reject before it even reads a data stream.
++
+Those files have no data stream part at all.
 
 Each test file here targets a single, specific failure mode rather than
 bundling many cases into one shared trace. When a test fails, the narrow
@@ -22,11 +33,11 @@ the metadata stream, the data stream, and the expected error message all
 describe just the one behaviour under test.
 
 Each `.mctf` file represents a single pytest test. `conftest.py`
-collects and runs those files. You can "`run`" a single one if you
-want:
+collects and runs the files of both subdirectories. You can "`run`" a
+single one if you want:
 
 ----
-$ bt-pytest ctf-2-invalid-pkt-magic.mctf
+$ bt-pytest data/ctf-2-invalid-pkt-magic.mctf
 ----
 
 == File naming
@@ -44,7 +55,7 @@ pytest only collects files matching one of these patterns:
 == File format
 
 Each `.mctf` file is a moultipart file (see `moultipart.py` in the
-source tree) containing three parts, separated by `---` lines:
+source tree) containing these parts, separated by `---` lines:
 
 . **Metadata stream**, always named `metadata`:
 +
@@ -64,6 +75,9 @@ when materializing the `metadata` file.
   https://github.com/efficios/normand[Normand] text.
 +
 This is 100% of the data stream(s) to write.
++
+A file of the `metadata` subdirectory doesn't have this part: the
+metadata stream alone must make `src.ctf.fs` fail.
 
 . **Expected error message**, always named `@error`:
 +
@@ -82,7 +96,7 @@ For each collected `.mctf` file, `_FailMctfItem.runtest()`:
 +
 --
 * One `metadata` file.
-* One or more data stream files.
+* Zero or more data stream files.
 --
 
 . Reads the `@error` part (stripped) to obtain the expected substring.
