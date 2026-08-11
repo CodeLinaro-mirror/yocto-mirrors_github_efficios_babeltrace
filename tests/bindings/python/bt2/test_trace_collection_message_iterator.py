@@ -433,11 +433,10 @@ def ascd_grouping_dir(common_data_dir):
 
 
 @pytest.fixture
-def ascd_grouping_env(ascd_grouping_dir):
-    saved = os.environ["BABELTRACE_PLUGIN_PATH"]
-    os.environ["BABELTRACE_PLUGIN_PATH"] += os.pathsep + str(ascd_grouping_dir)
-    yield
-    os.environ["BABELTRACE_PLUGIN_PATH"] = saved
+def ascd_grouping_env(monkeypatch, ascd_grouping_dir):
+    monkeypatch.setenv(
+        "BABELTRACE_PLUGIN_PATH", str(ascd_grouping_dir), prepend=os.pathsep
+    )
 
 
 def test_ascd_grouping(ascd_grouping_env, ascd_grouping_dir):
@@ -551,11 +550,10 @@ def ascd_params_log_level_dir(common_data_dir):
 
 
 @pytest.fixture
-def ascd_params_log_level_env(ascd_params_log_level_dir):
-    saved = os.environ["BABELTRACE_PLUGIN_PATH"]
-    os.environ["BABELTRACE_PLUGIN_PATH"] += os.pathsep + str(ascd_params_log_level_dir)
-    yield
-    os.environ["BABELTRACE_PLUGIN_PATH"] = saved
+def ascd_params_log_level_env(monkeypatch, ascd_params_log_level_dir):
+    monkeypatch.setenv(
+        "BABELTRACE_PLUGIN_PATH", str(ascd_params_log_level_dir), prepend=os.pathsep
+    )
 
 
 @pytest.fixture(scope="session")
