@@ -896,9 +896,10 @@ lttng_live_query_session_ids(struct lttng_live_msg_iter *lttng_live_msg_iter)
             if (const auto traceFmt = be32toh(recvBufAsSession().v2_15.trace_format);
                 traceFmt != LTTNG_LIVE_TRACE_FORMAT_CTF_V1_8 &&
                 traceFmt != LTTNG_LIVE_TRACE_FORMAT_CTF_V2_0) {
-                viewer_handle_recv_status(status,
-                                          "unknown trace format in session (v2.15 protocol)");
-                return status;
+                BT_CPPLOGE_APPEND_CAUSE_SPEC(
+                    viewer_connection->logger,
+                    "Unknown trace format in session (v2.15 protocol): trace-format={}", traceFmt);
+                return LTTNG_LIVE_VIEWER_STATUS_ERROR;
             }
 
             const auto hostnameLen = be32toh(recvBufAsSession().v2_15.hostname_len);

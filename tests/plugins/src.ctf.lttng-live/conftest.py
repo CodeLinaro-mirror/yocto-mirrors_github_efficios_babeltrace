@@ -27,8 +27,9 @@ def test_data_dir():
 
 # A case for the validation of a session within a v2.15 protocol session
 # list reply: the server options making it announce a bogus session
-# (zero or oversized hostname/name length), paired with the error
-# message substring the client is expected to produce when rejecting it.
+# (zero or oversized hostname/name length, unknown trace format), paired
+# with the error message substring the client is expected to produce
+# when rejecting it.
 class _BadV215SessionListReplyCase(typing.NamedTuple):
     server_options: typing.Dict[str, int]
     expected_msg: str
@@ -63,6 +64,13 @@ class _BadV215SessionListReplyCase(typing.NamedTuple):
                 "Session name length is greater than arbitrary max",
             ),
             id="session-name-too-long",
+        ),
+        pytest.param(
+            _BadV215SessionListReplyCase(
+                {"override_trace_format": 1337},
+                "Unknown trace format in session (v2.15 protocol): trace-format=1337",
+            ),
+            id="unknown-trace-format",
         ),
     ]
 )
