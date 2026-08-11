@@ -64,7 +64,7 @@ class TestCreate:
     ]
 
     @pytest.mark.parametrize("make_const", [False, True], ids=["non-const", "const"])
-    @pytest.mark.parametrize("raw_val,expected_type", _FROM_VAL_PARAMS)
+    @pytest.mark.parametrize(["raw_val", "expected_type"], _FROM_VAL_PARAMS)
     def test_from_val(self, raw_val, expected_type, make_const):
         orig = expected_type(raw_val)
 

@@ -1642,6 +1642,31 @@ Make sure to correctly scope your fixtures.
 * Use `pytest.raises()` to test expected exceptions.
 
 * Use `@pytest.mark.parametrize()` to run a test with different inputs.
++
+When there's more than one argument name, write them as a list of
+strings, not as a single comma-separated string nor as a tuple:
++
+[source,python]
+----
+# Good
+@pytest.mark.parametrize(["trace_name", "expected_count"], ...)
+
+# Bad
+@pytest.mark.parametrize("trace_name,expected_count", ...)
+@pytest.mark.parametrize("trace_name, expected_count", ...)
+@pytest.mark.parametrize(("trace_name", "expected_count"), ...)
+----
++
+Keep a single argument name as a plain string:
++
+[source,python]
+----
+# Good
+@pytest.mark.parametrize("trace_name", ["trace-1", "trace-2"])
+
+# Bad
+@pytest.mark.parametrize(["trace_name"], ["trace-1", "trace-2"])
+----
 
 * Use `@pytest.mark.skip()` or `pytest.mark.skipif()` to skip tests.
 

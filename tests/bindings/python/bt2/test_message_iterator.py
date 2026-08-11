@@ -843,7 +843,7 @@ def _can_seek_ns_from_origin_test(
 
 
 @pytest.mark.parametrize(
-    ("iter_can_seek_beginning", "iter_can_seek_forward"),
+    ["iter_can_seek_beginning", "iter_can_seek_forward"],
     [
         pytest.param(False, False, id="cant-seek-beginning-not-forward-seekable"),
         pytest.param(False, True, id="cant-seek-beginning-forward-seekable"),

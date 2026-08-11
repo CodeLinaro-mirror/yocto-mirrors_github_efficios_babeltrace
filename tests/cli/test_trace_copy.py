@@ -24,7 +24,7 @@ def pytest_generate_tests(metafunc):
     if "ctf_version" in metafunc.fixturenames and "trace_path" in metafunc.fixturenames:
         traces = _succeed_traces(metafunc.config.ctf_traces_dir)
         metafunc.parametrize(
-            "ctf_version,trace_path",
+            ["ctf_version", "trace_path"],
             traces,
             ids=[f"{p.name}-ctf-{'1.8' if v == 1 else '2'}" for v, p in traces],
         )

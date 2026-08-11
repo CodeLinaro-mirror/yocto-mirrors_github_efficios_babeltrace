@@ -6,7 +6,7 @@ import bt_tests_utils as btu
 
 
 @pytest.mark.parametrize(
-    "provider_subdir,expected_init,expected_provider,expected_exit",
+    ["provider_subdir", "expected_init", "expected_provider", "expected_exit"],
     [
         # Both providers get initialized, loaded and finalized
         # exactly once.
