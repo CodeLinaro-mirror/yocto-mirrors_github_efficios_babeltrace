@@ -3,7 +3,7 @@
 
 import types
 import pathlib
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union, Optional
 
 import bt2
 import pytest
@@ -239,10 +239,15 @@ def test_ts_format_tz_local(
     )
 
 
+# Error cause message of an invalid `tz` entry of the `ts-format`
+# parameter, which follows the cause message of the actual reason.
+_INVALID_TZ_MSG = "Invalid `tz` entry of `ts-format` parameter."
+
+
 # Tests that the component rejects invalid `ts-format`-related
-# initialization parameters with the expected error cause message.
+# initialization parameters with the expected error cause message(s).
 @pytest.mark.parametrize(
-    ["params", "expected_msg"],
+    ["params", "expected_msgs"],
     [
         pytest.param(
             {"ts-format": "rfc-3339"},
@@ -271,10 +276,44 @@ def test_ts_format_tz_local(
             "Error validating parameter `ts-format`: unexpected key `zone`.",
             id="unknown-key",
         ),
+        *[
+            pytest.param(
+                {"ts-format": {"type": "date-time", "tz": tz}},
+                [
+                    f"Invalid UTC offset `{tz}`: expecting `+HH:MM` or `-HH:MM`",
+                    _INVALID_TZ_MSG,
+                ],
+                id=f"bad-offset-{tz}",
+            )
+            for tz in (
+                "+5:00",
+                "-0400",
+                "+05:3",
+                "+05:300",
+                "+24:00",
+                "-05:60",
+                "+0a:00",
+                "+05-30",
+                "+",
+            )
+        ],
+        pytest.param(
+            {"ts-format": {"type": "date-time", "tz": "-00:00"}},
+            [
+                "Invalid UTC offset `-00:00`: use `+00:00` or `utc`.",
+                _INVALID_TZ_MSG,
+            ],
+            id="neg-zero-offset",
+        ),
+        pytest.param(
+            {"ts-format": {"type": "date-time", "tz": ""}},
+            ["Empty time zone string.", _INVALID_TZ_MSG],
+            id="empty-tz",
+        ),
         pytest.param(
             {"ts-format": {"type": "date-time", "tz": "Mars/Olympus_Mons"}},
-            "Error validating parameter `ts-format.tz`: string is not amongst "
-            "the available choices",
+            "Invalid time zone `Mars/Olympus_Mons` (`tz` entry of `ts-format` "
+            "parameter): expecting `local`, `utc`, `+HH:MM`, or `-HH:MM`.",
             id="unknown-tz-id",
         ),
         pytest.param(
@@ -284,7 +323,7 @@ def test_ts_format_tz_local(
             id="tz-with-cycles",
         ),
         pytest.param(
-            {"ts-format": {"type": "seconds-from-origin", "tz": "utc"}},
+            {"ts-format": {"type": "seconds-from-origin", "tz": "+05:00"}},
             "`tz` entry of `ts-format` parameter only applies to the `time` and "
             '`date-time` types: type="seconds-from-origin"',
             id="tz-with-seconds-from-origin",
@@ -305,15 +344,21 @@ def test_ts_format_tz_local(
         ],
     ],
 )
-def test_ts_format_invalid(pretty_comp_cls, params, expected_msg: str):
+def test_ts_format_invalid(
+    pretty_comp_cls, params, expected_msgs: Union[str, List[str]]
+):
     graph = bt2.Graph()
 
     with pytest.raises(bt2._Error) as exc_info:
         graph.add_component(pretty_comp_cls, "snk", params=params)
 
-    assert any(expected_msg in cause.message for cause in exc_info.value), [
-        cause.message for cause in exc_info.value
-    ]
+    if isinstance(expected_msgs, str):
+        expected_msgs = [expected_msgs]
+
+    for expected_msg in expected_msgs:
+        assert any(expected_msg in cause.message for cause in exc_info.value), [
+            cause.message for cause in exc_info.value
+        ]
 
 
 # Tests that the component warns about each legacy timestamp format

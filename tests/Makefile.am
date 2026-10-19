@@ -289,8 +289,10 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/succeed/ts-delta-two-events-cycles.mctf \
 	plugins/sink.text.pretty/succeed/ts-delta-two-events.mctf \
 	plugins/sink.text.pretty/succeed/ts-fmt-cycles.mctf \
+	plugins/sink.text.pretty/succeed/ts-fmt-date-time-offset.mctf \
 	plugins/sink.text.pretty/succeed/ts-fmt-date-time-utc.mctf \
 	plugins/sink.text.pretty/succeed/ts-fmt-secs-from-origin.mctf \
+	plugins/sink.text.pretty/succeed/ts-fmt-time-offset.mctf \
 	plugins/sink.text.pretty/succeed/ts-fmt-time-utc.mctf \
 	plugins/sink.text.pretty/succeed/ts-fmt-tz-only.mctf \
 	plugins/sink.text.pretty/succeed/ts-neg-two-events.mctf \

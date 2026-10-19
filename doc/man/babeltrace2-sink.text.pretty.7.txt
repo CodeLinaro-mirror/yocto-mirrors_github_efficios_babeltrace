@@ -90,6 +90,12 @@ nlparam:tz[]::
 
 `utc`::
     UTC.
+
+`+HH:MM` or `-HH:MM`::
+    Fixed UTC offset, where `HH` is between `00` and `23` and `MM` is
+    between `00` and `59`.
++
+`-00:00` isn't valid.
 --
 +
 The nlparam:tz[] entry only applies to the `time` and `date-time` types.
@@ -102,6 +108,9 @@ may change from one line to the next.
 ====
 The `local` time zone is the time zone of the system which _reads_ the
 trace, not of the system which _recorded_ it.
+
+To express timestamps in the time zone of the tracing system, specify
+its UTC offset explicitly with the nlparam:tz[] entry.
 ====
 
 The `time` and `date-time` types consider that the origin of the clock
@@ -396,8 +405,9 @@ nlparam:type[]=(`cycles` | `seconds-from-origin` | `time` | `date-time`) vtype:[
 +
 Default: `time`.
 
-nlparam:tz[]=(`local` | `utc`) vtype:[optional string]::
-    Express timestamps in the local time zone or in UTC.
+nlparam:tz[]=_TZ_ vtype:[optional string]::
+    Express timestamps in the time zone _TZ_: `local`, `utc`, or a fixed
+    UTC offset (`+HH:MM` or `-HH:MM`).
 +
 Only applies to the `time` and `date-time` types.
 +

@@ -33,13 +33,12 @@ namespace {
 const char *colorChoices[] = {"never", "auto", "always", nullptr};
 const char *showHideChoices[] = {"show", "hide", nullptr};
 const char *tsFmtTypeChoices[] = {"cycles", "seconds-from-origin", "time", "date-time", nullptr};
-const char *tsTzChoices[] = {"local", "utc", nullptr};
 
 bt_param_validation_map_value_entry_descr tsFmtParams[] = {
     {"type", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
      bt_param_validation_value_descr::makeString(tsFmtTypeChoices)},
     {"tz", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
-     bt_param_validation_value_descr::makeString(tsTzChoices)},
+     bt_param_validation_value_descr::makeString()},
     BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_END};
 
 bt_param_validation_map_value_entry_descr prettyParams[] = {
@@ -171,8 +170,24 @@ TsFmt tsFmtFromParams(const bt2c::Logger& logger, const bt2::ConstMapValue param
                     tsFmtMapVal["type"]->asString().value());
             }
 
-            tsFmt.tz = tzVal->asString().value() == "utc" ? bt2c::Tz::createUtc() :
-                                                            bt2c::Tz::createLocal();
+            const auto tzStr = tzVal->asString().value();
+
+            /* Time zone identifiers aren't supported */
+            if (tzStr.len() > 0 && tzStr != "local" && tzStr != "utc" && tzStr[0] != '+' &&
+                tzStr[0] != '-') {
+                BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
+                    logger, bt2c::Error,
+                    "Invalid time zone `{}` (`tz` entry of `ts-format` parameter): "
+                    "expecting `local`, `utc`, `+HH:MM`, or `-HH:MM`.",
+                    tzStr);
+            }
+
+            try {
+                tsFmt.tz = bt2c::Tz::createFromStr(tzStr, logger);
+            } catch (const bt2c::Error&) {
+                BT_CPPLOGE_APPEND_CAUSE_AND_RETHROW_SPEC(
+                    logger, "Invalid `tz` entry of `ts-format` parameter.");
+            }
         }
     } else {
         /* Convert the legacy parameters */
