@@ -167,12 +167,14 @@ EXTRA_DIST = \
 	plugins/sink.text.details/no-packet-context.expect \
 	plugins/sink.text.details/test_succeed_details.py \
 	plugins/sink.text.pretty/data/jan-jul.mctf \
+	plugins/sink.text.pretty/data/monrovia-1971.mctf \
 	plugins/sink.text.pretty/stderr/conftest.py \
 	plugins/sink.text.pretty/stderr/disc-events-clk-count-1.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-clk-count-many.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-no-clk.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-no-uid.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-no-uuid.mctf \
+	plugins/sink.text.pretty/stderr/disc-events-rfc-3339-utc.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-utc-date-time.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-utc-time.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-uuid.mctf \
@@ -297,6 +299,19 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/succeed/ts-fmt-tz-only.mctf \
 	plugins/sink.text.pretty/succeed/ts-neg-two-events.mctf \
 	plugins/sink.text.pretty/succeed/ts-no-delta.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-dst-fall.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-dst-spring.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-epoch-offset-neg.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-epoch.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-neg.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-offset-max.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-offset-neg.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-offset-next-day.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-offset-pos.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-offset-prev-day.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-offset-zero.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-utc.mctf \
+	plugins/sink.text.pretty/succeed/ts-rfc-3339-verbose.mctf \
 	plugins/sink.text.pretty/succeed/ts-secs-from-origin.mctf \
 	plugins/sink.text.pretty/succeed/ts-secs-neg.mctf \
 	plugins/sink.text.pretty/succeed/ts-utc-date-time.mctf \

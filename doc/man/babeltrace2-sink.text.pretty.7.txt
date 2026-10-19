@@ -78,6 +78,20 @@ Example: `13:48:17.587654321`
     Date and time of day, with nanosecond precision.
 +
 Example: `2012-10-29 13:48:17.587654321`
+
+`rfc-3339`::
+    https://datatracker.ietf.org/doc/html/rfc3339#section-5.6[RFC{nbsp}3339]
+    date-time, with nanosecond precision, including the time zone
+    designator.
++
+The time zone designator is `Z` for the UTC time zone and the UTC offset
+in effect at the time of the timestamp, formatted as `+HH:MM` or
+`-HH:MM`, for any other time zone.
++
+Examples:
++
+* `2012-10-29T17:48:17.587654321Z`
+* `2012-10-29T13:48:17.587654321-04:00`
 --
 
 nlparam:tz[]::
@@ -106,7 +120,8 @@ On Windows, GLib only knows Windows time zone names such as
 `Eastern Standard Time`.
 --
 +
-The nlparam:tz[] entry only applies to the `time` and `date-time` types.
+The nlparam:tz[] entry only applies to the `time`, `date-time`, and
+`rfc-3339` types.
 
 With the `local` time zone or a time zone identifier, the component
 determines the UTC offset for each timestamp, honoring daylight saving
@@ -122,12 +137,16 @@ its time zone identifier or UTC offset explicitly with the nlparam:tz[]
 entry.
 ====
 
-The `time` and `date-time` types consider that the origin of the clock
-is the Unix epoch, whether or not this is true (see the
+The `time`, `date-time`, and `rfc-3339` types consider that the origin
+of the clock is the Unix epoch, whether or not this is true (see the
 manopt:babeltrace2-convert[1,--clock-force-correlate] option of the
 man:babeltrace2-convert[1] command). The component falls back to the
 `seconds-from-origin` type, logging a warning once, to format a
 timestamp which precedes the origin of the clock.
+
+Since RFC{nbsp}3339 doesn't support a UTC offset having seconds, with
+the `rfc-3339` type, the component rounds any such UTC offset (found in
+some historical time zones) to the nearest minute.
 
 The legacy param:clock-cycles[], param:clock-date[], param:clock-gmt[],
 and param:clock-seconds[] parameters also select a timestamp format.
@@ -409,7 +428,7 @@ param:ts-format[]=_FORMAT_ vtype:[optional map]::
 _FORMAT_ is a map containing the following optional entries:
 +
 --
-nlparam:type[]=(`cycles` | `seconds-from-origin` | `time` | `date-time`) vtype:[optional string]::
+nlparam:type[]=(`cycles` | `seconds-from-origin` | `time` | `date-time` | `rfc-3339`) vtype:[optional string]::
     Timestamp representation.
 +
 Default: `time`.
@@ -418,7 +437,7 @@ nlparam:tz[]=_TZ_ vtype:[optional string]::
     Express timestamps in the time zone _TZ_: `local`, `utc`, a fixed
     UTC offset (`+HH:MM` or `-HH:MM`), or a time zone identifier.
 +
-Only applies to the `time` and `date-time` types.
+Only applies to the `time`, `date-time`, and `rfc-3339` types.
 +
 Default: `local`.
 --

@@ -220,6 +220,43 @@ def _pretty_lines(
     ["ts_format", "expected"],
     [
         pytest.param(
+            {"type": "rfc-3339", "tz": "America/Toronto"},
+            [
+                "[2012-01-15T07:00:00.000000000-05:00] e: { v = 0xAB }",
+                "[2012-07-15T08:00:00.000000000-04:00] e: { v = 0xAB }",
+            ],
+            marks=_needs_zoneinfo("America/Toronto"),
+            id="rfc-3339-dst",
+        ),
+        # Windows time zone name (only on Windows)
+        pytest.param(
+            {"type": "rfc-3339", "tz": "Eastern Standard Time"},
+            [
+                "[2012-01-15T07:00:00.000000000-05:00] e: { v = 0xAB }",
+                "[2012-07-15T08:00:00.000000000-04:00] e: { v = 0xAB }",
+            ],
+            marks=_needs_zoneinfo("Eastern Standard Time"),
+            id="rfc-3339-dst-windows",
+        ),
+        pytest.param(
+            {"type": "rfc-3339", "tz": "Asia/Kolkata"},
+            [
+                "[2012-01-15T17:30:00.000000000+05:30] e: { v = 0xAB }",
+                "[2012-07-15T17:30:00.000000000+05:30] e: { v = 0xAB }",
+            ],
+            marks=_needs_zoneinfo("Asia/Kolkata"),
+            id="rfc-3339-no-dst",
+        ),
+        pytest.param(
+            {"type": "rfc-3339", "tz": "UTC"},
+            [
+                "[2012-01-15T12:00:00.000000000+00:00] e: { v = 0xAB }",
+                "[2012-07-15T12:00:00.000000000+00:00] e: { v = 0xAB }",
+            ],
+            marks=_needs_zoneinfo("UTC"),
+            id="rfc-3339-utc-id",
+        ),
+        pytest.param(
             {"type": "date-time", "tz": "America/Toronto"},
             [
                 "[2012-01-15 07:00:00.000000000] e: { v = 0xAB }",
@@ -278,7 +315,46 @@ def test_ts_format_tz_id(
     ["tz_env", "ts_format", "expected"],
     [
         pytest.param(
+            # POSIX time zone: UTC−05:00, daylight saving time
+            # (UTC−04:00) from the second Sunday of March to the first
+            # Sunday of November.
+            "EST5EDT,M3.2.0,M11.1.0",
+            {"type": "rfc-3339", "tz": "local"},
+            [
+                "[2012-01-15T07:00:00.000000000-05:00] e: { v = 0xAB }",
+                "[2012-07-15T08:00:00.000000000-04:00] e: { v = 0xAB }",
+            ],
+            id="rfc-3339-dst",
+        ),
+        pytest.param(
+            "EST5EDT,M3.2.0,M11.1.0",
+            {"type": "rfc-3339"},
+            [
+                "[2012-01-15T07:00:00.000000000-05:00] e: { v = 0xAB }",
+                "[2012-07-15T08:00:00.000000000-04:00] e: { v = 0xAB }",
+            ],
+            id="rfc-3339-def-tz",
+        ),
+        pytest.param(
             # POSIX offsets are negated: this is UTC+05:30
+            "IST-5:30",
+            {"type": "rfc-3339", "tz": "local"},
+            [
+                "[2012-01-15T17:30:00.000000000+05:30] e: { v = 0xAB }",
+                "[2012-07-15T17:30:00.000000000+05:30] e: { v = 0xAB }",
+            ],
+            id="rfc-3339-pos",
+        ),
+        pytest.param(
+            "UTC0",
+            {"type": "rfc-3339", "tz": "local"},
+            [
+                "[2012-01-15T12:00:00.000000000+00:00] e: { v = 0xAB }",
+                "[2012-07-15T12:00:00.000000000+00:00] e: { v = 0xAB }",
+            ],
+            id="rfc-3339-utc",
+        ),
+        pytest.param(
             "IST-5:30",
             {"type": "date-time", "tz": "local"},
             [
@@ -339,6 +415,48 @@ def test_ts_format_tz_local(
         )
         == expected
     )
+
+
+# Tests that, with the `rfc-3339` type, the component rounds a UTC
+# offset which isn't a whole number of minutes to the nearest minute,
+# consistently adjusting the written time.
+#
+# The UTC offset of Africa/Monrovia is −00:44:30 before 1972.
+@_needs_zoneinfo("Africa/Monrovia")
+@pytest.mark.parametrize(
+    ["ts_format", "extra_env", "expected"],
+    [
+        pytest.param(
+            {"type": "rfc-3339", "tz": "Africa/Monrovia"},
+            None,
+            "[1970-12-31T23:15:00.000000000-00:45] e: { v = 0xAB }",
+            id="rfc-3339-tz-id",
+        ),
+        pytest.param(
+            {"type": "rfc-3339", "tz": "local"},
+            {"TZ": "Africa/Monrovia"},
+            "[1970-12-31T23:15:00.000000000-00:45] e: { v = 0xAB }",
+            id="rfc-3339-local",
+        ),
+        pytest.param(
+            # Not rounded: no written offset
+            {"type": "date-time", "tz": "Africa/Monrovia"},
+            None,
+            "[1970-12-31 23:15:30.000000000] e: { v = 0xAB }",
+            id="date-time-tz-id",
+        ),
+    ],
+)
+def test_ts_format_rfc_3339_non_whole_minute_offset(
+    build_root_dir, materialize_mctf, ts_format, extra_env, expected
+):
+    assert _pretty_lines(
+        build_root_dir,
+        materialize_mctf,
+        "monrovia-1971.mctf",
+        {"ts-format": ts_format},
+        extra_env=extra_env,
+    ) == [expected]
 
 
 # Error cause message of an invalid `tz` entry of the `ts-format`
@@ -419,14 +537,14 @@ _INVALID_TZ_MSG = "Invalid `tz` entry of `ts-format` parameter."
         ),
         pytest.param(
             {"ts-format": {"type": "cycles", "tz": "utc"}},
-            "`tz` entry of `ts-format` parameter only applies to the `time` and "
-            '`date-time` types: type="cycles"',
+            "`tz` entry of `ts-format` parameter only applies to the `time`, "
+            '`date-time`, and `rfc-3339` types: type="cycles"',
             id="tz-with-cycles",
         ),
         pytest.param(
             {"ts-format": {"type": "seconds-from-origin", "tz": "+05:00"}},
-            "`tz` entry of `ts-format` parameter only applies to the `time` and "
-            '`date-time` types: type="seconds-from-origin"',
+            "`tz` entry of `ts-format` parameter only applies to the `time`, "
+            '`date-time`, and `rfc-3339` types: type="seconds-from-origin"',
             id="tz-with-seconds-from-origin",
         ),
         *[

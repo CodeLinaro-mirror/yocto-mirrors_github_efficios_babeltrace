@@ -1,0 +1,48 @@
+--- metadata
+/* CTF 1.8 */
+
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+clock {
+    name = c;
+    freq = 1000000000;
+    absolute = true;
+    offset = 0;
+    offset_s = 1351532897;
+};
+
+stream {
+    event.header := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; } id;
+        integer { size = 64; align = 8; signed = false; byte_order = le; map = clock.c.value; } timestamp;
+    };
+};
+
+event {
+    id = 0;
+    name = "e";
+    fields := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = hexadecimal; } v;
+    };
+};
+
+--- stream
+$0                 # `id`
+[587654321:64le]   # `timestamp`
+ab                 # `v`
+
+--- @params
+{
+  "ts-format": {
+    "type": "rfc-3339",
+    "tz": "+05:30"
+  }
+}
+
+--- @output
+[2012-10-29T23:18:17.587654321+05:30] (+?.?????????) e: { v = 0xAB }

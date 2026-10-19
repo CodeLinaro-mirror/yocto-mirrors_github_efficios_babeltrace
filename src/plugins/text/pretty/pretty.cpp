@@ -32,7 +32,8 @@ namespace {
 
 const char *colorChoices[] = {"never", "auto", "always", nullptr};
 const char *showHideChoices[] = {"show", "hide", nullptr};
-const char *tsFmtTypeChoices[] = {"cycles", "seconds-from-origin", "time", "date-time", nullptr};
+const char *tsFmtTypeChoices[] = {"cycles", "seconds-from-origin", "time", "date-time", "rfc-3339",
+                                  nullptr};
 
 bt_param_validation_map_value_entry_descr tsFmtParams[] = {
     {"type", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
@@ -155,9 +156,11 @@ TsFmt tsFmtFromParams(const bt2c::Logger& logger, const bt2::ConstMapValue param
                 tsFmt.type = TsFmtType::SecFromOrigin;
             } else if (type == "time") {
                 tsFmt.type = TsFmtType::Time;
-            } else {
-                BT_ASSERT(type == "date-time");
+            } else if (type == "date-time") {
                 tsFmt.type = TsFmtType::DateTime;
+            } else {
+                BT_ASSERT(type == "rfc-3339");
+                tsFmt.type = TsFmtType::Rfc3339;
             }
         }
 
@@ -165,8 +168,8 @@ TsFmt tsFmtFromParams(const bt2c::Logger& logger, const bt2::ConstMapValue param
             if (tsFmt.type == TsFmtType::Cycles || tsFmt.type == TsFmtType::SecFromOrigin) {
                 BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
                     logger, bt2c::Error,
-                    "`tz` entry of `ts-format` parameter only applies to the `time` and "
-                    "`date-time` types: type=\"{}\"",
+                    "`tz` entry of `ts-format` parameter only applies to the `time`, "
+                    "`date-time`, and `rfc-3339` types: type=\"{}\"",
                     tsFmtMapVal["type"]->asString().value());
             }
 

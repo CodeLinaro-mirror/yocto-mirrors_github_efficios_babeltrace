@@ -36,6 +36,7 @@
 #include "cpp-common/bt2c/date-time.hpp"
 #include "cpp-common/bt2c/exc.hpp"
 #include "cpp-common/bt2c/logging.hpp"
+#include "cpp-common/bt2c/safe-ops.hpp"
 #include "cpp-common/bt2c/tz.hpp"
 
 namespace bt2pretty {
@@ -56,6 +57,12 @@ enum class TsFmtType
 
     /* `YYYY-MM-DD HH:MM:SS.NSEC` */
     DateTime,
+
+    /*
+     * RFC 3339 date-time: `YYYY-MM-DDTHH:MM:SS.NSECZ` (UTC) or
+     * `YYYY-MM-DDTHH:MM:SS.NSEC±HH:MM` (any other time zone).
+     */
+    Rfc3339,
 };
 
 /*
@@ -66,8 +73,8 @@ struct TsFmt final
     TsFmtType type = TsFmtType::Time;
 
     /*
-     * Time zone; only relevant when `type` is `TsFmtType::Time`
-     * or `TsFmtType::DateTime`.
+     * Time zone; only relevant when `type` is `TsFmtType::Time`,
+     * `TsFmtType::DateTime`, or `TsFmtType::Rfc3339`.
      */
     bt2c::Tz tz = bt2c::Tz::createLocal();
 };
@@ -415,12 +422,29 @@ private:
     }
 
     /*
+     * Date/time with its effective UTC offset.
+     */
+    struct _DateTimeWithOffset final
+    {
+        bt2c::DateTime dt;
+
+        /* Effective UTC offset (seconds) of `dt` */
+        std::int64_t offsetSec;
+    };
+
+    /*
      * Returns the date/time of `timeS` (seconds since the Unix epoch)
      * in the time zone of `_mOpts.tsFmt`.
      *
+     * When `_mOpts.tsFmt.type` is `TsFmtType::Rfc3339`, the returned
+     * offset is the effective UTC offset (seconds) of the returned
+     * date/time, always a whole number of minutes, the date/time
+     * reflecting it, because an RFC 3339 offset has no seconds.
+     * Otherwise, the returned offset is 0.
+     *
      * Returns `std::nullopt` if an underlying timing call fails.
      */
-    std::optional<bt2c::DateTime> _dateTime(const time_t timeS)
+    std::optional<_DateTimeWithOffset> _dateTime(const time_t timeS)
     {
         /*
          * TODO: Cache the last `timeS` and its result to skip the
@@ -433,11 +457,46 @@ private:
          * compared to UTC (about 3 % for the local time zone, which
          * calls localtime_r()). A cache miss costs almost nothing.
          */
-        if (const auto dt = _mOpts.tsFmt.tz.dateTime(timeS)) {
-            return dt;
+        const auto& tsFmt = _mOpts.tsFmt;
+
+        if (tsFmt.type != TsFmtType::Rfc3339) {
+            /* Offset is irrelevant */
+            if (const auto dt = tsFmt.tz.dateTime(timeS)) {
+                return _DateTimeWithOffset {*dt, 0};
+            }
+
+            BT_CPPLOGW("Failed to convert seconds to date/time: ts-s={}", timeS);
+            return std::nullopt;
         }
 
-        BT_CPPLOGW("Failed to convert seconds to date/time: ts-s={}", timeS);
+        const auto tzOffsetSec = tsFmt.tz.utcOffsetSec(timeS);
+
+        if (!tzOffsetSec) {
+            BT_CPPLOGW("Failed to get UTC offset: ts-s={}", timeS);
+            return std::nullopt;
+        }
+
+        auto offsetSec = static_cast<std::int64_t>(*tzOffsetSec);
+
+        if (offsetSec % 60 != 0) {
+            /*
+             * Some historical time zones have an offset which isn't a
+             * whole number of minutes (for example, -00:44:30): round
+             * to the nearest minute, away from zero on a tie, so that
+             * the written time and offset remain consistent.
+             */
+            offsetSec = (offsetSec + (offsetSec < 0 ? -30 : 30)) / 60 * 60;
+        }
+
+        /* The local time may not fit `time_t` near its limits */
+        if (const auto localTimeS = bt2c::safeAdd(timeS, static_cast<time_t>(offsetSec))) {
+            if (const auto dt = bt2c::Tz::createUtc().dateTime(*localTimeS)) {
+                return _DateTimeWithOffset {*dt, offsetSec};
+            }
+        }
+
+        BT_CPPLOGW("Failed to convert seconds to date/time: ts-s={}, offset-s={}", timeS,
+                   offsetSec);
         return std::nullopt;
     }
 
@@ -486,14 +545,14 @@ private:
             return false;
         }
 
-        const auto dt = this->_dateTime(static_cast<time_t>(tsSecAbs));
+        const auto dtWithOffset = this->_dateTime(static_cast<time_t>(tsSecAbs));
 
-        if (!dt) {
+        if (!dtWithOffset) {
             return false;
         }
 
-        const auto& date = dt->date();
-        const auto& timeOfDay = dt->timeOfDay();
+        const auto& date = dtWithOffset->dt.date();
+        const auto& timeOfDay = dtWithOffset->dt.timeOfDay();
 
         if (tsFmt.type == TsFmtType::Time) {
             this->_appendFmtToBuf(FMT_COMPILE("{:02}:{:02}:{:02}.{:09}"), timeOfDay.hour(),
@@ -502,10 +561,26 @@ private:
         }
 
         /* Write date and time */
-        BT_ASSERT_DBG(tsFmt.type == TsFmtType::DateTime);
-        this->_appendFmtToBuf(FMT_COMPILE("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09}"), date.year(),
-                              date.month(), date.day(), timeOfDay.hour(), timeOfDay.minute(),
-                              timeOfDay.second(), tsNsAbs);
+        this->_appendFmtToBuf(FMT_COMPILE("{:04}-{:02}-{:02}{}{:02}:{:02}:{:02}.{:09}"),
+                              date.year(), date.month(), date.day(),
+                              tsFmt.type == TsFmtType::Rfc3339 ? 'T' : ' ', timeOfDay.hour(),
+                              timeOfDay.minute(), timeOfDay.second(), tsNsAbs);
+
+        if (tsFmt.type == TsFmtType::Rfc3339) {
+            /* Add time zone designator */
+            if (tsFmt.tz.kind() == bt2c::Tz::Kind::Utc) {
+                this->_appendToBuf("Z");
+            } else {
+                const auto offsetSec = dtWithOffset->offsetSec;
+                const auto absOffsetSec = offsetSec < 0 ? -offsetSec : offsetSec;
+
+                this->_appendFmtToBuf(FMT_COMPILE("{}{:02}:{:02}"), offsetSec < 0 ? '-' : '+',
+                                      absOffsetSec / 3600, absOffsetSec % 3600 / 60);
+            }
+        } else {
+            BT_ASSERT_DBG(tsFmt.type == TsFmtType::DateTime);
+        }
+
         return true;
     }
 

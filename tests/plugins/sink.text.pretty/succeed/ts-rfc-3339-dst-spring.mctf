@@ -1,0 +1,55 @@
+--- metadata
+/* CTF 1.8 */
+
+
+trace {
+    major = 1;
+    minor = 8;
+    byte_order = le;
+};
+
+clock {
+    name = c;
+    freq = 1000000000;
+    absolute = true;
+    offset = 0;
+    offset_s = 1331449199;
+};
+
+stream {
+    event.header := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; } id;
+        integer { size = 64; align = 8; signed = false; byte_order = le; map = clock.c.value; } timestamp;
+    };
+};
+
+event {
+    id = 0;
+    name = "e";
+    fields := struct {
+        integer { size = 8; align = 8; signed = false; byte_order = le; base = hexadecimal; } v;
+    };
+};
+
+--- stream
+# event 1: 2012-03-11T06:59:59.999999999Z (last nanosecond of EST)
+$0                 # `id`
+[999999999:64le]   # `timestamp`
+ab                 # `v`
+
+# event 2: 2012-03-11T07:00:00Z (first nanosecond of EDT)
+$0                 # `id`
+[1000000000:64le]  # `timestamp`
+ab                 # `v`
+
+--- @params
+{
+  "ts-format": {
+    "type": "rfc-3339",
+    "tz": "EST5EDT,M3.2.0,M11.1.0"
+  }
+}
+
+--- @output
+[2012-03-11T01:59:59.999999999-05:00] (+?.?????????) e: { v = 0xAB }
+[2012-03-11T03:00:00.000000000-04:00] (+0.000000001) e: { v = 0xAB }
