@@ -419,11 +419,14 @@ private:
             return false;
         }
 
-        if (isNeg && !_mNegTsWarnDone) {
-            BT_CPPLOGW("Falling back to seconds from origin format for negative timestamp: "
-                       "ts-s={}, ts-ns={}",
-                       -static_cast<std::int64_t>(tsSecAbs), tsNsAbs);
-            _mNegTsWarnDone = true;
+        if (isNeg) {
+            if (!_mNegTsWarnDone) {
+                BT_CPPLOGW("Falling back to seconds from origin format for negative timestamp: "
+                           "ts-s={}, ts-ns={}",
+                           -static_cast<std::int64_t>(tsSecAbs), tsNsAbs);
+                _mNegTsWarnDone = true;
+            }
+
             return false;
         }
 

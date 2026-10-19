@@ -286,6 +286,7 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/succeed/ts-cycles.mctf \
 	plugins/sink.text.pretty/succeed/ts-delta-two-events-cycles.mctf \
 	plugins/sink.text.pretty/succeed/ts-delta-two-events.mctf \
+	plugins/sink.text.pretty/succeed/ts-neg-two-events.mctf \
 	plugins/sink.text.pretty/succeed/ts-no-delta.mctf \
 	plugins/sink.text.pretty/succeed/ts-secs-from-origin.mctf \
 	plugins/sink.text.pretty/succeed/ts-secs-neg.mctf \
