@@ -61,6 +61,18 @@ the `sink.text.pretty` component.
 The value `yes` becomes true, the value `no` becomes false, and any
 other value is considered to be a string.
 +
+Alternatively, the whole part may be a JSON object, which makes it
+possible to pass a map parameter such as `ts-format`:
++
+----
+{
+  "ts-format": {
+    "type": "date-time",
+    "tz": "utc"
+  }
+}
+----
++
 `conftest.py` always sets `color=never` and `path=__output-file__`.
 Initialization parameters listed here are merged on top of
 those defaults.

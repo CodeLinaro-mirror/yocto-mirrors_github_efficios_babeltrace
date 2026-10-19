@@ -166,6 +166,7 @@ EXTRA_DIST = \
 	plugins/sink.text.details/names-without-uid-mip1.expect \
 	plugins/sink.text.details/no-packet-context.expect \
 	plugins/sink.text.details/test_succeed_details.py \
+	plugins/sink.text.pretty/data/jan-jul.mctf \
 	plugins/sink.text.pretty/stderr/conftest.py \
 	plugins/sink.text.pretty/stderr/disc-events-clk-count-1.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-clk-count-many.mctf \
@@ -287,6 +288,11 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/succeed/ts-cycles.mctf \
 	plugins/sink.text.pretty/succeed/ts-delta-two-events-cycles.mctf \
 	plugins/sink.text.pretty/succeed/ts-delta-two-events.mctf \
+	plugins/sink.text.pretty/succeed/ts-fmt-cycles.mctf \
+	plugins/sink.text.pretty/succeed/ts-fmt-date-time-utc.mctf \
+	plugins/sink.text.pretty/succeed/ts-fmt-secs-from-origin.mctf \
+	plugins/sink.text.pretty/succeed/ts-fmt-time-utc.mctf \
+	plugins/sink.text.pretty/succeed/ts-fmt-tz-only.mctf \
 	plugins/sink.text.pretty/succeed/ts-neg-two-events.mctf \
 	plugins/sink.text.pretty/succeed/ts-no-delta.mctf \
 	plugins/sink.text.pretty/succeed/ts-secs-from-origin.mctf \

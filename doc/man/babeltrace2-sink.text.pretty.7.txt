@@ -4,7 +4,7 @@
 
 = babeltrace2-sink.text.pretty(7)
 :manpagetype: component class
-:revdate: 15 January 2025
+:revdate: 19 October 2026
 
 
 == NAME
@@ -45,30 +45,117 @@ This component class is equivalent to the `text` output format of
 man:babeltrace[1] (Babeltrace{nbsp}1 command-line tool).
 
 
+[[ts-fmt]]
+=== Timestamp format
+
+A compcls:sink.text.pretty[] component prefixes each event line with the
+timestamp of the event. It also uses this format for the time range of
+discarded events and discarded packets warnings.
+
+Use the param:ts-format[] parameter to choose a timestamp
+format. This parameter is a map containing two optional entries:
+
+nlparam:type[]::
+    Timestamp representation, one of:
++
+--
+`cycles`::
+    Clock value, in cycles, as a zero-padded decimal integer.
++
+Example: `00000001351532897587`
+
+`seconds-from-origin`::
+    Seconds since the origin of the clock, with nanosecond precision.
++
+Example: `1351532897.587654321`
+
+`time` (default)::
+    Time of day, with nanosecond precision.
++
+Example: `13:48:17.587654321`
+
+`date-time`::
+    Date and time of day, with nanosecond precision.
++
+Example: `2012-10-29 13:48:17.587654321`
+--
+
+nlparam:tz[]::
+    Time zone in which to express the timestamp, one of:
++
+--
+`local` (default)::
+    Local time zone of the system running the component, honoring the
+    `TZ` environment variable.
+
+`utc`::
+    UTC.
+--
++
+The nlparam:tz[] entry only applies to the `time` and `date-time` types.
+
+With the `local` time zone, the component determines the UTC offset for
+each timestamp, honoring daylight saving time: the UTC offset therefore
+may change from one line to the next.
+
+[IMPORTANT]
+====
+The `local` time zone is the time zone of the system which _reads_ the
+trace, not of the system which _recorded_ it.
+====
+
+The `time` and `date-time` types consider that the origin of the clock
+is the Unix epoch, whether or not this is true (see the
+manopt:babeltrace2-convert[1,--clock-force-correlate] option of the
+man:babeltrace2-convert[1] command). The component falls back to the
+`seconds-from-origin` type, logging a warning once, to format a
+timestamp which precedes the origin of the clock.
+
+The legacy param:clock-cycles[], param:clock-date[], param:clock-gmt[],
+and param:clock-seconds[] parameters also select a timestamp format.
+They're deprecated in favor of param:ts-format[], with which they're
+mutually exclusive.
+
+
 == INITIALIZATION PARAMETERS
 
 param:clock-cycles[]=_VAL_ vtype:[optional boolean]::
     If _VAL_ is true, then print event times in clock cycles instead of
     hours, minutes, seconds, and nanoseconds.
 +
+This parameter takes precedence over the param:clock-date[],
+param:clock-gmt[], and param:clock-seconds[] parameters.
++
 Default: false.
++
+Deprecated: use param:ts-format[] with the `cycles` type instead.
 
 param:clock-date[]=_VAL_ vtype:[optional boolean]::
     If _VAL_ is true, then print event times _and_ dates.
 +
 Default: false.
++
+Deprecated: use param:ts-format[] with the `date-time` type instead.
 
 param:clock-gmt[]=_VAL_ vtype:[optional boolean]::
     If _VAL_ is true, then print event times in the GMT time zone
     instead of the local time zone.
 +
 Default: false.
++
+Deprecated: use param:ts-format[] with the `utc` time zone instead.
 
 param:clock-seconds[]=_VAL_ vtype:[optional boolean]::
     If _VAL_ is true, then print event times in seconds instead of
     hours, minutes, seconds, and nanoseconds.
 +
+This parameter takes precedence over the param:clock-date[] and
+param:clock-gmt[] parameters.
++
 Default: false.
++
+Deprecated: use param:ts-format[] with the `seconds-from-origin` type
+instead.
 
 param:color[]=(`never` | `auto` | `always`) vtype:[optional string]::
     Force the terminal color support, one of:
@@ -297,6 +384,29 @@ If a set bit has no corresponding mapping, then the component
 prints `<unknown>`.
 +
 Default: false.
+
+param:ts-format[]=_FORMAT_ vtype:[optional map]::
+    Use the timestamp format _FORMAT_ (see <<ts-fmt,Timestamp format>>).
++
+_FORMAT_ is a map containing the following optional entries:
++
+--
+nlparam:type[]=(`cycles` | `seconds-from-origin` | `time` | `date-time`) vtype:[optional string]::
+    Timestamp representation.
++
+Default: `time`.
+
+nlparam:tz[]=(`local` | `utc`) vtype:[optional string]::
+    Express timestamps in the local time zone or in UTC.
++
+Only applies to the `time` and `date-time` types.
++
+Default: `local`.
+--
++
+This parameter is mutually exclusive with the legacy
+param:clock-cycles[], param:clock-date[], param:clock-gmt[], and
+param:clock-seconds[] parameters.
 
 param:verbose[]=_VAL_ vtype:[optional boolean]::
     If _VAL_ is true, then turn the verbose mode on.

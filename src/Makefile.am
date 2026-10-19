@@ -874,6 +874,7 @@ plugins_text_babeltrace_plugin_text_la_LDFLAGS = \
 	-avoid-version -module $(LD_NOTEXT)
 
 plugins_text_babeltrace_plugin_text_la_LIBADD = \
+	cpp-common/libcpp-common.la \
 	lib/libbabeltrace2.la \
 	common/libcommon.la \
 	$(FMT_LDADD) \

@@ -6,6 +6,7 @@
  * Copyright 2026 Philippe Proulx <pproulx@efficios.com>
  */
 
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <optional>
@@ -18,6 +19,8 @@
 
 #include "common/common.h"
 #include "cpp-common/bt2c/c-string-view.hpp"
+#include "cpp-common/bt2c/exc.hpp"
+#include "cpp-common/bt2c/tz.hpp"
 
 #include "plugins/common/param-validation/param-validation.h"
 
@@ -29,6 +32,15 @@ namespace {
 
 const char *colorChoices[] = {"never", "auto", "always", nullptr};
 const char *showHideChoices[] = {"show", "hide", nullptr};
+const char *tsFmtTypeChoices[] = {"cycles", "seconds-from-origin", "time", "date-time", nullptr};
+const char *tsTzChoices[] = {"local", "utc", nullptr};
+
+bt_param_validation_map_value_entry_descr tsFmtParams[] = {
+    {"type", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
+     bt_param_validation_value_descr::makeString(tsFmtTypeChoices)},
+    {"tz", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
+     bt_param_validation_value_descr::makeString(tsTzChoices)},
+    BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_END};
 
 bt_param_validation_map_value_entry_descr prettyParams[] = {
     {"color", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
@@ -45,6 +57,8 @@ bt_param_validation_map_value_entry_descr prettyParams[] = {
      bt_param_validation_value_descr::makeBool()},
     {"clock-gmt", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
      bt_param_validation_value_descr::makeBool()},
+    {"ts-format", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
+     bt_param_validation_value_descr::makeMap(tsFmtParams)},
     {"verbose", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
      bt_param_validation_value_descr::makeBool()},
 
@@ -105,6 +119,85 @@ void applyOneBoolIfSpecified(const bt2::ConstMapValue params, const bt2c::CStrin
     if (const auto val = params[key]) {
         option = val->asBool().value();
     }
+}
+
+/* Legacy timestamp format parameter names */
+constexpr std::array<const char *, 4> legacyTsFmtParamNames = {"clock-cycles", "clock-seconds",
+                                                               "clock-date", "clock-gmt"};
+
+/*
+ * Returns the timestamp format of the initialization parameters
+ * `params` (already validated).
+ *
+ * Throws `bt2c::Error` on error.
+ */
+TsFmt tsFmtFromParams(const bt2c::Logger& logger, const bt2::ConstMapValue params)
+{
+    TsFmt tsFmt;
+
+    if (const auto tsFmtVal = params["ts-format"]) {
+        /* Mutually exclusive with the legacy parameters */
+        for (const auto name : legacyTsFmtParamNames) {
+            if (params.hasEntry(name)) {
+                BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
+                    logger, bt2c::Error, "`ts-format` and `{}` parameters are mutually exclusive.",
+                    name);
+            }
+        }
+
+        const auto tsFmtMapVal = tsFmtVal->asMap();
+
+        if (const auto typeVal = tsFmtMapVal["type"]) {
+            const auto type = typeVal->asString().value();
+
+            if (type == "cycles") {
+                tsFmt.type = TsFmtType::Cycles;
+            } else if (type == "seconds-from-origin") {
+                tsFmt.type = TsFmtType::SecFromOrigin;
+            } else if (type == "time") {
+                tsFmt.type = TsFmtType::Time;
+            } else {
+                BT_ASSERT(type == "date-time");
+                tsFmt.type = TsFmtType::DateTime;
+            }
+        }
+
+        if (const auto tzVal = tsFmtMapVal["tz"]) {
+            if (tsFmt.type == TsFmtType::Cycles || tsFmt.type == TsFmtType::SecFromOrigin) {
+                BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
+                    logger, bt2c::Error,
+                    "`tz` entry of `ts-format` parameter only applies to the `time` and "
+                    "`date-time` types: type=\"{}\"",
+                    tsFmtMapVal["type"]->asString().value());
+            }
+
+            tsFmt.tz = tzVal->asString().value() == "utc" ? bt2c::Tz::createUtc() :
+                                                            bt2c::Tz::createLocal();
+        }
+    } else {
+        /* Convert the legacy parameters */
+        bool clockCycles = false;
+        bool clockSeconds = false;
+        bool clockDate = false;
+        bool clockGmt = false;
+
+        applyOneBoolWithDef(params, "clock-cycles", clockCycles, false);
+        applyOneBoolWithDef(params, "clock-seconds", clockSeconds, false);
+        applyOneBoolWithDef(params, "clock-date", clockDate, false);
+        applyOneBoolWithDef(params, "clock-gmt", clockGmt, false);
+
+        /* `clock-cycles` overrides everything else */
+        if (clockCycles) {
+            tsFmt.type = TsFmtType::Cycles;
+        } else if (clockSeconds) {
+            tsFmt.type = TsFmtType::SecFromOrigin;
+        } else {
+            tsFmt.type = clockDate ? TsFmtType::DateTime : TsFmtType::Time;
+            tsFmt.tz = clockGmt ? bt2c::Tz::createUtc() : bt2c::Tz::createLocal();
+        }
+    }
+
+    return tsFmt;
 }
 
 /*
@@ -187,29 +280,8 @@ WriterOpts writerOptsFromParams(const bt2c::Logger& logger, const bt2::ConstMapV
         opts.writeTsDelta = !opts.writeTsDelta;
     }
 
-    /* Basic options */
-    /* Timestamp format: clock-cycles overrides everything else. */
-    {
-        bool clockCycles = false;
-        bool clockSeconds = false;
-        bool clockDate = false;
-        bool clockGmt = false;
-
-        applyOneBoolWithDef(params, "clock-cycles", clockCycles, false);
-        applyOneBoolWithDef(params, "clock-seconds", clockSeconds, false);
-        applyOneBoolWithDef(params, "clock-date", clockDate, false);
-        applyOneBoolWithDef(params, "clock-gmt", clockGmt, false);
-
-        if (clockCycles) {
-            opts.clkFmt = ClkFormat::Cycles;
-        } else if (clockSeconds) {
-            opts.clkFmt = ClkFormat::SecFromOrigin;
-        } else if (clockGmt) {
-            opts.clkFmt = clockDate ? ClkFormat::UtcDateTime : ClkFormat::UtcTime;
-        } else {
-            opts.clkFmt = clockDate ? ClkFormat::LocalDateTime : ClkFormat::LocalTime;
-        }
-    }
+    /* Timestamp format */
+    opts.tsFmt = tsFmtFromParams(logger, params);
 
     applyOneBoolWithDef(params, "print-enum-flags", opts.writeEnumFieldFlags, false);
 
@@ -360,11 +432,11 @@ Comp::Comp(const bt2::SelfSinkComponent selfComp, const bt2::ConstMapValue param
     const auto emitTermCodes = opts.colorCodes.reset && opts.colorCodes.reset[0] != '\0';
 
     if (emitTermCodes) {
-        _mWriter.emplace(std::in_place_type<Writer<true>>, opts, *_mOut, this->_graphMipVersion(),
-                         _mLogger);
+        _mWriter.emplace(std::in_place_type<Writer<true>>, std::move(opts), *_mOut,
+                         this->_graphMipVersion(), _mLogger);
     } else {
-        _mWriter.emplace(std::in_place_type<Writer<false>>, opts, *_mOut, this->_graphMipVersion(),
-                         _mLogger);
+        _mWriter.emplace(std::in_place_type<Writer<false>>, std::move(opts), *_mOut,
+                         this->_graphMipVersion(), _mLogger);
     }
 }
 

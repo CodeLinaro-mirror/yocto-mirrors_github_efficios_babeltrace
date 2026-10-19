@@ -23,6 +23,7 @@
 #include <ostream>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <fmt/compile.h>
@@ -30,15 +31,19 @@
 
 #include "common/assert.h"
 #include "common/common.h"
-#include "compat/time.h"
 #include "cpp-common/bt2/message.hpp"
 #include "cpp-common/bt2c/c-string-view.hpp"
+#include "cpp-common/bt2c/date-time.hpp"
 #include "cpp-common/bt2c/exc.hpp"
 #include "cpp-common/bt2c/logging.hpp"
+#include "cpp-common/bt2c/tz.hpp"
 
 namespace bt2pretty {
 
-enum class ClkFormat
+/*
+ * Timestamp representation type.
+ */
+enum class TsFmtType
 {
     /* Raw cycle count since clock start */
     Cycles,
@@ -46,17 +51,25 @@ enum class ClkFormat
     /* Decimal seconds since clock origin (`[-]SEC.NS`) */
     SecFromOrigin,
 
-    /* `HH:MM:SS.NSEC` (local time) */
-    LocalTime,
+    /* `HH:MM:SS.NSEC` */
+    Time,
 
-    /* `YYYY-MM-DD HH:MM:SS.NSEC` (local time) */
-    LocalDateTime,
+    /* `YYYY-MM-DD HH:MM:SS.NSEC` */
+    DateTime,
+};
 
-    /* `HH:MM:SS.NSEC` in (UTC) */
-    UtcTime,
+/*
+ * Timestamp format.
+ */
+struct TsFmt final
+{
+    TsFmtType type = TsFmtType::Time;
 
-    /* `YYYY-MM-DD HH:MM:SS.NSEC` in (UTC) */
-    UtcDateTime,
+    /*
+     * Time zone; only relevant when `type` is `TsFmtType::Time`
+     * or `TsFmtType::DateTime`.
+     */
+    bt2c::Tz tz = bt2c::Tz::createLocal();
 };
 
 struct WriterOpts final
@@ -74,7 +87,7 @@ struct WriterOpts final
     bool writeTraceEnvProcname = false;
     bool writeTraceEnvVpid = false;
     bool writeTraceEnvHostname = false;
-    ClkFormat clkFmt = ClkFormat::LocalTime;
+    TsFmt tsFmt;
 
     /*
      * Terminal ANSI color codes to use when writing.
@@ -103,9 +116,9 @@ public:
      * `mipVersion`, and using a logger derived from `parentLogger`
      * (same logging level).
      */
-    explicit Writer(const WriterOpts& opts, std::ostream& out, const std::uint64_t mipVersion,
+    explicit Writer(WriterOpts opts, std::ostream& out, const std::uint64_t mipVersion,
                     const bt2c::Logger& parentLogger)
-        : _mOpts {opts},
+        : _mOpts {std::move(opts)},
           _mOut {&out},
           _mMipVersion {mipVersion},
           _mLogger {parentLogger, fmt::format("{}/WRITER", parentLogger.tag())}
@@ -329,7 +342,7 @@ private:
 
     /*
      * Writes a wall-clock representation of `*clkSnapshot` to the
-     * output buffer, using the format that `_mOpts.clkFmt` selects.
+     * output buffer, using the format that `_mOpts.tsFmt` selects.
      *
      * Writes a placeholder if `clkSnapshot` holds no clock snapshot.
      *
@@ -402,22 +415,41 @@ private:
     }
 
     /*
-     * Tries to write a date/time (depending on `_mOpts.clkFmt`) to the
+     * Returns the date/time of `timeS` (seconds since the Unix epoch)
+     * in the time zone of `_mOpts.tsFmt`.
+     *
+     * Returns `std::nullopt` if an underlying timing call fails.
+     */
+    std::optional<bt2c::DateTime> _dateTime(const time_t timeS)
+    {
+        if (const auto dt = _mOpts.tsFmt.tz.dateTime(timeS)) {
+            return dt;
+        }
+
+        BT_CPPLOGW("Failed to convert seconds to date/time: ts-s={}", timeS);
+        return std::nullopt;
+    }
+
+    /*
+     * Tries to write a date/time (depending on `_mOpts.tsFmt`) to the
      * output buffer for `tsSecAbs` and `tsNsAbs` (the absolute parts of
      * a timestamp, with `isNeg` indicating its sign) to the
      * output buffer.
      *
      * Returns false (writing nothing to the output buffer) if
-     * `_mOpts.clkFmt` is `ClkFormat::SecFromOrigin`, the timestamp is
-     * negative, its number of seconds doesn't fit `time_t`, or one of
-     * the underlying timing/format calls fails.
-     * Callers should fall back to the `ClkFormat::SecFromOrigin` format
-     * in that case.
+     * `_mOpts.tsFmt.type` is `TsFmtType::SecFromOrigin`, the timestamp
+     * is negative, its number of seconds doesn't fit `time_t`, or one of
+     * the underlying timing calls fails. Callers should fall back to the
+     * `TsFmtType::SecFromOrigin` format in that case.
      */
     bool _tryWriteTsDateTime(const std::uint64_t tsSecAbs, const std::uint64_t tsNsAbs,
                              const bool isNeg)
     {
-        if (_mOpts.clkFmt == ClkFormat::SecFromOrigin) {
+        const auto& tsFmt = _mOpts.tsFmt;
+
+        BT_ASSERT_DBG(tsFmt.type != TsFmtType::Cycles);
+
+        if (tsFmt.type == TsFmtType::SecFromOrigin) {
             return false;
         }
 
@@ -443,32 +475,26 @@ private:
             return false;
         }
 
-        const auto isUtc =
-            _mOpts.clkFmt == ClkFormat::UtcTime || _mOpts.clkFmt == ClkFormat::UtcDateTime;
+        const auto dt = this->_dateTime(static_cast<time_t>(tsSecAbs));
 
-        tm tm;
-        const time_t timeS = static_cast<time_t>(tsSecAbs);
-
-        if (const auto res = isUtc ? bt_gmtime_r(&timeS, &tm) : bt_localtime_r(&timeS, &tm); !res) {
-            BT_CPPLOGW("Failed to convert seconds to date/time with {}():, ts-s-abs={}",
-                       isUtc ? "gmtime" : "localtime", tsSecAbs);
+        if (!dt) {
             return false;
         }
 
-        if (_mOpts.clkFmt == ClkFormat::LocalDateTime || _mOpts.clkFmt == ClkFormat::UtcDateTime) {
-            char timeStr[26];
+        const auto& date = dt->date();
+        const auto& timeOfDay = dt->timeOfDay();
 
-            if (const auto res = std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d ", &tm); !res) {
-                BT_CPPLOGW("Failed to format date with std::strftime(): ts-s-abs={}", tsSecAbs);
-                return false;
-            }
-
-            this->_appendToBuf(timeStr);
+        if (tsFmt.type == TsFmtType::Time) {
+            this->_appendFmtToBuf(FMT_COMPILE("{:02}:{:02}:{:02}.{:09}"), timeOfDay.hour(),
+                                  timeOfDay.minute(), timeOfDay.second(), tsNsAbs);
+            return true;
         }
 
-        /* Write time */
-        this->_appendFmtToBuf(FMT_COMPILE("{:02}:{:02}:{:02}.{:09}"), tm.tm_hour, tm.tm_min,
-                              tm.tm_sec, tsNsAbs);
+        /* Write date and time */
+        BT_ASSERT_DBG(tsFmt.type == TsFmtType::DateTime);
+        this->_appendFmtToBuf(FMT_COMPILE("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09}"), date.year(),
+                              date.month(), date.day(), timeOfDay.hour(), timeOfDay.minute(),
+                              timeOfDay.second(), tsNsAbs);
         return true;
     }
 
@@ -497,7 +523,7 @@ private:
             }
 
             this->_withColor(_mTermCodes.ts, [&] {
-                if (_mOpts.clkFmt == ClkFormat::Cycles) {
+                if (_mOpts.tsFmt.type == TsFmtType::Cycles) {
                     this->_writeTsCycles(clkSnapshot, true);
                 } else {
                     this->_writeTsWall(clkSnapshot, true);
@@ -518,7 +544,7 @@ private:
                 this->_appendToBuf("(");
             }
 
-            if (_mOpts.clkFmt == ClkFormat::Cycles) {
+            if (_mOpts.tsFmt.type == TsFmtType::Cycles) {
                 if (_mTsDelta) {
                     this->_appendFmtToBuf(FMT_COMPILE("+{:012}"), *_mTsDelta);
                 } else {
@@ -1493,7 +1519,7 @@ private:
 
             if (beginClkSnapshot && endClkSnapshot) {
                 const auto writeOneTs = [this](const bt2::ConstClockSnapshot cs) {
-                    if (_mOpts.clkFmt == ClkFormat::Cycles) {
+                    if (_mOpts.tsFmt.type == TsFmtType::Cycles) {
                         this->_writeTsCycles(cs, false);
                     } else {
                         this->_writeTsWall(cs, false);
@@ -1625,7 +1651,7 @@ private:
     /*
      * Last timestamp, if any.
      *
-     * Cycles when `_mOpts.clkFmt` is `ClkFormat::Cycles`, otherwise
+     * Cycles when `_mOpts.tsFmt.type` is `TsFmtType::Cycles`, otherwise
      * nanoseconds from origin.
      */
     std::optional<std::uint64_t> _mLastTs;
