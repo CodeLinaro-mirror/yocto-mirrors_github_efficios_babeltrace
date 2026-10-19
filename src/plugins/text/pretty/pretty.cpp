@@ -170,20 +170,8 @@ TsFmt tsFmtFromParams(const bt2c::Logger& logger, const bt2::ConstMapValue param
                     tsFmtMapVal["type"]->asString().value());
             }
 
-            const auto tzStr = tzVal->asString().value();
-
-            /* Time zone identifiers aren't supported */
-            if (tzStr.len() > 0 && tzStr != "local" && tzStr != "utc" && tzStr[0] != '+' &&
-                tzStr[0] != '-') {
-                BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
-                    logger, bt2c::Error,
-                    "Invalid time zone `{}` (`tz` entry of `ts-format` parameter): "
-                    "expecting `local`, `utc`, `+HH:MM`, or `-HH:MM`.",
-                    tzStr);
-            }
-
             try {
-                tsFmt.tz = bt2c::Tz::createFromStr(tzStr, logger);
+                tsFmt.tz = bt2c::Tz::createFromStr(tzVal->asString().value(), logger);
             } catch (const bt2c::Error&) {
                 BT_CPPLOGE_APPEND_CAUSE_AND_RETHROW_SPEC(
                     logger, "Invalid `tz` entry of `ts-format` parameter.");

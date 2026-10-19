@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2020 EfficiOS, Inc.
 # SPDX-License-Identifier: GPL-2.0-only
 
+import os
+import sys
 import types
 import pathlib
 from typing import Any, Dict, List, Union, Optional
@@ -142,6 +144,45 @@ def test_ts_after_2038(pretty_comp_cls, tmp_path: pathlib.Path, expected: str):
     assert out_path.read_text(encoding="utf-8").strip() == expected
 
 
+# Returns whether or not the time zone database of GLib has the time
+# zone identifier `tz_id`.
+#
+# Like GLib:
+#
+# On Windows:
+#     Looks for the time zone `tz_id` (for example,
+#     `Eastern Standard Time`) within the registry.
+#
+# Otherwise:
+#     Looks for the `tz_id` file (for example, `America/Toronto`) within
+#     the `TZDIR` directory, if set, or within `/usr/share/zoneinfo`
+#     otherwise.
+def _zoneinfo_has(tz_id: str) -> bool:
+    if sys.platform == "win32":
+        import winreg
+
+        try:
+            with winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                f"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones\\{tz_id}",
+            ):
+                return True
+        except OSError:
+            return False
+
+    tzdir = os.environ.get("TZDIR") or "/usr/share/zoneinfo"
+    return (pathlib.Path(tzdir) / tz_id).is_file()
+
+
+# Returns a pytest mark which skips a test unless the time zone database
+# has all the time zone identifiers `tz_ids`.
+def _needs_zoneinfo(*tz_ids: str):
+    return pytest.mark.skipif(
+        not all(_zoneinfo_has(tz_id) for tz_id in tz_ids),
+        reason=f"time zone database lacks {', '.join(tz_ids)}",
+    )
+
+
 # Runs the CLI to pretty-print the trace of `mctf_name` with the
 # `sink.text.pretty` initialization parameters `params` (`no-delta` and
 # `color` added) and returns the lines it writes.
@@ -167,6 +208,67 @@ def _pretty_lines(
     )
 
     return result.stdout.splitlines()
+
+
+# Tests the `tz` entry of the `ts-format` parameter with time zone
+# identifiers.
+#
+# The trace has an event in January and another one in July: the UTC
+# offset of a time zone having daylight saving time differs between
+# both lines.
+@pytest.mark.parametrize(
+    ["ts_format", "expected"],
+    [
+        pytest.param(
+            {"type": "date-time", "tz": "America/Toronto"},
+            [
+                "[2012-01-15 07:00:00.000000000] e: { v = 0xAB }",
+                "[2012-07-15 08:00:00.000000000] e: { v = 0xAB }",
+            ],
+            marks=_needs_zoneinfo("America/Toronto"),
+            id="date-time-dst",
+        ),
+        pytest.param(
+            {"type": "date-time", "tz": "Asia/Kolkata"},
+            [
+                "[2012-01-15 17:30:00.000000000] e: { v = 0xAB }",
+                "[2012-07-15 17:30:00.000000000] e: { v = 0xAB }",
+            ],
+            marks=_needs_zoneinfo("Asia/Kolkata"),
+            id="date-time-no-dst",
+        ),
+        pytest.param(
+            {"type": "date-time", "tz": "UTC"},
+            [
+                "[2012-01-15 12:00:00.000000000] e: { v = 0xAB }",
+                "[2012-07-15 12:00:00.000000000] e: { v = 0xAB }",
+            ],
+            marks=_needs_zoneinfo("UTC"),
+            id="date-time-utc-id",
+        ),
+        pytest.param(
+            {"type": "time", "tz": "Europe/Paris"},
+            [
+                "[13:00:00.000000000] e: { v = 0xAB }",
+                "[14:00:00.000000000] e: { v = 0xAB }",
+            ],
+            marks=_needs_zoneinfo("Europe/Paris"),
+            id="time-dst",
+        ),
+    ],
+)
+def test_ts_format_tz_id(
+    build_root_dir, materialize_mctf, ts_format: Dict[str, str], expected
+):
+    assert (
+        _pretty_lines(
+            build_root_dir,
+            materialize_mctf,
+            "jan-jul.mctf",
+            {"ts-format": ts_format},
+        )
+        == expected
+    )
 
 
 # Tests the `local` value of the `tz` entry of the `ts-format`
@@ -312,8 +414,7 @@ _INVALID_TZ_MSG = "Invalid `tz` entry of `ts-format` parameter."
         ),
         pytest.param(
             {"ts-format": {"type": "date-time", "tz": "Mars/Olympus_Mons"}},
-            "Invalid time zone `Mars/Olympus_Mons` (`tz` entry of `ts-format` "
-            "parameter): expecting `local`, `utc`, `+HH:MM`, or `-HH:MM`.",
+            ["Unknown time zone `Mars/Olympus_Mons`.", _INVALID_TZ_MSG],
             id="unknown-tz-id",
         ),
         pytest.param(

@@ -422,6 +422,17 @@ private:
      */
     std::optional<bt2c::DateTime> _dateTime(const time_t timeS)
     {
+        /*
+         * TODO: Cache the last `timeS` and its result to skip the
+         * conversion for consecutive timestamps within the same second,
+         * a common case.
+         *
+         * With a time zone identifier, each conversion calls
+         * g_time_zone_find_interval() which linearly scans the
+         * intervals of the time zone: this adds about 15 % of overhead
+         * compared to UTC (about 3 % for the local time zone, which
+         * calls localtime_r()). A cache miss costs almost nothing.
+         */
         if (const auto dt = _mOpts.tsFmt.tz.dateTime(timeS)) {
             return dt;
         }
