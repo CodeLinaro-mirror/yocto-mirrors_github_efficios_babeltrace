@@ -21,6 +21,19 @@ def test_unconnected_port_raises(pretty_comp_cls):
     )
 
 
+# Tests that the component appends an error cause which describes an
+# invalid initialization parameter.
+def test_invalid_param_error_cause(pretty_comp_cls):
+    with pytest.raises(bt2._Error) as exc_info:
+        bt2.Graph().add_component(pretty_comp_cls, "snk", params={"clock-gmt": "yes"})
+
+    assert any(
+        "Error validating parameter `clock-gmt`: unexpected type: "
+        "expected-type=BOOL, actual-type=STRING" in cause.message
+        for cause in exc_info.value
+    )
+
+
 # Tests that the component emits the right terminal color codes when
 # asked to.
 def test_term_colors(build_root_dir, ctf_traces_dir):

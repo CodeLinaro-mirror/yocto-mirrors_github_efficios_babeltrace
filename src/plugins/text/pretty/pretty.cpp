@@ -111,8 +111,12 @@ void applyOneBoolIfSpecified(const bt2::ConstMapValue params, const bt2c::CStrin
  * Builds and creates `Writer` options from the initialization
  * parameters `params`, considering `out` as the effective output stream
  * of the future `Writer` instance.
+ *
+ * Appends a cause to the error of the current thread using `logger` and
+ * throws `bt2c::Error` on error.
  */
-WriterOpts writerOptsFromParams(const bt2::ConstMapValue params, const std::ostream& out)
+WriterOpts writerOptsFromParams(const bt2c::Logger& logger, const bt2::ConstMapValue params,
+                                const std::ostream& out)
 {
     /* Validate parameters */
     {
@@ -127,7 +131,7 @@ WriterOpts writerOptsFromParams(const bt2::ConstMapValue params, const std::ostr
             const std::string errStr {validateError ? validateError : ""};
 
             g_free(validateError);
-            throw bt2c::Error {errStr};
+            BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(logger, bt2c::Error, "{}", errStr);
         }
 
         g_free(validateError);
@@ -343,7 +347,7 @@ Comp::Comp(const bt2::SelfSinkComponent selfComp, const bt2::ConstMapValue param
         BT_CPPLOGE_APPEND_CAUSE_AND_RETHROW("Failed to add a single input port.");
     }
 
-    auto opts = writerOptsFromParams(params, *_mOut);
+    auto opts = writerOptsFromParams(_mLogger, params, *_mOut);
 
     /*
      * Detect whether colors are enabled to pick the right
