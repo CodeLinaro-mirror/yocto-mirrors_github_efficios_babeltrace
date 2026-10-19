@@ -156,6 +156,7 @@ INPUT                   = "@srcdir@/all.dox" \
                           "@abs_top_srcdir@/src/cpp-common/bt2c/text-loc-str.hpp" \
                           "@abs_top_srcdir@/src/cpp-common/bt2c/text-loc.hpp" \
                           "@abs_top_srcdir@/src/cpp-common/bt2c/type-traits.hpp" \
+                          "@abs_top_srcdir@/src/cpp-common/bt2c/tz.hpp" \
                           "@abs_top_srcdir@/src/cpp-common/bt2c/unicode-conv.hpp" \
                           "@abs_top_srcdir@/src/cpp-common/bt2c/uuid.hpp" \
                           "@abs_top_srcdir@/src/cpp-common/bt2c/val-req.hpp" \

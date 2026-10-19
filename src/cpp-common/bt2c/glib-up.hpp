@@ -115,6 +115,28 @@ using GMappedFileUP = std::unique_ptr<GMappedFile, internal::GMappedFileDeleter>
 
 namespace internal {
 
+struct GTimeZoneDeleter final
+{
+    void operator()(GTimeZone * const tz) noexcept
+    {
+        g_time_zone_unref(tz);
+    }
+};
+
+} /* namespace internal */
+
+/*!
+@brief
+    Unique pointer to
+    <a href="https://docs.gtk.org/glib/struct.TimeZone.html"><code>GTimeZone</code></a>.
+
+The custom deleter calls
+<a href="https://docs.gtk.org/glib/method.TimeZone.unref.html"><code>GLib.TimeZone.unref</code></a>.
+*/
+using GTimeZoneUP = std::unique_ptr<GTimeZone, internal::GTimeZoneDeleter>;
+
+namespace internal {
+
 struct GMatchInfoDeleter final
 {
     void operator()(GMatchInfo * const matchInfo) noexcept

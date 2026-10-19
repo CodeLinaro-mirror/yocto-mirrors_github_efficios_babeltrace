@@ -60,6 +60,7 @@ $(DX_DOCDIR)/$(PACKAGE).tag: \
 	@top_srcdir@/src/cpp-common/bt2c/text-loc-str.hpp \
 	@top_srcdir@/src/cpp-common/bt2c/text-loc.hpp \
 	@top_srcdir@/src/cpp-common/bt2c/type-traits.hpp \
+	@top_srcdir@/src/cpp-common/bt2c/tz.hpp \
 	@top_srcdir@/src/cpp-common/bt2c/unicode-conv.hpp \
 	@top_srcdir@/src/cpp-common/bt2c/uuid.hpp \
 	@top_srcdir@/src/cpp-common/bt2c/val-req.hpp \

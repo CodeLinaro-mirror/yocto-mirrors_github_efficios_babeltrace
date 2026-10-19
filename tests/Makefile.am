@@ -1354,6 +1354,9 @@ cpp_common_test_unicode_conv_LDADD = $(CPP_COMMON_LIB_TEST_LDADD)
 noinst_PROGRAMS += cpp-common/test-str-scanner
 cpp_common_test_str_scanner_LDADD = $(CPP_COMMON_LIB_TEST_LDADD)
 
+noinst_PROGRAMS += cpp-common/test-tz
+cpp_common_test_tz_LDADD = $(CPP_COMMON_LIB_TEST_LDADD)
+
 noinst_LTLIBRARIES += lib/utils/liblib-utils.la
 lib_utils_liblib_utils_la_SOURCES = \
 	lib/utils/run-in.cpp \

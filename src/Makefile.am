@@ -242,6 +242,8 @@ cpp_common_libcpp_common_la_SOURCES = \
 	cpp-common/bt2c/text-loc-str.cpp \
 	cpp-common/bt2c/text-loc-str.hpp \
 	cpp-common/bt2c/type-traits.hpp \
+	cpp-common/bt2c/tz.cpp \
+	cpp-common/bt2c/tz.hpp \
 	cpp-common/bt2c/unicode-conv.cpp \
 	cpp-common/bt2c/unicode-conv.hpp \
 	cpp-common/bt2c/uuid.hpp \
