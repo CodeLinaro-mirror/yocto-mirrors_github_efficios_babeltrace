@@ -32,8 +32,8 @@ namespace {
 
 const char *colorChoices[] = {"never", "auto", "always", nullptr};
 const char *showHideChoices[] = {"show", "hide", nullptr};
-const char *tsFmtTypeChoices[] = {"cycles", "seconds-from-origin", "time", "date-time", "rfc-3339",
-                                  nullptr};
+const char *tsFmtTypeChoices[] = {
+    "cycles", "seconds-from-origin", "time", "date-time", "rfc-3339", "metar", nullptr};
 
 bt_param_validation_map_value_entry_descr tsFmtParams[] = {
     {"type", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
@@ -158,14 +158,20 @@ TsFmt tsFmtFromParams(const bt2c::Logger& logger, const bt2::ConstMapValue param
                 tsFmt.type = TsFmtType::Time;
             } else if (type == "date-time") {
                 tsFmt.type = TsFmtType::DateTime;
-            } else {
-                BT_ASSERT(type == "rfc-3339");
+            } else if (type == "rfc-3339") {
                 tsFmt.type = TsFmtType::Rfc3339;
+            } else {
+                BT_ASSERT(type == "metar");
+                tsFmt.type = TsFmtType::Metar;
+
+                /* Always UTC */
+                tsFmt.tz = bt2c::Tz::createUtc();
             }
         }
 
         if (const auto tzVal = tsFmtMapVal["tz"]) {
-            if (tsFmt.type == TsFmtType::Cycles || tsFmt.type == TsFmtType::SecFromOrigin) {
+            if (tsFmt.type == TsFmtType::Cycles || tsFmt.type == TsFmtType::SecFromOrigin ||
+                tsFmt.type == TsFmtType::Metar) {
                 BT_CPPLOGE_APPEND_CAUSE_AND_THROW_SPEC(
                     logger, bt2c::Error,
                     "`tz` entry of `ts-format` parameter only applies to the `time`, "

@@ -63,6 +63,9 @@ enum class TsFmtType
      * `YYYY-MM-DDTHH:MM:SS.NSEC±HH:MM` (any other time zone).
      */
     Rfc3339,
+
+    /* METAR observation time, always UTC: `DDHHMMZ` */
+    Metar,
 };
 
 /*
@@ -75,6 +78,8 @@ struct TsFmt final
     /*
      * Time zone; only relevant when `type` is `TsFmtType::Time`,
      * `TsFmtType::DateTime`, or `TsFmtType::Rfc3339`.
+     *
+     * Always UTC when `type` is `TsFmtType::Metar`.
      */
     bt2c::Tz tz = bt2c::Tz::createLocal();
 };
@@ -557,6 +562,14 @@ private:
         if (tsFmt.type == TsFmtType::Time) {
             this->_appendFmtToBuf(FMT_COMPILE("{:02}:{:02}:{:02}.{:09}"), timeOfDay.hour(),
                                   timeOfDay.minute(), timeOfDay.second(), tsNsAbs);
+            return true;
+        }
+
+        if (tsFmt.type == TsFmtType::Metar) {
+            /* Day of month, hour, and minute (truncated) */
+            BT_ASSERT_DBG(tsFmt.tz.kind() == bt2c::Tz::Kind::Utc);
+            this->_appendFmtToBuf(FMT_COMPILE("{:02}{:02}{:02}Z"), date.day(), timeOfDay.hour(),
+                                  timeOfDay.minute());
             return true;
         }
 

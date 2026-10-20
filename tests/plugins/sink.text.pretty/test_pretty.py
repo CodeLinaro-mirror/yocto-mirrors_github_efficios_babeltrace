@@ -394,6 +394,16 @@ def test_ts_format_tz_id(
             ],
             id="time-utc",
         ),
+        pytest.param(
+            # `TZ` doesn't apply: always UTC
+            "EST5EDT,M3.2.0,M11.1.0",
+            {"type": "metar"},
+            [
+                "[151200Z] e: { v = 0xAB }",
+                "[151200Z] e: { v = 0xAB }",
+            ],
+            id="metar",
+        ),
     ],
 )
 def test_ts_format_tz_local(
@@ -547,6 +557,15 @@ _INVALID_TZ_MSG = "Invalid `tz` entry of `ts-format` parameter."
             '`date-time`, and `rfc-3339` types: type="seconds-from-origin"',
             id="tz-with-seconds-from-origin",
         ),
+        *[
+            pytest.param(
+                {"ts-format": {"type": "metar", "tz": tz}},
+                "`tz` entry of `ts-format` parameter only applies to the `time`, "
+                '`date-time`, and `rfc-3339` types: type="metar"',
+                id=f"tz-with-metar-{tz}",
+            )
+            for tz in ("utc", "local", "+00:00")
+        ],
         *[
             pytest.param(
                 {"ts-format": {"type": "date-time"}, legacy_param: False},

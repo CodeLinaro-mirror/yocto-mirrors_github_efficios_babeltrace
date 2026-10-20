@@ -171,6 +171,7 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/stderr/conftest.py \
 	plugins/sink.text.pretty/stderr/disc-events-clk-count-1.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-clk-count-many.mctf \
+	plugins/sink.text.pretty/stderr/disc-events-metar.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-no-clk.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-no-uid.mctf \
 	plugins/sink.text.pretty/stderr/disc-events-no-uuid.mctf \
@@ -297,6 +298,10 @@ EXTRA_DIST = \
 	plugins/sink.text.pretty/succeed/ts-fmt-time-offset.mctf \
 	plugins/sink.text.pretty/succeed/ts-fmt-time-utc.mctf \
 	plugins/sink.text.pretty/succeed/ts-fmt-tz-only.mctf \
+	plugins/sink.text.pretty/succeed/ts-metar-month-change.mctf \
+	plugins/sink.text.pretty/succeed/ts-metar-neg.mctf \
+	plugins/sink.text.pretty/succeed/ts-metar-verbose.mctf \
+	plugins/sink.text.pretty/succeed/ts-metar.mctf \
 	plugins/sink.text.pretty/succeed/ts-neg-two-events.mctf \
 	plugins/sink.text.pretty/succeed/ts-no-delta.mctf \
 	plugins/sink.text.pretty/succeed/ts-rfc-3339-dst-fall.mctf \
