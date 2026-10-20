@@ -186,10 +186,31 @@ TsFmt tsFmtFromParams(const bt2c::Logger& logger, const bt2::ConstMapValue param
         applyOneBoolWithDef(params, "clock-date", clockDate, false);
         applyOneBoolWithDef(params, "clock-gmt", clockGmt, false);
 
-        /* `clock-cycles` overrides everything else */
+        /*
+         * Warns that the legacy parameter `name` has no effect if `val`
+         * is true because the `overridingName` one is true.
+         */
+        const auto warnIfIgnored = [&logger](const bool val, const char * const name,
+                                             const char * const overridingName) {
+            if (val) {
+                BT_CPPLOGW_SPEC(logger,
+                                "Ignoring `{}` parameter because the `{}` parameter is true.", name,
+                                overridingName);
+            }
+        };
+
+        /*
+         * `clock-cycles` overrides everything else and `clock-seconds`
+         * overrides `clock-date` and `clock-gmt`.
+         */
         if (clockCycles) {
+            warnIfIgnored(clockSeconds, "clock-seconds", "clock-cycles");
+            warnIfIgnored(clockDate, "clock-date", "clock-cycles");
+            warnIfIgnored(clockGmt, "clock-gmt", "clock-cycles");
             tsFmt.type = TsFmtType::Cycles;
         } else if (clockSeconds) {
+            warnIfIgnored(clockDate, "clock-date", "clock-seconds");
+            warnIfIgnored(clockGmt, "clock-gmt", "clock-seconds");
             tsFmt.type = TsFmtType::SecFromOrigin;
         } else {
             tsFmt.type = clockDate ? TsFmtType::DateTime : TsFmtType::Time;

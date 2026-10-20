@@ -314,3 +314,67 @@ def test_ts_format_invalid(pretty_comp_cls, params, expected_msg: str):
     assert any(expected_msg in cause.message for cause in exc_info.value), [
         cause.message for cause in exc_info.value
     ]
+
+
+# Tests that the component warns about each legacy timestamp format
+# parameter which another one overrides, and only about those.
+@pytest.mark.parametrize(
+    ["params", "expected_ignored"],
+    [
+        pytest.param(
+            {"clock-cycles": True, "clock-seconds": True},
+            [("clock-seconds", "clock-cycles")],
+            id="cycles-seconds",
+        ),
+        pytest.param(
+            {"clock-cycles": True, "clock-date": True, "clock-gmt": True},
+            [("clock-date", "clock-cycles"), ("clock-gmt", "clock-cycles")],
+            id="cycles-date-gmt",
+        ),
+        pytest.param(
+            {"clock-seconds": True, "clock-date": True},
+            [("clock-date", "clock-seconds")],
+            id="seconds-date",
+        ),
+        pytest.param(
+            {"clock-seconds": True, "clock-gmt": True},
+            [("clock-gmt", "clock-seconds")],
+            id="seconds-gmt",
+        ),
+        pytest.param(
+            {"clock-cycles": True, "clock-seconds": False, "clock-date": False},
+            [],
+            id="cycles-others-false",
+        ),
+        pytest.param(
+            {"clock-date": True, "clock-gmt": True},
+            [],
+            id="date-gmt",
+        ),
+    ],
+)
+def test_legacy_ts_format_ignored_warning(
+    build_root_dir, ctf_traces_dir, params, expected_ignored
+):
+    result = btu_cli.run_cli(
+        build_root_dir,
+        [
+            str(ctf_traces_dir / "2/succeed/smalltrace"),
+            "-c",
+            "sink.text.pretty",
+            "-l",
+            "W",
+            btu_cli.CliParams({"color": "never", **params}),
+        ],
+        check=True,
+    )
+
+    warnings = [line for line in result.stderr.splitlines() if "Ignoring `" in line]
+    assert len(warnings) == len(expected_ignored), warnings
+
+    for name, overriding_name in expected_ignored:
+        assert any(
+            f"Ignoring `{name}` parameter because the `{overriding_name}` "
+            "parameter is true" in line
+            for line in warnings
+        ), warnings
