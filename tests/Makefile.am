@@ -1331,6 +1331,12 @@ noinst_PROGRAMS += cpp-common/test-parse-json
 cpp_common_test_parse_json_LDADD = $(CPP_COMMON_LIB_TEST_LDADD)
 
 noinst_PROGRAMS += cpp-common/test-prio-heap
+
+noinst_PROGRAMS += cpp-common/test-regex
+cpp_common_test_regex_LDADD = \
+	$(COMMON_TEST_LDADD) \
+	$(FMT_LDADD)
+
 noinst_PROGRAMS += cpp-common/test-reverse-fixed-len-int-bits
 noinst_PROGRAMS += cpp-common/test-safe-ops
 

@@ -113,6 +113,28 @@ The custom deleter calls
 */
 using GMappedFileUP = std::unique_ptr<GMappedFile, internal::GMappedFileDeleter>;
 
+namespace internal {
+
+struct GMatchInfoDeleter final
+{
+    void operator()(GMatchInfo * const matchInfo) noexcept
+    {
+        g_match_info_free(matchInfo);
+    }
+};
+
+} /* namespace internal */
+
+/*!
+@brief
+    Unique pointer to
+    <a href="https://docs.gtk.org/glib/struct.MatchInfo.html"><code>GMatchInfo</code></a>.
+
+The custom deleter calls
+<a href="https://docs.gtk.org/glib/method.MatchInfo.free.html"><code>GLib.MatchInfo.free</code></a>.
+*/
+using GMatchInfoUP = std::unique_ptr<GMatchInfo, internal::GMatchInfoDeleter>;
+
 } /* namespace bt2c */
 
 #endif /* BABELTRACE_CPP_COMMON_BT2C_GLIB_UP_HPP */
