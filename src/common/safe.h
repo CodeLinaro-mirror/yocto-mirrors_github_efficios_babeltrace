@@ -115,7 +115,12 @@ bool bt_safe_to_mul_uint64(uint64_t a, uint64_t b)
 static inline
 bool bt_safe_to_add_int64(int64_t a, int64_t b)
 {
-	return a <= INT64_MAX - b;
+	/* Neither subtraction below can overflow */
+	if (b >= 0) {
+		return a <= INT64_MAX - b;
+	}
+
+	return a >= INT64_MIN - b;
 }
 
 /*!
