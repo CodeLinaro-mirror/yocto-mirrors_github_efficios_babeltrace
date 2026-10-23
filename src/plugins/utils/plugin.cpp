@@ -12,7 +12,7 @@
 #include "dummy/dummy.hpp"
 #include "muxer/comp.hpp"
 #include "muxer/msg-iter.hpp"
-#include "trimmer/trimmer.h"
+#include "trimmer/comp.hpp"
 
 #ifndef BT_BUILT_IN_PLUGINS
 BT_PLUGIN_MODULE();
@@ -36,19 +36,11 @@ BT_PLUGIN_SINK_COMPONENT_CLASS_HELP(counter,
                                     "See the babeltrace2-sink.utils.counter(7) manual page.");
 
 /* flt.utils.trimmer */
-BT_PLUGIN_FILTER_COMPONENT_CLASS(trimmer, trimmer_msg_iter_next);
-BT_PLUGIN_FILTER_COMPONENT_CLASS_GET_SUPPORTED_MIP_VERSIONS_METHOD(trimmer,
-                                                                   trimmer_supported_mip_versions);
+BT_CPP_PLUGIN_FILTER_COMPONENT_CLASS(trimmer, bt2trimmer::Comp);
 BT_PLUGIN_FILTER_COMPONENT_CLASS_DESCRIPTION(
     trimmer, "Discard messages that occur outside a specific time range.");
 BT_PLUGIN_FILTER_COMPONENT_CLASS_HELP(trimmer,
                                       "See the babeltrace2-filter.utils.trimmer(7) manual page.");
-BT_PLUGIN_FILTER_COMPONENT_CLASS_INITIALIZE_METHOD(trimmer, trimmer_init);
-BT_PLUGIN_FILTER_COMPONENT_CLASS_FINALIZE_METHOD(trimmer, trimmer_finalize);
-BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_INITIALIZE_METHOD(trimmer,
-                                                                          trimmer_msg_iter_init);
-BT_PLUGIN_FILTER_COMPONENT_CLASS_MESSAGE_ITERATOR_CLASS_FINALIZE_METHOD(trimmer,
-                                                                        trimmer_msg_iter_finalize);
 
 /* flt.utils.muxer */
 BT_CPP_PLUGIN_FILTER_COMPONENT_CLASS(muxer, bt2mux::Comp);

@@ -116,6 +116,7 @@ EXTRA_DIST = \
 	plugins/flt.utils.muxer/test_clock_compat.py \
 	plugins/flt.utils.muxer/test_succeed_muxer.py \
 	plugins/flt.utils.trimmer/test_succeed_trimmer.py \
+	plugins/flt.utils.trimmer/test_trimmer_msgs.py \
 	plugins/flt.utils.trimmer/test_trimmer_out_of_range.py \
 	plugins/sink.ctf.fs/succeed/test_succeed_sink_ctf.py \
 	plugins/sink.ctf.fs/succeed/trace-double.expect \

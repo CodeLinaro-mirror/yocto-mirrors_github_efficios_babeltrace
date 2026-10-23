@@ -721,8 +721,11 @@ plugin_utils_sources = \
 	plugins/utils/muxer/msg-iter.hpp \
 	plugins/utils/muxer/upstream-msg-iter.cpp \
 	plugins/utils/muxer/upstream-msg-iter.hpp \
-	plugins/utils/trimmer/trimmer.c \
-	plugins/utils/trimmer/trimmer.h \
+	plugins/utils/trimmer/bound.hpp \
+	plugins/utils/trimmer/comp.cpp \
+	plugins/utils/trimmer/comp.hpp \
+	plugins/utils/trimmer/msg-iter.cpp \
+	plugins/utils/trimmer/msg-iter.hpp \
 	plugins/utils/plugin.cpp
 
 plugins_utils_babeltrace_plugin_utils_la_SOURCES = $(plugin_utils_sources)
@@ -733,6 +736,7 @@ plugins_utils_babeltrace_plugin_utils_la_LDFLAGS = \
 	-avoid-version -module $(LD_NOTEXT)
 
 plugins_utils_babeltrace_plugin_utils_la_LIBADD = \
+	cpp-common/libcpp-common.la \
 	plugins/common/muxing/libmuxing.la \
 	lib/libbabeltrace2.la \
 	common/libcommon.la \

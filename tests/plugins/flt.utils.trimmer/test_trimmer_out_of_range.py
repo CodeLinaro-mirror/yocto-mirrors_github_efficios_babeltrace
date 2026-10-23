@@ -44,29 +44,34 @@ def test_out_of_range(
 
 
 # Tests that a `flt.utils.trimmer` component rejects a `begin` or `end`
-# number of seconds from origin of which the number of nanoseconds from
-# origin doesn't fit a signed 64-bit integer.
+# `[-]SEC[.NANO]` time of which the absolute value of the number of
+# nanoseconds from origin doesn't fit a signed 64-bit integer, even
+# when the number of seconds itself doesn't fit an unsigned
+# 64-bit integer.
 @pytest.mark.parametrize(
-    ["param_name", "secs"],
+    ["param_name", "time"],
     [
-        pytest.param("begin", "9223372037", id="over-max-s"),
-        pytest.param("end", "9223372036.854775808", id="over-max-ns"),
-        pytest.param("begin", "-9223372036.854775808", id="under-min-ns"),
-        pytest.param("end", "18446744074", id="over-max-u64-s"),
+        pytest.param("begin", "9223372037", id="sec-begin"),
+        pytest.param("end", "-9223372037", id="neg-sec-end"),
+        pytest.param("begin", "9223372036.854775808", id="sec-nano-begin"),
+        pytest.param("end", "-9223372036.854775808", id="neg-sec-nano-end"),
+        pytest.param("begin", "123456789012345678901234567890", id="many-digits-begin"),
+        pytest.param(
+            "end", "-123456789012345678901234567890.5", id="neg-many-digits-end"
+        ),
     ],
 )
-def test_secs_out_of_range(
+def test_sec_out_of_range(
     trimmer_comp_cls: bt2._FilterComponentClassConst,
     param_name: str,
-    secs: str,
+    time: str,
 ):
     with pytest.raises(bt2._Error) as exc_info:
-        bt2.Graph().add_component(trimmer_comp_cls, "flt", params={param_name: secs})
+        bt2.Graph().add_component(trimmer_comp_cls, "flt", params={param_name: time})
 
     _assert_has_cause(
         exc_info.value,
-        "Number of nanoseconds from origin doesn't fit a signed 64-bit integer: "
-        f'param="{secs}"',
+        f'Time is out of range (nanoseconds from origin): param="{time}"',
     )
 
 
@@ -140,7 +145,7 @@ def test_iter_before_epoch(
     _assert_has_cause(
         exc_info.value,
         "Cannot convert date/time to nanoseconds from origin (date/time before "
-        "the Unix epoch or after 2262?): date-time=1969-12-31 12:00:00.000000000",
+        "the Unix epoch or after 2262?): date-time=1969-12-31T12:00:00.000000000",
     )
 
 
