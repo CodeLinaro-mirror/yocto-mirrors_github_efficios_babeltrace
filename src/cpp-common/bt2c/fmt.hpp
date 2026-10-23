@@ -23,6 +23,13 @@ When you include this file, you get custom {fmt} formatting of:
 
 - Any wise_enum enumerator within the \c bt2c or \c bt2 namespace.
 - A bt2c::UuidView instance.
+- A bt2c::Date, bt2c::TimeOfDay, or bt2c::DateTime instance, using the
+  ISO&nbsp;8601 extended format (for example, <code>2026-10-23</code>,
+  <code>14:10:33</code>, and <code>2026-10-23T14:10:33</code>).
+
+  The year of a date has at least four digits. A year outside
+  [0,&nbsp;9999] also has an explicit sign (for example,
+  <code>-0044-03-15</code> and <code>+10000-01-01</code>).
 */
 
 #include <fmt/format.h> /* IWYU pragma: keep */
@@ -30,6 +37,7 @@ When you include this file, you get custom {fmt} formatting of:
 #include "cpp-common/bt2/value.hpp"
 #include "cpp-common/vendor/wise-enum/wise_enum.h"
 
+#include "date-time.hpp"
 #include "uuid.hpp"
 
 namespace internal {
@@ -113,6 +121,27 @@ template <typename T>
 inline std::string format_as(const UuidView uuid)
 {
     return uuid.str();
+}
+
+inline std::string format_as(const Date& date)
+{
+    if (date.year() >= 0 && date.year() <= 9999) {
+        return fmt::format("{:04}-{:02}-{:02}", date.year(), date.month(), date.day());
+    }
+
+    /* ISO 8601 expanded representation */
+    return fmt::format("{:+05}-{:02}-{:02}", date.year(), date.month(), date.day());
+}
+
+inline std::string format_as(const TimeOfDay& timeOfDay)
+{
+    return fmt::format("{:02}:{:02}:{:02}", timeOfDay.hour(), timeOfDay.minute(),
+                       timeOfDay.second());
+}
+
+inline std::string format_as(const DateTime& dateTime)
+{
+    return fmt::format("{}T{}", dateTime.date(), dateTime.timeOfDay());
 }
 
 } /* namespace bt2c */

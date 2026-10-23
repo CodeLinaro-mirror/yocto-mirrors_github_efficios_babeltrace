@@ -210,6 +210,8 @@ cpp_common_libcpp_common_la_SOURCES = \
 	cpp-common/bt2c/c-string-view.hpp \
 	cpp-common/bt2c/contains.hpp \
 	cpp-common/bt2c/data-len.hpp \
+	cpp-common/bt2c/date-time.cpp \
+	cpp-common/bt2c/date-time.hpp \
 	cpp-common/bt2c/endian.hpp \
 	cpp-common/bt2c/exc.hpp \
 	cpp-common/bt2c/file-utils.cpp \

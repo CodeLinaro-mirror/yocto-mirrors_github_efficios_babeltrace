@@ -1327,6 +1327,9 @@ noinst_PROGRAMS += cpp-common/test-data-len
 noinst_PROGRAMS += cpp-common/test-endian
 noinst_PROGRAMS += cpp-common/test-join
 
+noinst_PROGRAMS += cpp-common/test-date-time
+cpp_common_test_date_time_LDADD = $(CPP_COMMON_LIB_TEST_LDADD)
+
 noinst_PROGRAMS += cpp-common/test-parse-json
 cpp_common_test_parse_json_LDADD = $(CPP_COMMON_LIB_TEST_LDADD)
 
