@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2020 EfficiOS, Inc.
 # SPDX-License-Identifier: GPL-2.0-only
 
-import os
-import sys
 import types
 import pathlib
 from typing import Any, Dict, List, Union, Optional
@@ -144,45 +142,6 @@ def test_ts_after_2038(pretty_comp_cls, tmp_path: pathlib.Path, expected: str):
     assert out_path.read_text(encoding="utf-8").strip() == expected
 
 
-# Returns whether or not the time zone database of GLib has the time
-# zone identifier `tz_id`.
-#
-# Like GLib:
-#
-# On Windows:
-#     Looks for the time zone `tz_id` (for example,
-#     `Eastern Standard Time`) within the registry.
-#
-# Otherwise:
-#     Looks for the `tz_id` file (for example, `America/Toronto`) within
-#     the `TZDIR` directory, if set, or within `/usr/share/zoneinfo`
-#     otherwise.
-def _zoneinfo_has(tz_id: str) -> bool:
-    if sys.platform == "win32":
-        import winreg
-
-        try:
-            with winreg.OpenKey(
-                winreg.HKEY_LOCAL_MACHINE,
-                f"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones\\{tz_id}",
-            ):
-                return True
-        except OSError:
-            return False
-
-    tzdir = os.environ.get("TZDIR") or "/usr/share/zoneinfo"
-    return (pathlib.Path(tzdir) / tz_id).is_file()
-
-
-# Returns a pytest mark which skips a test unless the time zone database
-# has all the time zone identifiers `tz_ids`.
-def _needs_zoneinfo(*tz_ids: str):
-    return pytest.mark.skipif(
-        not all(_zoneinfo_has(tz_id) for tz_id in tz_ids),
-        reason=f"time zone database lacks {', '.join(tz_ids)}",
-    )
-
-
 # Runs the CLI to pretty-print the trace of `mctf_name` with the
 # `sink.text.pretty` initialization parameters `params` (`no-delta` and
 # `color` added) and returns the lines it writes.
@@ -225,7 +184,7 @@ def _pretty_lines(
                 "[2012-01-15T07:00:00.000000000-05:00] e: { v = 0xAB }",
                 "[2012-07-15T08:00:00.000000000-04:00] e: { v = 0xAB }",
             ],
-            marks=_needs_zoneinfo("America/Toronto"),
+            marks=btu.needs_zoneinfo("America/Toronto"),
             id="rfc-3339-dst",
         ),
         # Windows time zone name (only on Windows)
@@ -235,7 +194,7 @@ def _pretty_lines(
                 "[2012-01-15T07:00:00.000000000-05:00] e: { v = 0xAB }",
                 "[2012-07-15T08:00:00.000000000-04:00] e: { v = 0xAB }",
             ],
-            marks=_needs_zoneinfo("Eastern Standard Time"),
+            marks=btu.needs_zoneinfo("Eastern Standard Time"),
             id="rfc-3339-dst-windows",
         ),
         pytest.param(
@@ -244,7 +203,7 @@ def _pretty_lines(
                 "[2012-01-15T17:30:00.000000000+05:30] e: { v = 0xAB }",
                 "[2012-07-15T17:30:00.000000000+05:30] e: { v = 0xAB }",
             ],
-            marks=_needs_zoneinfo("Asia/Kolkata"),
+            marks=btu.needs_zoneinfo("Asia/Kolkata"),
             id="rfc-3339-no-dst",
         ),
         pytest.param(
@@ -253,7 +212,7 @@ def _pretty_lines(
                 "[2012-01-15T12:00:00.000000000+00:00] e: { v = 0xAB }",
                 "[2012-07-15T12:00:00.000000000+00:00] e: { v = 0xAB }",
             ],
-            marks=_needs_zoneinfo("UTC"),
+            marks=btu.needs_zoneinfo("UTC"),
             id="rfc-3339-utc-id",
         ),
         pytest.param(
@@ -262,7 +221,7 @@ def _pretty_lines(
                 "[2012-01-15 07:00:00.000000000] e: { v = 0xAB }",
                 "[2012-07-15 08:00:00.000000000] e: { v = 0xAB }",
             ],
-            marks=_needs_zoneinfo("America/Toronto"),
+            marks=btu.needs_zoneinfo("America/Toronto"),
             id="date-time-dst",
         ),
         pytest.param(
@@ -271,7 +230,7 @@ def _pretty_lines(
                 "[2012-01-15 17:30:00.000000000] e: { v = 0xAB }",
                 "[2012-07-15 17:30:00.000000000] e: { v = 0xAB }",
             ],
-            marks=_needs_zoneinfo("Asia/Kolkata"),
+            marks=btu.needs_zoneinfo("Asia/Kolkata"),
             id="date-time-no-dst",
         ),
         pytest.param(
@@ -280,7 +239,7 @@ def _pretty_lines(
                 "[2012-01-15 12:00:00.000000000] e: { v = 0xAB }",
                 "[2012-07-15 12:00:00.000000000] e: { v = 0xAB }",
             ],
-            marks=_needs_zoneinfo("UTC"),
+            marks=btu.needs_zoneinfo("UTC"),
             id="date-time-utc-id",
         ),
         pytest.param(
@@ -289,7 +248,7 @@ def _pretty_lines(
                 "[13:00:00.000000000] e: { v = 0xAB }",
                 "[14:00:00.000000000] e: { v = 0xAB }",
             ],
-            marks=_needs_zoneinfo("Europe/Paris"),
+            marks=btu.needs_zoneinfo("Europe/Paris"),
             id="time-dst",
         ),
     ],
@@ -432,7 +391,7 @@ def test_ts_format_tz_local(
 # consistently adjusting the written time.
 #
 # The UTC offset of Africa/Monrovia is −00:44:30 before 1972.
-@_needs_zoneinfo("Africa/Monrovia")
+@btu.needs_zoneinfo("Africa/Monrovia")
 @pytest.mark.parametrize(
     ["ts_format", "extra_env", "expected"],
     [

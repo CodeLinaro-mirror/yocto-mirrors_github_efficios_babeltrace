@@ -244,3 +244,51 @@ def test_trimmer_failure(ctf_traces_dir, build_root_dir, cli_args):
     assert _count_output_lines(result.stdout) == 0
     assert result.stderr, "Nothing on standard error"
     assert "Invalid date/time format" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "cli_args,expected_msg",
+    [
+        pytest.param(["--begin=2012-00-29"], "Invalid date", id="month-zero"),
+        pytest.param(["--begin=2012-13-29"], "Invalid date", id="month-too-large"),
+        pytest.param(["--begin=2012-10-00"], "Invalid date", id="day-zero"),
+        pytest.param(["--begin=2012-10-32"], "Invalid date", id="day-too-large"),
+        pytest.param(["--begin=2012-04-31"], "Invalid date", id="april-31"),
+        pytest.param(
+            ["--begin=2013-02-29 12:48:17"],
+            "Invalid date",
+            id="february-29-common-year",
+        ),
+        pytest.param(
+            ["--begin=2012-10-29 24:48:17"],
+            "Invalid time of day",
+            id="date-time-hour-too-large",
+        ),
+        pytest.param(
+            ["--begin=2012-10-29 12:60:17"],
+            "Invalid time of day",
+            id="date-time-minute-too-large",
+        ),
+        pytest.param(
+            ["--begin=2012-10-29 12:48:61"],
+            "Invalid time of day",
+            id="date-time-second-too-large",
+        ),
+        pytest.param(
+            ["--begin=24:48:17"], "Invalid time of day", id="time-of-day-hour-too-large"
+        ),
+        pytest.param(
+            ["--begin=12:60"], "Invalid time of day", id="time-of-day-minute-too-large"
+        ),
+    ],
+)
+def test_trimmer_out_of_range(ctf_traces_dir, build_root_dir, cli_args, expected_msg):
+    result = btu_cli.run_cli(
+        build_root_dir,
+        [str(ctf_traces_dir / "1/succeed/wk-heartbeat-u")] + cli_args,
+        check=False,
+        extra_env={**_EST_ENV, "BABELTRACE_FLT_UTILS_TRIMMER_LOG_LEVEL": "E"},
+    )
+    assert result.returncode != 0
+    assert _count_output_lines(result.stdout) == 0
+    assert expected_msg in result.stderr

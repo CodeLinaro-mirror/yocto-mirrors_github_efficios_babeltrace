@@ -54,9 +54,16 @@ bt_param_validation_status validateBoundType(const bt_value * const libValue,
     return BT_PARAM_VALIDATION_STATUS_OK;
 }
 
+bt_param_validation_map_value_entry_descr tsFmtParams[] = {
+    {"tz", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
+     bt_param_validation_value_descr::makeString()},
+    BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_END};
+
 bt_param_validation_map_value_entry_descr trimmerParams[] = {
     {"gmt", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
      bt_param_validation_value_descr::makeBool()},
+    {"ts-format", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
+     bt_param_validation_value_descr::makeMap(tsFmtParams)},
     {"begin", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
      bt_param_validation_value_descr::makeCustom(validateBoundType)},
     {"end", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
@@ -185,7 +192,20 @@ Comp::Comp(const bt2::SelfFilterComponent selfComp, const bt2::ConstMapValue par
         }
     }
 
-    if (const auto gmtVal = params["gmt"]; gmtVal && gmtVal->asBool().value()) {
+    if (const auto tsFmtVal = params["ts-format"]) {
+        if (params.hasEntry("gmt")) {
+            BT_CPPLOGE_APPEND_CAUSE_AND_THROW(
+                bt2c::Error, "`ts-format` and `gmt` parameters are mutually exclusive.");
+        }
+
+        if (const auto tzVal = tsFmtVal->asMap()["tz"]) {
+            try {
+                _mTz = bt2c::Tz::createFromStr(tzVal->asString().value(), _mLogger);
+            } catch (const bt2c::Error&) {
+                BT_CPPLOGE_APPEND_CAUSE_AND_RETHROW("Invalid `tz` entry of `ts-format` parameter.");
+            }
+        }
+    } else if (const auto gmtVal = params["gmt"]; gmtVal && gmtVal->asBool().value()) {
         _mTz = bt2c::Tz::createUtc();
     }
 
@@ -240,12 +260,17 @@ Bound Comp::_boundFromStr(const bt2c::CStringView str) const
     if (const auto match = dtRegex.matchGroups(str)) {
         const auto date = dateFromMatch(*match, 1);
 
+        if (!date) {
+            BT_CPPLOGE_APPEND_CAUSE_AND_THROW(bt2c::Error, "Invalid date: param=\"{}\"", str);
+        }
+
         /* Midnight without a time of day */
         const auto timeOfDay =
             (*match)[4] ? timeOfDayFromMatch(*match, 4) : std::make_optional(TimeOfDayWithNs {});
 
-        if (!date || !timeOfDay) {
-            BT_CPPLOGE_APPEND_CAUSE_AND_THROW(bt2c::Error, "Invalid date/time: param=\"{}\"", str);
+        if (!timeOfDay) {
+            BT_CPPLOGE_APPEND_CAUSE_AND_THROW(bt2c::Error, "Invalid time of day: param=\"{}\"",
+                                              str);
         }
 
         if (const auto nsFromOrig = this->_nsFromOrig(*date, *timeOfDay)) {

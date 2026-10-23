@@ -29,6 +29,7 @@ from typing import (
 )
 
 import bt2
+import pytest
 
 _logger = logging.getLogger(__name__)
 
@@ -818,3 +819,42 @@ def tcmi_events(*args: Any, **kwargs: Any) -> List[Any]:
     )
 
     return [m.event for m in msgs if isinstance(m, bt2._EventMessageConst)]
+
+
+# Returns whether or not the time zone database of GLib has the time
+# zone identifier `tz_id`.
+#
+# Like GLib:
+#
+# On Windows:
+#     Looks for the time zone `tz_id` (for example,
+#     `Eastern Standard Time`) within the registry.
+#
+# Otherwise:
+#     Looks for the `tz_id` file (for example, `America/Toronto`) within
+#     the `TZDIR` directory, if set, or within `/usr/share/zoneinfo`
+#     otherwise.
+def zoneinfo_has(tz_id: str) -> bool:
+    if sys.platform == "win32":
+        import winreg
+
+        try:
+            with winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                f"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones\\{tz_id}",
+            ):
+                return True
+        except OSError:
+            return False
+
+    tzdir = os.environ.get("TZDIR") or "/usr/share/zoneinfo"
+    return (pathlib.Path(tzdir) / tz_id).is_file()
+
+
+# Returns a pytest mark which skips a test unless the time zone database
+# has all the time zone identifiers `tz_ids`.
+def needs_zoneinfo(*tz_ids: str) -> pytest.MarkDecorator:
+    return pytest.mark.skipif(
+        not all(zoneinfo_has(tz_id) for tz_id in tz_ids),
+        reason=f"time zone database lacks {', '.join(tz_ids)}",
+    )

@@ -51,15 +51,18 @@ private:
 
     /*
      * Returns the time (nanoseconds from origin) of the date `date` at
-     * the time of day `timeOfDay`, or `std::nullopt` if it can't
-     * convert it.
+     * the time of day `timeOfDay` in the time zone `_mTz`, or
+     * `std::nullopt` if it can't convert it, including if the resulting
+     * time is before the Unix epoch or if its number of nanoseconds
+     * from origin doesn't fit `std::int64_t`.
      */
     std::optional<std::int64_t> _nsFromOrig(const bt2c::Date& date,
                                             const TimeOfDayWithNs& timeOfDay) const noexcept;
 
     /*
      * Returns the full time bound of the time of day `timeOfDay` on the
-     * date of the time `refNsFromOrig` (nanoseconds from origin).
+     * date, in the time zone `_mTz`, of the time `refNsFromOrig`
+     * (nanoseconds from origin).
      *
      * Throws `bt2c::Error` on error.
      */

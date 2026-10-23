@@ -4,7 +4,7 @@
 
 = babeltrace2-filter.utils.trimmer(7)
 :manpagetype: component class
-:revdate: 1 September 2023
+:revdate: 21 October 2026
 
 
 == NAME
@@ -66,8 +66,13 @@ The format of _TIME_ when it's a string is one of:
 include::common-trimmer-time-format.txt[]
 --
 +
+A number of seconds from origin is an exact time. The component
+interprets a date/time or a time in the time zone of the nlparam:tz[]
+entry of the param:ts-format[] parameter.
++
 If _TIME_ has no date information, then the message iterator uses the
-time of the first upstream message to determine the date.
+time of the first upstream message to determine the date, in that same
+time zone.
 
 param:end[]=_TIME_ vtype:[optional string or signed integer]::
     Set the end time of the trimming time range to _TIME_.
@@ -83,7 +88,62 @@ param:gmt[]=_VAL_ vtype:[optional boolean]::
     If _VAL_ is true, then set the time zone of the param:begin[] and
     param:end[] parameters to GMT instead of the local time zone.
 +
+Setting this parameter to true is equivalent to setting the
+nlparam:tz[] entry of the param:ts-format[] parameter to `utc`.
++
+This parameter is mutually exclusive with the param:ts-format[]
+parameter.
++
 Default: false.
++
+Deprecated: set the nlparam:tz[] entry of the param:ts-format[]
+parameter to `utc` instead.
+
+param:ts-format[]=_FORMAT_ vtype:[optional map]::
+    Interpret the date and time of day of the param:begin[] and
+    param:end[] parameters with the timestamp format _FORMAT_.
++
+_FORMAT_ is a map containing the following optional entry:
++
+--
+nlparam:tz[]=_TZ_ vtype:[optional string]::
+    Interpret the date and time of day in the time zone _TZ_, one of:
+
+`local` (default):::
+    Local time zone of the system running the component, honoring the
+    `TZ` environment variable.
+
+`utc`:::
+    UTC.
+
+`pass:[+]HH:MM` or `-HH:MM`:::
+    Fixed UTC offset, where `HH` is between `00` and `23` and `MM` is
+    between `00` and `59`.
++
+`-00:00` isn't valid.
+
+Time zone identifier:::
+    Named time zone, as known to GLib, typically an identifier of the
+    https://www.iana.org/time-zones[IANA time zone database] such as
+    `America/Toronto` or `Australia/Perth`.
++
+On Windows, GLib only knows Windows time zone names such as
+`Eastern Standard Time`.
+--
++
+With the `local` time zone or a time zone identifier, the component
+honors daylight saving time (DST) for each of the param:begin[] and
+param:end[] parameters. With a time zone identifier, when DST ends, a
+date and time of day which occurs twice means its first occurrence
+(DST), and when DST starts, a date and time of day which doesn't exist
+means the start of DST.
++
+This parameter is mutually exclusive with the param:gmt[] parameter.
++
+IMPORTANT: The `local` time zone is the time zone of the system which
+_reads_ the trace, not of the system which _recorded_ it. To use the
+time zone of the tracing system, specify its time zone identifier or UTC
+offset explicitly.
 
 
 == PORTS
