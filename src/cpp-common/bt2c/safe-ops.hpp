@@ -46,7 +46,7 @@ constexpr bool safeToMul(const T a, const T b)
 {
     static_assert(std::is_unsigned_v<T>, "`T` is an unsigned type.");
 
-    return a == 0 || b == 0 || a < std::numeric_limits<T>::max() / b;
+    return a == 0 || b == 0 || a <= std::numeric_limits<T>::max() / b;
 }
 
 /*!
