@@ -95,7 +95,7 @@ bool bt_safe_to_mul_uint64(uint64_t a, uint64_t b)
 		return true;
 	}
 
-	return a < UINT64_MAX / b;
+	return a <= UINT64_MAX / b;
 }
 
 /*!
