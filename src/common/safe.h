@@ -51,7 +51,27 @@ bool bt_safe_to_mul_int64(int64_t a, int64_t b)
 		return true;
 	}
 
-	return a < INT64_MAX / b;
+	/*
+	 * Each division below can't overflow and truncates toward zero,
+	 * giving the exact limit for an integral `a` or `b`.
+	 */
+	if (a > 0) {
+		if (b > 0) {
+			/* Positive product */
+			return a <= INT64_MAX / b;
+		}
+
+		/* Negative product */
+		return b >= INT64_MIN / a;
+	}
+
+	if (b > 0) {
+		/* Negative product */
+		return a >= INT64_MIN / b;
+	}
+
+	/* Positive product (dividing by a negative `b` flips `<=`) */
+	return a >= INT64_MAX / b;
 }
 
 /*!
