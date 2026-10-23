@@ -1560,7 +1560,12 @@ int bt_common_clock_value_from_ns_from_origin(
 		goto end;
 	}
 
-	value_in_ns = (uint64_t) (ns_from_origin - offset_in_ns);
+	/*
+	 * `ns_from_origin - offset_in_ns` isn't negative, but may not fit
+	 * `int64_t` when `offset_in_ns` is negative: subtract as unsigned
+	 * integers (modulo 2^64) to get its exact value.
+	 */
+	value_in_ns = (uint64_t) ns_from_origin - (uint64_t) offset_in_ns;
 
 	/* Number of whole clock periods in `value_in_ns` */
 	value_periods = value_in_ns / NS_PER_S_U;
