@@ -2417,7 +2417,16 @@ static void print_convert_usage(FILE *fp)
     fprintf(fp, "Format of BEGIN and END\n");
     fprintf(fp, "-----------------------\n");
     fprintf(fp, "\n");
-    fprintf(fp, "    [YYYY-MM-DD [hh:mm:]]ss[.nnnnnnnnn]\n");
+    fprintf(fp, "    YYYY-MM-DD[ HH:II[:SS[.NANO]]]\n");
+    fprintf(fp, "    HH:II[:SS[.NANO]]\n");
+    fprintf(fp, "    [-]SEC[.NANO]\n");
+    fprintf(fp, "    YYYY-MM-DDTHH:II:SS[.NANO]OFFSET\n");
+    fprintf(fp, "\n");
+    fprintf(fp, "NANO is up to nine digits and SEC is a number of seconds since origin.\n");
+    fprintf(fp, "\n");
+    fprintf(fp, "The last form is an RFC 3339 date-time (for example,\n");
+    fprintf(fp, "`2012-10-29T13:48:17.587654321-04:00`) where OFFSET is `Z` (UTC),\n");
+    fprintf(fp, "`+HH:II`, or `-HH:II`.\n");
     fprintf(fp, "\n\n");
     print_expected_params_format(fp);
     /* clang-format on */

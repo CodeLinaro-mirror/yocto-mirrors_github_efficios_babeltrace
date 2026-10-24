@@ -4,7 +4,7 @@
 
 = babeltrace2-filter.utils.trimmer(7)
 :manpagetype: component class
-:revdate: 21 October 2026
+:revdate: 23 October 2026
 
 
 == NAME
@@ -66,9 +66,10 @@ The format of _TIME_ when it's a string is one of:
 include::common-trimmer-time-format.txt[]
 --
 +
-A number of seconds from origin is an exact time. The component
-interprets a date/time or a time in the time zone of the nlparam:tz[]
-entry of the param:ts-format[] parameter.
+A number of seconds from origin and an RFC{nbsp}3339 date-time are
+exact times. A date/time has no UTC offset: the component interprets it
+in the time zone of the nlparam:tz[] entry of the param:ts-format[]
+parameter.
 +
 If _TIME_ has no date information, then the message iterator uses the
 time of the first upstream message to determine the date, in that same
@@ -85,8 +86,8 @@ If you don't specify this parameter, then the component discards no
 events from the beginning of the trimming time range.
 
 param:gmt[]=_VAL_ vtype:[optional boolean]::
-    If _VAL_ is true, then set the time zone of the param:begin[] and
-    param:end[] parameters to GMT instead of the local time zone.
+    If _VAL_ is true, then interpret a param:begin[] or param:end[] time
+    which has no UTC offset in GMT instead of the local time zone.
 +
 Setting this parameter to true is equivalent to setting the
 nlparam:tz[] entry of the param:ts-format[] parameter to `utc`.
@@ -100,14 +101,15 @@ Deprecated: set the nlparam:tz[] entry of the param:ts-format[]
 parameter to `utc` instead.
 
 param:ts-format[]=_FORMAT_ vtype:[optional map]::
-    Interpret the date and time of day of the param:begin[] and
-    param:end[] parameters with the timestamp format _FORMAT_.
+    Interpret a param:begin[] or param:end[] time which has no UTC
+    offset with the timestamp format _FORMAT_.
 +
 _FORMAT_ is a map containing the following optional entry:
 +
 --
 nlparam:tz[]=_TZ_ vtype:[optional string]::
-    Interpret the date and time of day in the time zone _TZ_, one of:
+    Interpret a date and time of day which has no UTC offset in the
+    time zone _TZ_, one of:
 
 `local` (default):::
     Local time zone of the system running the component, honoring the

@@ -89,6 +89,85 @@ def test_trimmer_range(
     )
 
 
+# Trims with RFC 3339 `--begin` and/or `--end` times, of which the UTC
+# offset makes the time zone (`--clock-gmt`, EST) irrelevant.
+#
+# `begin` and `end` are `(hour, rest)` pairs, `hour` being a GMT hour.
+@pytest.mark.parametrize(
+    ["tz_args", "tz_env"],
+    [
+        pytest.param(["--clock-gmt"], None, id="gmt"),
+        pytest.param([], _EST_ENV, id="est"),
+    ],
+)
+@pytest.mark.parametrize(
+    ["offset", "hour_offset"],
+    [
+        pytest.param("Z", 0, id="z"),
+        pytest.param("z", 0, id="lowercase-z"),
+        pytest.param("+00:00", 0, id="pos-zero"),
+        pytest.param("-00:00", 0, id="neg-zero"),
+        pytest.param("-04:00", -4, id="neg"),
+        pytest.param("+09:00", 9, id="pos-next-day"),
+    ],
+)
+@pytest.mark.parametrize(
+    ["expected_event_count", "begin", "end"],
+    [
+        pytest.param(18, (17, _BEGIN), None, id="begin"),
+        pytest.param(9, None, (17, _END), id="end"),
+        pytest.param(7, (17, _BEGIN), (17, _END), id="begin-and-end"),
+        pytest.param(0, (18, _BEGIN), None, id="begin-out-of-range"),
+        pytest.param(0, None, (16, _END), id="end-out-of-range"),
+    ],
+)
+def test_trimmer_rfc_3339(
+    ctf_traces_dir,
+    build_root_dir,
+    tz_args,
+    tz_env,
+    offset,
+    hour_offset,
+    expected_event_count,
+    begin,
+    end,
+):
+    def fmt_time(time):
+        hour, rest = time
+        hour += hour_offset
+        day = 29 + hour // 24
+        return "2012-10-{:02}T{:02}:{}{}".format(day, hour % 24, rest, offset)
+
+    cli_args = list(tz_args)
+
+    if begin is not None:
+        cli_args += ["--begin", fmt_time(begin)]
+
+    if end is not None:
+        cli_args += ["--end", fmt_time(end)]
+
+    assert (
+        _trimmed_event_count(ctf_traces_dir, build_root_dir, cli_args, tz_env)
+        == expected_event_count
+    )
+
+
+# Trims with RFC 3339 times with `--timerange`.
+@pytest.mark.parametrize("brackets", [False, True], ids=["no-brackets", "brackets"])
+def test_trimmer_rfc_3339_timerange(ctf_traces_dir, build_root_dir, brackets):
+    arg = "2012-10-29T13:{}-04:00,2012-10-29T17:{}Z".format(_BEGIN, _END)
+
+    if brackets:
+        arg = "[{}]".format(arg)
+
+    assert (
+        _trimmed_event_count(
+            ctf_traces_dir, build_root_dir, ["--timerange", arg], _EST_ENV
+        )
+        == 7
+    )
+
+
 # Various format tests (using EST timezone). We sometimes apply a clock
 # offset to make the events of the trace span two different seconds or
 # minutes.
@@ -224,6 +303,30 @@ def test_trimmer_formats(
             id="date-time-format-missing-day-2",
         ),
         pytest.param(
+            ["--begin=2012-10-29T12:48:17.1231231231Z"],
+            id="rfc-3339-format-too-many-nanosecond-digits",
+        ),
+        pytest.param(
+            ["--begin=2012-10-29T12:48:17.Z"],
+            id="rfc-3339-format-missing-nanoseconds",
+        ),
+        pytest.param(
+            ["--begin=2012-10-29T12:48Z"],
+            id="rfc-3339-format-missing-seconds",
+        ),
+        pytest.param(
+            ["--begin=2012-10-29T12:48:17"],
+            id="rfc-3339-format-missing-offset",
+        ),
+        pytest.param(
+            ["--begin=2012-10-29T12:48:17+0400"],
+            id="rfc-3339-format-offset-missing-colon",
+        ),
+        pytest.param(
+            ["--begin=2012-10-29T12:48:17+04"],
+            id="rfc-3339-format-offset-missing-minutes",
+        ),
+        pytest.param(
             ["--begin=1351532898.1231231231"],
             id="seconds-from-origin-format-too-many-nanosecond-digits",
         ),
@@ -273,6 +376,31 @@ def test_trimmer_failure(ctf_traces_dir, build_root_dir, cli_args):
             ["--begin=2012-10-29 12:48:61"],
             "Invalid time of day",
             id="date-time-second-too-large",
+        ),
+        pytest.param(
+            ["--begin=2013-02-29T12:48:17Z"],
+            "Invalid date",
+            id="rfc-3339-february-29-common-year",
+        ),
+        pytest.param(
+            ["--begin=2012-10-29T24:48:17Z"],
+            "Invalid time of day",
+            id="rfc-3339-hour-too-large",
+        ),
+        pytest.param(
+            ["--begin=2012-10-29T12:48:17+24:00"],
+            "Invalid UTC offset",
+            id="rfc-3339-offset-hour-too-large",
+        ),
+        pytest.param(
+            ["--begin=2012-10-29T12:48:17-04:60"],
+            "Invalid UTC offset",
+            id="rfc-3339-offset-minute-too-large",
+        ),
+        pytest.param(
+            ["--begin=9999-12-31T23:59:59Z"],
+            "Date/time is out of range",
+            id="rfc-3339-out-of-range",
         ),
         pytest.param(
             ["--begin=24:48:17"], "Invalid time of day", id="time-of-day-hour-too-large"

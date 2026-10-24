@@ -581,3 +581,273 @@ def test_tz_after_max(
     assert any(expected_msg in cause.message for cause in exc_info.value), [
         cause.message for cause in exc_info.value
     ]
+
+
+# Tests RFC 3339 date-times as the `begin` and `end` parameters.
+@pytest.mark.parametrize(
+    ["begin", "end", "expected"],
+    [
+        pytest.param(
+            "2024-07-01T12:00:00Z", "2024-07-01T13:30:00Z", _HOURLY[2:4], id="z"
+        ),
+        pytest.param(
+            "2024-07-01t12:00:00z",
+            "2024-07-01t13:30:00z",
+            _HOURLY[2:4],
+            id="lowercase-t-z",
+        ),
+        pytest.param(
+            "2024-07-01 12:00:00Z",
+            "2024-07-01 13:30:00Z",
+            _HOURLY[2:4],
+            id="space-separator",
+        ),
+        pytest.param(
+            "2024-07-01T12:00:00+00:00",
+            "2024-07-01T13:30:00+00:00",
+            _HOURLY[2:4],
+            id="offset-pos-zero",
+        ),
+        # RFC 3339, 4.3: UTC, unknown local offset
+        pytest.param(
+            "2024-07-01T12:00:00-00:00",
+            "2024-07-01T13:30:00-00:00",
+            _HOURLY[2:4],
+            id="offset-neg-zero",
+        ),
+        pytest.param(
+            "2024-07-01T08:00:00-04:00",
+            "2024-07-01T09:30:00-04:00",
+            _HOURLY[2:4],
+            id="offset-neg",
+        ),
+        pytest.param(
+            "2024-07-01T17:30:00+05:30",
+            "2024-07-01T19:00:00+05:30",
+            _HOURLY[2:4],
+            id="offset-pos-half-hour",
+        ),
+        pytest.param(
+            "2024-07-02T02:00:00+14:00",
+            "2024-07-02T03:30:00+14:00",
+            _HOURLY[2:4],
+            id="offset-next-day",
+        ),
+        pytest.param(
+            "2024-06-30T23:00:00-11:00",
+            "2024-07-01T00:30:00-11:00",
+            _HOURLY[0:2],
+            id="offset-prev-day",
+        ),
+        pytest.param(
+            "2024-07-01T08:00:00-04:00",
+            "2024-07-01T19:00:00+05:30",
+            _HOURLY[2:4],
+            id="different-offsets",
+        ),
+        pytest.param(
+            "2024-07-01T11:59:59.999999999Z",
+            "2024-07-01T13:00:00.000000001Z",
+            _HOURLY[2:4],
+            id="ns-around",
+        ),
+        pytest.param(
+            "2024-07-01T12:00:00.000000001Z",
+            "2024-07-01T12:59:59.999999999Z",
+            [],
+            id="ns-within",
+        ),
+        pytest.param(
+            "2024-07-01T12:00:00.5Z",
+            "2024-07-01T13:00:00.0-00:00",
+            _HOURLY[3:4],
+            id="ns-partial",
+        ),
+        # A leap second means the first second of the next minute
+        pytest.param(
+            "2024-07-01T11:59:60Z",
+            "2024-07-01T12:59:60Z",
+            _HOURLY[2:4],
+            id="leap-second",
+        ),
+        pytest.param(
+            "1969-12-31T23:00:00Z",
+            "2024-07-01T12:00:00Z",
+            _HOURLY[0:3],
+            id="before-epoch",
+        ),
+        # Smallest date-time which fits as nanoseconds from origin
+        pytest.param(
+            "1677-09-21T00:12:43.145224192Z",
+            None,
+            _HOURLY,
+            id="min",
+            marks=[
+                pytest.mark.needs_64_bit_time_t,
+                pytest.mark.skipif(
+                    btu.os_type() == btu.OsType.DARWIN,
+                    reason="timegm() of macOS rejects years before 1900",
+                ),
+                pytest.mark.skipif(
+                    btu.os_type() == btu.OsType.MINGW,
+                    reason="_mkgmtime() of Windows rejects years before 1969",
+                ),
+            ],
+        ),
+        # Greatest date-time which fits as nanoseconds from origin
+        pytest.param(
+            None,
+            "2262-04-11T23:47:16.854775807Z",
+            _HOURLY,
+            id="max",
+            marks=pytest.mark.needs_64_bit_time_t,
+        ),
+        pytest.param(
+            "2024-07-01T08:00:00-04:00",
+            str(_ns_from_utc("2024-07-01T13:30") // 1_000_000_000),
+            _HOURLY[2:4],
+            id="with-sec",
+        ),
+        pytest.param(
+            "2024-07-01 12:00",
+            "2024-07-01T13:30:00Z",
+            _HOURLY[2:4],
+            id="with-date-time",
+        ),
+    ],
+)
+def test_rfc_3339(
+    trimmer_comp_cls, begin: Optional[str], end: Optional[str], expected: List[str]
+):
+    params = {"ts-format": {"tz": "utc"}}
+
+    if begin is not None:
+        params["begin"] = begin
+
+    if end is not None:
+        params["end"] = end
+
+    assert _trimmed_events(trimmer_comp_cls, _HOURLY, params) == expected
+
+
+# Tests that the component converts an RFC 3339 date-time to the
+# exact nanoseconds from origin, the source having an event one minute
+# before, at, and one minute after midnight UTC on the date `date`.
+@pytest.mark.parametrize(
+    "date",
+    [
+        "1970-01-01",
+        "1970-03-01",
+        "1972-02-29",
+        "1972-03-01",
+        "1999-12-31",
+        "2000-02-29",
+        "2000-03-01",
+        "2024-07-01",
+        *[
+            pytest.param(date, marks=pytest.mark.needs_64_bit_time_t)
+            for date in ("2100-02-28", "2100-03-01", "2262-04-11")
+        ],
+    ],
+)
+def test_rfc_3339_exact(trimmer_comp_cls, date: str):
+    midnight = _ns_from_utc(f"{date}T00:00")
+    times = [_event_name(midnight + delta * 60_000_000_000) for delta in (-1, 0, 1)]
+
+    # Before the Unix epoch: can't have such an event
+    if date == "1970-01-01":
+        times = times[1:]
+
+    assert _trimmed_events(
+        trimmer_comp_cls,
+        times,
+        {"begin": f"{date}T00:00:00Z", "end": f"{date}T00:00:00Z"},
+    ) == [f"{date}T00:00"]
+
+
+# Tests that the `tz` entry of the `ts-format` parameter, the `gmt`
+# parameter, and the local time zone have no effect on an RFC 3339
+# date-time.
+@pytest.mark.parametrize(
+    "params",
+    [
+        pytest.param({}, id="default"),
+        pytest.param({"gmt": True}, id="gmt"),
+        *[
+            pytest.param({"ts-format": {"tz": tz}}, id=f"tz-{tz}")
+            for tz in ("local", "utc", "+05:30", "-11:00", "+14:00")
+        ],
+    ],
+)
+def test_rfc_3339_tz(trimmer_comp_cls, set_local_tz, params: Dict[str, Any]):
+    # See test_tz_local()
+    set_local_tz("XYZ-3")
+    assert (
+        _trimmed_events(
+            trimmer_comp_cls,
+            _HOURLY,
+            {
+                **params,
+                "begin": "2024-07-01T08:00:00-04:00",
+                "end": "2024-07-01T13:30:00Z",
+            },
+        )
+        == _HOURLY[2:4]
+    )
+
+
+# Tests that the component rejects invalid RFC 3339 date-times with the
+# expected error cause message.
+@pytest.mark.parametrize(
+    ["begin", "expected_msg"],
+    [
+        pytest.param("2024-02-30T12:00:00Z", "Invalid date", id="bad-date"),
+        pytest.param("2024-07-01T24:00:00Z", "Invalid time of day", id="bad-hour"),
+        pytest.param("2024-07-01T12:60:00Z", "Invalid time of day", id="bad-minute"),
+        pytest.param("2024-07-01T12:00:61Z", "Invalid time of day", id="bad-second"),
+        pytest.param(
+            "2024-07-01T12:00:00+24:00", "Invalid UTC offset", id="bad-offset-hour"
+        ),
+        pytest.param(
+            "2024-07-01T12:00:00-05:60", "Invalid UTC offset", id="bad-offset-minute"
+        ),
+        *[
+            pytest.param(
+                begin,
+                "Date/time is out of range (nanoseconds from origin)",
+                id=f"out-of-range-{begin_id}",
+            )
+            for begin, begin_id in (
+                ("9999-12-31T23:59:59Z", "far-future"),
+                ("2262-04-11T23:47:16.854775808Z", "max-plus-one"),
+                ("1677-09-21T00:12:43.145224191Z", "min-minus-one"),
+                ("0000-01-01T00:00:00Z", "far-past"),
+            )
+        ],
+        *[
+            pytest.param(begin, "Invalid date/time format", id=f"bad-format-{begin_id}")
+            for begin, begin_id in (
+                ("2024-07-01T12:00Z", "no-second"),
+                ("2024-07-01T12:00:00", "no-offset"),
+                ("2024-07-01T12:00:00.Z", "empty-fraction"),
+                ("2024-07-01T12:00:00.1234567890Z", "too-many-ns-digits"),
+                ("2024-07-01T12:00:00+0500", "offset-no-colon"),
+                ("2024-07-01T12:00:00+05", "offset-no-minute"),
+                ("2024-07-01T12:00:00+5:00", "offset-one-hour-digit"),
+                ("2024-07-01T12:00:00 Z", "space-before-offset"),
+                ("2024-07-01X12:00:00Z", "bad-separator"),
+                ("2024-07-01TT12:00:00Z", "double-separator"),
+                ("12:00:00Z", "no-date"),
+            )
+        ],
+    ],
+)
+def test_rfc_3339_invalid(trimmer_comp_cls, begin: str, expected_msg: str):
+    graph = bt2.Graph()
+
+    with pytest.raises(bt2._Error) as exc_info:
+        graph.add_component(trimmer_comp_cls, "flt", params={"begin": begin})
+
+    assert any(
+        f'{expected_msg}: param="{begin}"' in cause.message for cause in exc_info.value
+    ), [cause.message for cause in exc_info.value]

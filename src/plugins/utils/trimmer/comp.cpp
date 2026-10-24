@@ -22,6 +22,7 @@
 
 #include "common/assert.h"
 #include "common/common.h"
+#include "common/safe.h"
 #include "cpp-common/bt2/wrap.hpp"
 #include "cpp-common/bt2c/c-string-view.hpp"
 #include "cpp-common/bt2c/date-time.hpp"
@@ -169,6 +170,45 @@ std::optional<TimeOfDayWithNs> timeOfDayFromMatch(const bt2c::RegexMatch& match,
                             groupFracNs(match, firstIndex + 3)};
 }
 
+/*
+ * Returns the time (nanoseconds from origin, the Unix epoch) of the
+ * date `date` at the time of day `timeOfDay` in the time zone `tz`, or
+ * `std::nullopt` if it can't convert it or if the result doesn't fit
+ * `std::int64_t`.
+ */
+std::optional<std::int64_t> nsFromOrigInTz(const bt2c::Tz& tz, const bt2c::Date& date,
+                                           const TimeOfDayWithNs& timeOfDay) noexcept
+{
+    const auto sec = tz.secFromDateTime(bt2c::DateTime {date, timeOfDay.timeOfDay});
+
+    if (!sec) {
+        return std::nullopt;
+    }
+
+    const auto sec64 = static_cast<std::int64_t>(*sec);
+    const auto ns = static_cast<std::int64_t>(timeOfDay.ns);
+
+    if (sec64 >= 0) {
+        if (!bt_safe_to_mul_int64(sec64, NS_PER_S_I)) {
+            return std::nullopt;
+        }
+
+        return bt2c::safeAdd(sec64 * NS_PER_S_I, ns);
+    }
+
+    /*
+     * `sec64` × 1,000,000,000 may not fit `std::int64_t` while the
+     * result does (for example, 1677-09-21T00:12:43.145224192Z):
+     * compute (`sec64` + 1) × 1,000,000,000 − (1,000,000,000 − `ns`)
+     * instead.
+     */
+    if (!bt_safe_to_mul_int64(sec64 + 1, NS_PER_S_I)) {
+        return std::nullopt;
+    }
+
+    return bt2c::safeSub((sec64 + 1) * NS_PER_S_I, NS_PER_S_I - ns);
+}
+
 } /* namespace */
 
 Comp::Comp(const bt2::SelfFilterComponent selfComp, const bt2::ConstMapValue params, void *)
@@ -240,6 +280,22 @@ Bound Comp::_boundFromParam(const bt2::ConstValue param) const
 
 Bound Comp::_boundFromStr(const bt2c::CStringView str) const
 {
+    /* RFC 3339 date-time: `YYYY-MM-DDTHH:II:SS[.NANO]OFFSET` */
+    static const bt2c::Regex rfc3339Regex {
+        /* `YYYY-MM-DD` */
+        "^([0-9]{4})-([0-9]{2})-([0-9]{2})"
+
+        /* Separator: `T` also being `t` or a space (RFC 3339, 5.6) */
+        "[Tt ]"
+
+        /* `HH:II:SS[.NANO]` */
+        "([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\\.([0-9]{1,9}))?"
+
+        /* `Z`, `z`, `+HH:II`, or `-HH:II` */
+        "(?:[Zz]|([+-])([0-9]{2}):([0-9]{2}))"
+
+        "\\z"};
+
     /* `YYYY-MM-DD[ HH:II[:SS[.NANO]]]` */
     static const bt2c::Regex dtRegex {
         /* `YYYY-MM-DD` */
@@ -256,6 +312,10 @@ Bound Comp::_boundFromStr(const bt2c::CStringView str) const
 
     /* `[-]SEC[.NANO]` */
     static const bt2c::Regex secRegex {"^(-?)([0-9]+)(?:\\.([0-9]{1,9}))?\\z"};
+
+    if (const auto match = rfc3339Regex.matchGroups(str)) {
+        return this->_boundFromRfc3339Match(*match, str);
+    }
 
     if (const auto match = dtRegex.matchGroups(str)) {
         const auto date = dateFromMatch(*match, 1);
@@ -317,18 +377,63 @@ Bound Comp::_boundFromStr(const bt2c::CStringView str) const
     BT_CPPLOGE_APPEND_CAUSE_AND_THROW(bt2c::Error, "Invalid date/time format: param=\"{}\"", str);
 }
 
+Bound Comp::_boundFromRfc3339Match(const bt2c::RegexMatch& match, const bt2c::CStringView str) const
+{
+    const auto date = dateFromMatch(match, 1);
+
+    if (!date) {
+        BT_CPPLOGE_APPEND_CAUSE_AND_THROW(bt2c::Error, "Invalid date: param=\"{}\"", str);
+    }
+
+    const auto timeOfDay = timeOfDayFromMatch(match, 4);
+
+    if (!timeOfDay) {
+        BT_CPPLOGE_APPEND_CAUSE_AND_THROW(bt2c::Error, "Invalid time of day: param=\"{}\"", str);
+    }
+
+    /*
+     * UTC offset (seconds), positive east of UTC.
+     *
+     * `Z` means UTC, and so does `-00:00` which, as per RFC 3339, 4.3,
+     * means the date/time is in UTC without knowing the local offset.
+     */
+    auto offsetSec = 0;
+
+    if (const auto sign = match[8]) {
+        const auto hours = groupVal(match, 9);
+        const auto mins = groupVal(match, 10);
+
+        if (hours > 23 || mins > 59) {
+            BT_CPPLOGE_APPEND_CAUSE_AND_THROW(bt2c::Error, "Invalid UTC offset: param=\"{}\"", str);
+        }
+
+        offsetSec = static_cast<int>(hours * 3600 + mins * 60);
+
+        if ((*sign)[0] == '-') {
+            offsetSec = -offsetSec;
+        }
+    }
+
+    if (const auto nsFromOrig =
+            nsFromOrigInTz(bt2c::Tz::createFixedOffset(offsetSec), *date, *timeOfDay)) {
+        return Bound {*nsFromOrig};
+    }
+
+    BT_CPPLOGE_APPEND_CAUSE_AND_THROW(
+        bt2c::Error, "Date/time is out of range (nanoseconds from origin): param=\"{}\"", str);
+}
+
 std::optional<std::int64_t> Comp::_nsFromOrig(const bt2c::Date& date,
                                               const TimeOfDayWithNs& timeOfDay) const noexcept
 {
-    const auto sec = _mTz.secFromDateTime(bt2c::DateTime {date, timeOfDay.timeOfDay});
+    const auto nsFromOrig = nsFromOrigInTz(_mTz, date, timeOfDay);
 
-    /* Nanoseconds from origin must fit `std::int64_t` */
-    if (!sec || *sec < 0 ||
-        *sec > (std::numeric_limits<std::int64_t>::max() - timeOfDay.ns) / NS_PER_S_I) {
+    /* Reject a time before the Unix epoch */
+    if (nsFromOrig && *nsFromOrig < 0) {
         return std::nullopt;
     }
 
-    return static_cast<std::int64_t>(*sec) * NS_PER_S_I + timeOfDay.ns;
+    return nsFromOrig;
 }
 
 Bound Comp::_fullBound(const TimeOfDayWithNs& timeOfDay, const std::int64_t refNsFromOrig) const

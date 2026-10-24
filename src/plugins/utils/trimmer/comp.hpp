@@ -14,6 +14,7 @@
 #include "cpp-common/bt2/component-class-dev.hpp"
 #include "cpp-common/bt2c/c-string-view.hpp"
 #include "cpp-common/bt2c/date-time.hpp"
+#include "cpp-common/bt2c/regex.hpp"
 #include "cpp-common/bt2c/tz.hpp"
 
 #include "bound.hpp"
@@ -48,6 +49,15 @@ private:
      * Throws `bt2c::Error` if `str` is invalid.
      */
     Bound _boundFromStr(bt2c::CStringView str) const;
+
+    /*
+     * Returns the bound of which the RFC 3339 date-time `str` is the
+     * string representation, `match` being the match of `str` (see
+     * _boundFromStr()).
+     *
+     * Throws `bt2c::Error` if `str` is invalid.
+     */
+    Bound _boundFromRfc3339Match(const bt2c::RegexMatch& match, bt2c::CStringView str) const;
 
     /*
      * Returns the time (nanoseconds from origin) of the date `date` at

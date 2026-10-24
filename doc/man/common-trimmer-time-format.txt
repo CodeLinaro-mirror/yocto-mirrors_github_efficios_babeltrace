@@ -2,10 +2,25 @@
 //
 // SPDX-License-Identifier: CC-BY-SA-4.0
 
+. Date/time, without a UTC offset:
++
 [verse]
-__YYYY__-__MM__-__DD__ __HH__:__II__[:__SS__[.__NANO__]]
+__YYYY__-__MM__-__DD__$$[$$ __HH__:__II__[:__SS__[.__NANO__]]]
 __HH__:__II__[:__SS__[.__NANO__]]
++
+Without a time of day, the time is midnight.
+
+. Seconds from origin:
++
+[verse]
 $$[$$-]__SEC__[.__NANO__]
+
+. https://datatracker.ietf.org/doc/html/rfc3339#section-5.6[RFC{nbsp}3339] date-time:
++
+[verse]
+__YYYY__-__MM__-__DD__T__HH__:__II__:__SS__$$[$$.__NANO__]__OFFSET__
+
+With:
 
 _YYYY_::
     4-digit year.
@@ -28,5 +43,10 @@ _SS_::
 _NANO_::
     Nanoseconds (up to nine digits).
 
-_SEC_::
-    Seconds since origin.
+_OFFSET_::
+    UTC offset: `Z` (UTC), `+__HH__:__II__` (east of UTC), or
+    `-__HH__:__II__` (west of UTC).
++
+`z` and `-00:00` are equivalent to `Z`.
+
+_SEC_:: Seconds since origin.
