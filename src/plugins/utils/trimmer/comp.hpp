@@ -22,6 +22,25 @@
 
 namespace bt2trimmer {
 
+/*
+ * Expected format of the `begin` and `end` parameters (`type` entry of
+ * the `ts-format` parameter).
+ */
+enum class TsFmtType
+{
+    /* Any format */
+    Auto,
+
+    /* `YYYY-MM-DD[ HH:II[:SS[.NANO]]]` or `HH:II[:SS[.NANO]]` */
+    DateTime,
+
+    /* `[-]SEC[.NANO]` */
+    SecFromOrigin,
+
+    /* `YYYY-MM-DDTHH:II:SS[.NANO]OFFSET` */
+    Rfc3339,
+};
+
 class Comp final : public bt2::UserFilterComponent<Comp, MsgIter>
 {
     friend class MsgIter;
@@ -46,7 +65,8 @@ private:
     /*
      * Returns the bound of which `str` is the string representation.
      *
-     * Throws `bt2c::Error` if `str` is invalid.
+     * Throws `bt2c::Error` if `str` is invalid, including if its format
+     * isn't the one of `_mTsFmtType`.
      */
     Bound _boundFromStr(bt2c::CStringView str) const;
 
@@ -91,6 +111,9 @@ private:
     /* Bounds of the trimming time range */
     Bound _mBegin;
     Bound _mEnd;
+
+    /* Expected format of the `begin` and `end` parameters */
+    TsFmtType _mTsFmtType = TsFmtType::Auto;
 
     /* Time zone of the date/time of `_mBegin` and `_mEnd` */
     bt2c::Tz _mTz = bt2c::Tz::createLocal();

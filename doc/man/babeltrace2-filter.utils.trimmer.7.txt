@@ -74,6 +74,9 @@ parameter.
 If _TIME_ has no date information, then the message iterator uses the
 time of the first upstream message to determine the date, in that same
 time zone.
++
+To require a specific format, set the nlparam:type[] entry of the
+param:ts-format[] parameter.
 
 param:end[]=_TIME_ vtype:[optional string or signed integer]::
     Set the end time of the trimming time range to _TIME_.
@@ -101,12 +104,33 @@ Deprecated: set the nlparam:tz[] entry of the param:ts-format[]
 parameter to `utc` instead.
 
 param:ts-format[]=_FORMAT_ vtype:[optional map]::
-    Interpret a param:begin[] or param:end[] time which has no UTC
-    offset with the timestamp format _FORMAT_.
+    Parse the param:begin[] and param:end[] times with the timestamp
+    format _FORMAT_.
 +
-_FORMAT_ is a map containing the following optional entry:
+_FORMAT_ is a map containing the following optional entries:
 +
 --
+nlparam:type[]=(`auto` | `date-time` | `seconds-from-origin` | `rfc-3339`) vtype:[optional string]::
+    Format which the param:begin[] and param:end[] times must have
+    (see the param:begin[] parameter), one of:
+
+`auto` (default):::
+    Any format: the component guesses it.
+
+`date-time`:::
+    Date/time, without a UTC offset.
+
+`seconds-from-origin`:::
+    Seconds from origin, possibly as a signed integer value.
+
+`rfc-3339`:::
+    RFC{nbsp}3339 date-time.
+
++
+With a type other than `auto`, the component fails if the param:begin[]
+or param:end[] time has another format instead of possibly misreading
+it.
+
 nlparam:tz[]=_TZ_ vtype:[optional string]::
     Interpret a date and time of day which has no UTC offset in the
     time zone _TZ_, one of:
@@ -131,6 +155,10 @@ Time zone identifier:::
 +
 On Windows, GLib only knows Windows time zone names such as
 `Eastern Standard Time`.
+
++
+Only applies to the `auto` and `date-time` types: a number of seconds
+from origin and an RFC{nbsp}3339 date-time are exact times.
 --
 +
 With the `local` time zone or a time zone identifier, the component

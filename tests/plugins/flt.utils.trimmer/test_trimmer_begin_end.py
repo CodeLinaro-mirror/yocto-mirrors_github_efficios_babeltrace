@@ -851,3 +851,159 @@ def test_rfc_3339_invalid(trimmer_comp_cls, begin: str, expected_msg: str):
     assert any(
         f'{expected_msg}: param="{begin}"' in cause.message for cause in exc_info.value
     ), [cause.message for cause in exc_info.value]
+
+
+# Number of seconds from origin of 12:00 and 13:30 UTC on 1 July 2024.
+_SEC_12_00 = _ns_from_utc("2024-07-01T12:00") // 1_000_000_000
+_SEC_13_30 = _ns_from_utc("2024-07-01T13:30") // 1_000_000_000
+
+
+# `begin` and `end` parameters, for each format, which make a trimmer
+# let `_HOURLY[2:4]` (`_HOURLY` for `date`) through with the `utc`
+# time zone.
+_TYPE_FMT_BOUNDS = {
+    "date-time": ("2024-07-01 12:00", "2024-07-01 13:30"),
+    "date": ("2024-07-01", "2024-07-02"),
+    "rfc-3339": ("2024-07-01T08:00:00-04:00", "2024-07-01T13:30:00Z"),
+    "time": ("12:00", "13:30"),
+    "sec-str": (str(_SEC_12_00), str(_SEC_13_30)),
+    "sec-int": (_SEC_12_00, _SEC_13_30),
+}
+
+# Formats of `_TYPE_FMT_BOUNDS` which each value of the `type` entry of
+# the `ts-format` parameter accepts.
+_TYPE_ACCEPTED_FMTS = {
+    "auto": set(_TYPE_FMT_BOUNDS),
+    "date-time": {"date-time", "date", "time"},
+    "seconds-from-origin": {"sec-str", "sec-int"},
+    "rfc-3339": {"rfc-3339"},
+}
+
+
+# Tests that the `type` entry of the `ts-format` parameter makes the
+# component accept the `begin` and `end` parameters having its format.
+@pytest.mark.parametrize(
+    ["ts_fmt_type", "fmt"],
+    [
+        pytest.param(ts_fmt_type, fmt, id=f"{ts_fmt_type}-{fmt}")
+        for ts_fmt_type, fmts in _TYPE_ACCEPTED_FMTS.items()
+        for fmt in sorted(fmts)
+    ],
+)
+def test_ts_fmt_type(trimmer_comp_cls, ts_fmt_type: str, fmt: str):
+    begin, end = _TYPE_FMT_BOUNDS[fmt]
+    ts_fmt: Dict[str, Any] = {"type": ts_fmt_type}
+
+    # The `tz` entry only applies to the `auto` and `date-time` types
+    if ts_fmt_type in ("auto", "date-time"):
+        ts_fmt["tz"] = "utc"
+
+    assert _trimmed_events(
+        trimmer_comp_cls,
+        _HOURLY,
+        {"ts-format": ts_fmt, "begin": begin, "end": end},
+    ) == (_HOURLY if fmt == "date" else _HOURLY[2:4])
+
+
+# Tests that the `tz` entry of the `ts-format` parameter applies to a
+# date/time and to a time with the `date-time` type.
+@pytest.mark.parametrize(
+    ["begin", "end"],
+    [
+        pytest.param("2024-07-01 17:30", "2024-07-01 19:00", id="date-time"),
+        pytest.param("17:30", "19:00", id="time"),
+    ],
+)
+def test_ts_fmt_type_date_time_tz(trimmer_comp_cls, begin: str, end: str):
+    assert (
+        _trimmed_events(
+            trimmer_comp_cls,
+            _HOURLY,
+            {
+                "ts-format": {"type": "date-time", "tz": "+05:30"},
+                "begin": begin,
+                "end": end,
+            },
+        )
+        == _HOURLY[2:4]
+    )
+
+
+# Tests that the component rejects the `begin` or `end` parameter when
+# its format isn't the one of the `type` entry of the
+# `ts-format` parameter.
+@pytest.mark.parametrize("param_name", ["begin", "end"])
+@pytest.mark.parametrize(
+    ["ts_fmt_type", "fmt"],
+    [
+        pytest.param(ts_fmt_type, fmt, id=f"{ts_fmt_type}-{fmt}")
+        for ts_fmt_type, fmts in _TYPE_ACCEPTED_FMTS.items()
+        for fmt in sorted(set(_TYPE_FMT_BOUNDS) - fmts)
+    ],
+)
+def test_ts_fmt_type_mismatch(
+    trimmer_comp_cls, param_name: str, ts_fmt_type: str, fmt: str
+):
+    val = _TYPE_FMT_BOUNDS[fmt][0]
+    graph = bt2.Graph()
+
+    with pytest.raises(bt2._Error) as exc_info:
+        graph.add_component(
+            trimmer_comp_cls,
+            "flt",
+            params={"ts-format": {"type": ts_fmt_type}, param_name: val},
+        )
+
+    expected_msg = (
+        f"Invalid `{ts_fmt_type}` format (`type` entry of `ts-format` parameter): "
+        f'param="{val}"'
+    )
+
+    assert any(expected_msg in cause.message for cause in exc_info.value), [
+        cause.message for cause in exc_info.value
+    ]
+
+
+# Tests that the component rejects invalid `type` entries of the
+# `ts-format` parameter, as well as a `tz` entry with a type to which it
+# doesn't apply.
+@pytest.mark.parametrize(
+    ["ts_fmt", "expected_msg"],
+    [
+        pytest.param(
+            {"type": 23},
+            "Error validating parameter `ts-format.type`: unexpected type",
+            id="type-not-str",
+        ),
+        *[
+            pytest.param(
+                {"type": ts_fmt_type},
+                "Error validating parameter `ts-format.type`: string is not "
+                f"amongst the available choices: string={ts_fmt_type}, "
+                "choices=[auto, date-time, seconds-from-origin, rfc-3339]",
+                id=f"unknown-type-{ts_fmt_type}",
+            )
+            for ts_fmt_type in ("time", "cycles", "AUTO", "")
+        ],
+        *[
+            pytest.param(
+                {"type": ts_fmt_type, "tz": "utc"},
+                "`tz` entry of `ts-format` parameter only applies to the `auto` "
+                f'and `date-time` types: type="{ts_fmt_type}"',
+                id=f"tz-with-{ts_fmt_type}",
+            )
+            for ts_fmt_type in ("seconds-from-origin", "rfc-3339")
+        ],
+    ],
+)
+def test_ts_fmt_type_invalid(
+    trimmer_comp_cls, ts_fmt: Dict[str, Any], expected_msg: str
+):
+    graph = bt2.Graph()
+
+    with pytest.raises(bt2._Error) as exc_info:
+        graph.add_component(trimmer_comp_cls, "flt", params={"ts-format": ts_fmt})
+
+    assert any(expected_msg in cause.message for cause in exc_info.value), [
+        cause.message for cause in exc_info.value
+    ]

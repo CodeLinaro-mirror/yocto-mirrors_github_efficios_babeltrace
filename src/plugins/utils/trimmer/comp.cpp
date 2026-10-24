@@ -55,7 +55,11 @@ bt_param_validation_status validateBoundType(const bt_value * const libValue,
     return BT_PARAM_VALIDATION_STATUS_OK;
 }
 
+const char *tsFmtTypeChoices[] = {"auto", "date-time", "seconds-from-origin", "rfc-3339", nullptr};
+
 bt_param_validation_map_value_entry_descr tsFmtParams[] = {
+    {"type", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
+     bt_param_validation_value_descr::makeString(tsFmtTypeChoices)},
     {"tz", BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_OPTIONAL,
      bt_param_validation_value_descr::makeString()},
     BT_PARAM_VALIDATION_MAP_VALUE_ENTRY_END};
@@ -209,6 +213,26 @@ std::optional<std::int64_t> nsFromOrigInTz(const bt2c::Tz& tz, const bt2c::Date&
     return bt2c::safeSub((sec64 + 1) * NS_PER_S_I, NS_PER_S_I - ns);
 }
 
+/*
+ * Returns the name of the timestamp format type `type`, as the `type`
+ * entry of the `ts-format` parameter.
+ */
+const char *tsFmtTypeName(const TsFmtType type) noexcept
+{
+    switch (type) {
+    case TsFmtType::Auto:
+        return "auto";
+    case TsFmtType::DateTime:
+        return "date-time";
+    case TsFmtType::SecFromOrigin:
+        return "seconds-from-origin";
+    case TsFmtType::Rfc3339:
+        return "rfc-3339";
+    }
+
+    bt_common_abort();
+}
+
 } /* namespace */
 
 Comp::Comp(const bt2::SelfFilterComponent selfComp, const bt2::ConstMapValue params, void *)
@@ -238,7 +262,32 @@ Comp::Comp(const bt2::SelfFilterComponent selfComp, const bt2::ConstMapValue par
                 bt2c::Error, "`ts-format` and `gmt` parameters are mutually exclusive.");
         }
 
-        if (const auto tzVal = tsFmtVal->asMap()["tz"]) {
+        const auto tsFmtMapVal = tsFmtVal->asMap();
+
+        if (const auto typeVal = tsFmtMapVal["type"]) {
+            const auto type = typeVal->asString().value();
+
+            if (type == "date-time") {
+                _mTsFmtType = TsFmtType::DateTime;
+            } else if (type == "seconds-from-origin") {
+                _mTsFmtType = TsFmtType::SecFromOrigin;
+            } else if (type == "rfc-3339") {
+                _mTsFmtType = TsFmtType::Rfc3339;
+            } else {
+                BT_ASSERT(type == "auto");
+            }
+        }
+
+        if (const auto tzVal = tsFmtMapVal["tz"]) {
+            /* A seconds from origin or an RFC 3339 date-time is exact */
+            if (_mTsFmtType == TsFmtType::SecFromOrigin || _mTsFmtType == TsFmtType::Rfc3339) {
+                BT_CPPLOGE_APPEND_CAUSE_AND_THROW(
+                    bt2c::Error,
+                    "`tz` entry of `ts-format` parameter only applies to the `auto` and "
+                    "`date-time` types: type=\"{}\"",
+                    tsFmtTypeName(_mTsFmtType));
+            }
+
             try {
                 _mTz = bt2c::Tz::createFromStr(tzVal->asString().value(), _mLogger);
             } catch (const bt2c::Error&) {
@@ -313,11 +362,21 @@ Bound Comp::_boundFromStr(const bt2c::CStringView str) const
     /* `[-]SEC[.NANO]` */
     static const bt2c::Regex secRegex {"^(-?)([0-9]+)(?:\\.([0-9]{1,9}))?\\z"};
 
-    if (const auto match = rfc3339Regex.matchGroups(str)) {
+    /*
+     * Returns the match of `str` with `regex`, or `std::nullopt` if
+     * `_mTsFmtType` doesn't accept the format `type` or if `str`
+     * doesn't match.
+     */
+    const auto matchGroups = [this, str](const TsFmtType type, const bt2c::Regex& regex) {
+        return _mTsFmtType == TsFmtType::Auto || _mTsFmtType == type ? regex.matchGroups(str) :
+                                                                       std::nullopt;
+    };
+
+    if (const auto match = matchGroups(TsFmtType::Rfc3339, rfc3339Regex)) {
         return this->_boundFromRfc3339Match(*match, str);
     }
 
-    if (const auto match = dtRegex.matchGroups(str)) {
+    if (const auto match = matchGroups(TsFmtType::DateTime, dtRegex)) {
         const auto date = dateFromMatch(*match, 1);
 
         if (!date) {
@@ -344,7 +403,7 @@ Bound Comp::_boundFromStr(const bt2c::CStringView str) const
             str);
     }
 
-    if (const auto match = timeOfDayRegex.matchGroups(str)) {
+    if (const auto match = matchGroups(TsFmtType::DateTime, timeOfDayRegex)) {
         if (const auto timeOfDay = timeOfDayFromMatch(*match, 1)) {
             return Bound {*timeOfDay};
         }
@@ -352,7 +411,7 @@ Bound Comp::_boundFromStr(const bt2c::CStringView str) const
         BT_CPPLOGE_APPEND_CAUSE_AND_THROW(bt2c::Error, "Invalid time of day: param=\"{}\"", str);
     }
 
-    if (const auto match = secRegex.matchGroups(str)) {
+    if (const auto match = matchGroups(TsFmtType::SecFromOrigin, secRegex)) {
         /* The number of seconds itself may not even fit `std::uint64_t` */
         const auto sec = digitsVal(*(*match)[2]);
         const auto secNs = sec ? bt2c::safeMul<std::uint64_t>(*sec, NS_PER_S_U) : std::nullopt;
@@ -372,6 +431,13 @@ Bound Comp::_boundFromStr(const bt2c::CStringView str) const
         const auto absNsFromOrigI = static_cast<std::int64_t>(*absNsFromOrig);
 
         return Bound {(*match)[1]->empty() ? absNsFromOrigI : -absNsFromOrigI};
+    }
+
+    if (_mTsFmtType != TsFmtType::Auto) {
+        BT_CPPLOGE_APPEND_CAUSE_AND_THROW(
+            bt2c::Error,
+            "Invalid `{}` format (`type` entry of `ts-format` parameter): param=\"{}\"",
+            tsFmtTypeName(_mTsFmtType), str);
     }
 
     BT_CPPLOGE_APPEND_CAUSE_AND_THROW(bt2c::Error, "Invalid date/time format: param=\"{}\"", str);
