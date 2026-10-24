@@ -142,9 +142,15 @@ def test_ts_after_2038(pretty_comp_cls, tmp_path: pathlib.Path, expected: str):
     assert out_path.read_text(encoding="utf-8").strip() == expected
 
 
-# Runs the CLI to pretty-print the trace of `mctf_name` with the
-# `sink.text.pretty` initialization parameters `params` (`no-delta` and
-# `color` added) and returns the lines it writes.
+# Directory of the `.mctf` files which tests of this module
+# materialize themselves.
+_DATA_DIR = pathlib.Path(__file__).parent / "data"
+
+
+# Runs the CLI to pretty-print the trace of `mctf_name` (within
+# `_DATA_DIR`) with the `sink.text.pretty` initialization parameters
+# `params` (`no-delta` and `color` added) and returns the lines
+# it writes.
 def _pretty_lines(
     build_root_dir: pathlib.Path,
     materialize_mctf,
@@ -152,7 +158,7 @@ def _pretty_lines(
     params: Dict[str, Any],
     extra_env: Optional[Dict[str, str]] = None,
 ) -> List[str]:
-    trace = materialize_mctf(pathlib.Path(__file__).parent / "data" / mctf_name)
+    trace = materialize_mctf(_DATA_DIR / mctf_name)
 
     result = btu_cli.run_cli(
         build_root_dir,
@@ -620,3 +626,48 @@ def test_legacy_ts_format_ignored_warning(
             "parameter is true" in line
             for line in warnings
         ), warnings
+
+
+# Tests the `--ts-tz` option of the `convert` command, which sets the
+# `tz` entry of the `ts-format` parameter of the implicit
+# `sink.text.pretty` component.
+@pytest.mark.parametrize(
+    ["opts", "expected"],
+    [
+        pytest.param(
+            ["--ts-tz=utc"],
+            [
+                "[12:00:00.000000000] e: { v = 0xAB }",
+                "[12:00:00.000000000] e: { v = 0xAB }",
+            ],
+            id="tz-utc",
+        ),
+        pytest.param(
+            ["--ts-tz", "-04:00"],
+            [
+                "[08:00:00.000000000] e: { v = 0xAB }",
+                "[08:00:00.000000000] e: { v = 0xAB }",
+            ],
+            id="tz-offset",
+        ),
+        pytest.param(
+            ["--ts-tz=America/Toronto"],
+            [
+                "[07:00:00.000000000] e: { v = 0xAB }",
+                "[08:00:00.000000000] e: { v = 0xAB }",
+            ],
+            marks=btu.needs_zoneinfo("America/Toronto"),
+            id="tz-id",
+        ),
+    ],
+)
+def test_convert_ts_opts(build_root_dir, materialize_mctf, opts: List[str], expected):
+    trace = materialize_mctf(_DATA_DIR / "jan-jul.mctf")
+
+    result = btu_cli.run_cli(
+        build_root_dir,
+        [str(trace.path), "--no-delta", "--color=never", *opts],
+        check=True,
+    )
+
+    assert result.stdout.splitlines() == expected

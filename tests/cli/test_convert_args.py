@@ -117,6 +117,41 @@ def path_to_trace_2(ctf_traces_dir):
             id="path-non-option-arg-and-clock-seconds",
         ),
         pytest.param(
+            "{path_to_trace} --ts-tz=utc",
+            "--component auto-disc-source-ctf-fs:source.ctf.fs --params 'inputs=[\"{path_to_trace}\"]' --component pretty:sink.text.pretty --params 'ts-format={{tz=\"utc\"}}' --component muxer:filter.utils.muxer --connect auto-disc-source-ctf-fs:muxer --connect muxer:pretty",
+            id="path-non-option-arg-and-ts-tz",
+        ),
+        pytest.param(
+            "{path_to_trace} --ts-tz America/Toronto",
+            "--component auto-disc-source-ctf-fs:source.ctf.fs --params 'inputs=[\"{path_to_trace}\"]' --component pretty:sink.text.pretty --params 'ts-format={{tz=\"America/Toronto\"}}' --component muxer:filter.utils.muxer --connect auto-disc-source-ctf-fs:muxer --connect muxer:pretty",
+            id="path-non-option-arg-and-ts-tz-id-sep-arg",
+        ),
+        pytest.param(
+            "{path_to_trace} --ts-tz=utc --begin=123",
+            "--component auto-disc-source-ctf-fs:source.ctf.fs --params 'inputs=[\"{path_to_trace}\"]' --component pretty:sink.text.pretty --params 'ts-format={{tz=\"utc\"}}' --component muxer:filter.utils.muxer --component trimmer:filter.utils.trimmer --params 'begin=\"123\"' --params 'ts-format={{tz=\"utc\"}}' --connect auto-disc-source-ctf-fs:muxer --connect muxer:trimmer --connect trimmer:pretty",
+            id="path-non-option-arg-and-ts-tz-utc-and-begin",
+        ),
+        pytest.param(
+            "{path_to_trace} --begin=123 --ts-tz=+05:30",
+            "--component auto-disc-source-ctf-fs:source.ctf.fs --params 'inputs=[\"{path_to_trace}\"]' --component pretty:sink.text.pretty --params 'ts-format={{tz=\"+05:30\"}}' --component muxer:filter.utils.muxer --component trimmer:filter.utils.trimmer --params 'begin=\"123\"' --params 'ts-format={{tz=\"+05:30\"}}' --connect auto-disc-source-ctf-fs:muxer --connect muxer:trimmer --connect trimmer:pretty",
+            id="path-non-option-arg-and-ts-tz-offset-and-begin",
+        ),
+        pytest.param(
+            "{path_to_trace} --ts-tz=-04:00 --timerange=1,5",
+            "--component auto-disc-source-ctf-fs:source.ctf.fs --params 'inputs=[\"{path_to_trace}\"]' --component pretty:sink.text.pretty --params 'ts-format={{tz=\"-04:00\"}}' --component muxer:filter.utils.muxer --component trimmer:filter.utils.trimmer --params 'begin=\"1\"' --params 'end=\"5\"' --params 'ts-format={{tz=\"-04:00\"}}' --connect auto-disc-source-ctf-fs:muxer --connect muxer:trimmer --connect trimmer:pretty",
+            id="path-non-option-arg-and-ts-tz-and-timerange",
+        ),
+        pytest.param(
+            "{path_to_trace} -o dummy --ts-tz=utc",
+            "--component auto-disc-source-ctf-fs:source.ctf.fs --params 'inputs=[\"{path_to_trace}\"]' --component dummy:sink.utils.dummy --component muxer:filter.utils.muxer --connect auto-disc-source-ctf-fs:muxer --connect muxer:dummy",
+            id="path-non-option-arg-and-o-dummy-and-ts-tz",
+        ),
+        pytest.param(
+            "{path_to_trace} -o dummy --ts-tz=utc --begin=123",
+            "--component auto-disc-source-ctf-fs:source.ctf.fs --params 'inputs=[\"{path_to_trace}\"]' --component dummy:sink.utils.dummy --component muxer:filter.utils.muxer --component trimmer:filter.utils.trimmer --params 'begin=\"123\"' --params 'ts-format={{tz=\"utc\"}}' --connect auto-disc-source-ctf-fs:muxer --connect muxer:trimmer --connect trimmer:dummy",
+            id="path-non-option-arg-and-o-dummy-and-ts-tz-and-begin",
+        ),
+        pytest.param(
             "{path_to_trace} --color=never",
             "--component auto-disc-source-ctf-fs:source.ctf.fs --params 'inputs=[\"{path_to_trace}\"]' --component pretty:sink.text.pretty --params 'color=\"never\"' --component muxer:filter.utils.muxer --connect auto-disc-source-ctf-fs:muxer --connect muxer:pretty",
             id="path-non-option-arg-and-color",
@@ -374,6 +409,36 @@ def test_convert_run_args_success(
             "{path_to_trace} -o dummy --clock-seconds",
             "More than one sink component specified.",
             id="two-sinks-with-o-dummy-and-clock-seconds",
+        ),
+        pytest.param(
+            "{path_to_trace} --ts-tz=utc --clock-cycles",
+            "--ts-tz and --clock-cycles options are mutually exclusive.",
+            id="ts-tz-and-clock-cycles",
+        ),
+        pytest.param(
+            "{path_to_trace} --ts-tz=utc --clock-date",
+            "--ts-tz and --clock-date options are mutually exclusive.",
+            id="ts-tz-and-clock-date",
+        ),
+        pytest.param(
+            "{path_to_trace} --ts-tz=utc --clock-gmt",
+            "--ts-tz and --clock-gmt options are mutually exclusive.",
+            id="ts-tz-and-clock-gmt",
+        ),
+        pytest.param(
+            "{path_to_trace} --ts-tz=utc --clock-seconds",
+            "--ts-tz and --clock-seconds options are mutually exclusive.",
+            id="ts-tz-and-clock-seconds",
+        ),
+        pytest.param(
+            "{path_to_trace} --clock-gmt --ts-tz=utc --begin=123",
+            "--ts-tz and --clock-gmt options are mutually exclusive.",
+            id="clock-gmt-and-ts-tz-and-begin",
+        ),
+        pytest.param(
+            "{path_to_trace} --ts-tz=utc --ts-tz=local",
+            "Duplicate --ts-tz option",
+            id="duplicate-ts-tz",
         ),
         pytest.param(
             "{path_to_trace} --component=sink.abc.def -o text",

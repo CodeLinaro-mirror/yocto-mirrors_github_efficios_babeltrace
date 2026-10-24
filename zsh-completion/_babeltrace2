@@ -97,6 +97,13 @@ __bt2_complete_log_level() {
   compadd -V log-level -- NONE FATAL ERROR WARN INFO DEBUG TRACE
 }
 
+# Completes a time zone identifier.
+__bt2_complete_tz() {
+  # `_time_zone` expects the `null_glob` option of the completion system
+  setopt local_options null_glob
+  _time_zone
+}
+
 # Usage:
 #
 #     __bt2_complete_comp_cls_spec_or_plugin WITHPLUGINS
@@ -646,7 +653,7 @@ __bt2_complete() {
   __bt2_add_opts --debug-info-target-prefix 'prepend to the paths to executables recorded in the trace'
   __bt2_add_switches --clock-cycles 'print the event record time in clock cycles'
   __bt2_add_switches --clock-date 'print the date and the time of event records'
-  __bt2_add_switches --clock-gmt 'do not apply the local timezone to the printed times'
+  __bt2_add_switches --clock-gmt 'same as `--ts-tz=utc` (legacy)'
   __bt2_add_switches --clock-seconds 'print the event record times in seconds since Unix epoch'
   __bt2_add_opts --fields 'print specific metadata fields'
   __bt2_add_opts --names 'print specific structures'
@@ -655,6 +662,7 @@ __bt2_complete() {
   __bt2_add_switches --run-args 'print the equivalent `run` arguments, space-separated'
   __bt2_add_switches --run-args-0 'print the equivalent `run` arguments, null-separated'
   __bt2_add_switches --stream-intersection 'enable the stream intersection mode'
+  __bt2_add_opts --ts-tz 'set the time zone of the printed timestamps and of the trimming times'
 
   # Track state
   local -i is_convert_cmd=0 has_cur_comp=0 \
@@ -802,25 +810,25 @@ __bt2_complete() {
       --debug-info-target-prefix)
         in_opt_name=debug-info-target-prefix;;
       --clock-cycles)
-        __bt2_exclude_opts --clock-cycles --clock-seconds --clock-date --clock-gmt
+        __bt2_exclude_opts --clock-cycles --clock-seconds --clock-date --clock-gmt --ts-tz
         has_pretty_opt=1
         is_convert_cmd=1
         has_non_output_convert_opt=1
         ;;
       --clock-seconds)
-        __bt2_exclude_opts --clock-seconds --clock-cycles --clock-date
+        __bt2_exclude_opts --clock-seconds --clock-cycles --clock-date --ts-tz
         has_pretty_opt=1
         is_convert_cmd=1
         has_non_output_convert_opt=1
         ;;
       --clock-date)
-        __bt2_exclude_opts --clock-date --clock-cycles --clock-seconds
+        __bt2_exclude_opts --clock-date --clock-cycles --clock-seconds --ts-tz
         has_pretty_opt=1
         is_convert_cmd=1
         has_non_output_convert_opt=1
         ;;
       --clock-gmt)
-        __bt2_exclude_opts --clock-gmt --clock-cycles
+        __bt2_exclude_opts --clock-gmt --clock-cycles --ts-tz
         has_pretty_opt=1
         is_convert_cmd=1
         has_non_output_convert_opt=1
@@ -863,6 +871,14 @@ __bt2_complete() {
         is_convert_cmd=1
         has_non_output_convert_opt=1
         ;;
+      --ts-tz=*)
+        __bt2_exclude_opts --ts-tz \
+          --clock-cycles --clock-date --clock-gmt --clock-seconds
+        is_convert_cmd=1
+        has_non_output_convert_opt=1
+        ;;
+      --ts-tz)
+        in_opt_name=ts-tz;;
 
       # Non-option or option value
       *)
@@ -961,6 +977,12 @@ __bt2_complete() {
             __bt2_exclude_opts --output -w
             has_pretty_opt=1
             is_convert_cmd=1
+            ;;
+          ts-tz)
+            __bt2_exclude_opts --ts-tz \
+              --clock-cycles --clock-date --clock-gmt --clock-seconds
+            is_convert_cmd=1
+            has_non_output_convert_opt=1
             ;;
 
           # Non-option argument
@@ -1178,6 +1200,11 @@ __bt2_complete() {
     return
   elif [[ $in_opt_name == output ]] || compset -P --output=; then
     _files
+    return
+  elif [[ $in_opt_name == ts-tz ]] || compset -P --ts-tz=; then
+    _alternative \
+      'special-time-zones:special time zone:((local\:"local time zone (default)" utc\:UTC))' \
+      'time-zones:time zone identifier:__bt2_complete_tz'
     return
   fi
 

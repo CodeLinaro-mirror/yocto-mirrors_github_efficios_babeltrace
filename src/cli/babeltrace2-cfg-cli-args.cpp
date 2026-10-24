@@ -815,6 +815,7 @@ enum
     OPT_RUN_ARGS_0,
     OPT_STREAM_INTERSECTION,
     OPT_TIMERANGE,
+    OPT_TS_TZ,
     OPT_VERBOSE,
     OPT_VERSION,
 };
@@ -2345,8 +2346,6 @@ static void print_convert_usage(FILE *fp)
     fprintf(fp, "\n");
     fprintf(fp, "      --clock-cycles                Print timestamps in clock cycles\n");
     fprintf(fp, "      --clock-date                  Print timestamp dates\n");
-    fprintf(fp, "      --clock-gmt                   Print and parse timestamps in the GMT\n");
-    fprintf(fp, "                                    time zone instead of the local time zone\n");
     fprintf(fp, "      --clock-seconds               Print the timestamps as `SEC.NS` instead\n");
     fprintf(fp, "                                    of `hh:mm:ss.nnnnnnnnn`\n");
     fprintf(fp, "      --color=(never | auto | always)\n");
@@ -2376,6 +2375,13 @@ static void print_convert_usage(FILE *fp)
     fprintf(fp, "                                    BEGIN,END or [BEGIN,END] (literally `[` and\n");
     fprintf(fp, "                                    `]`) (see the format of BEGIN/END below)\n");
     fprintf(fp, "\n");
+    fprintf(fp, "Implicit `sink.text.pretty` and `filter.utils.trimmer` component options:\n");
+    fprintf(fp, "\n");
+    fprintf(fp, "      --ts-tz=TZ                    Print timestamps and parse BEGIN and END\n");
+    fprintf(fp, "                                    in the time zone TZ: `local` (default),\n");
+    fprintf(fp, "                                    `utc`, `+HH:MM`, `-HH:MM`, or a time zone\n");
+    fprintf(fp, "                                    identifier like `Asia/Jakarta`\n");
+    fprintf(fp, "\n");
     fprintf(fp, "Implicit `filter.lttng-utils.debug-info` component options:\n");
     fprintf(fp, "\n");
     fprintf(fp, "      --debug-info                  Create an implicit\n");
@@ -2391,6 +2397,7 @@ static void print_convert_usage(FILE *fp)
     fprintf(fp, "\n");
     fprintf(fp, "Legacy options that still work:\n");
     fprintf(fp, "\n");
+    fprintf(fp, "      --clock-gmt                   Same as `--ts-tz=utc`\n");
     fprintf(fp, "  -i, --input-format=(ctf | lttng-live)\n");
     fprintf(fp, "                                    `ctf`:\n");
     fprintf(fp, "                                      Create an implicit `source.ctf.fs`\n");
@@ -2467,6 +2474,7 @@ static const struct argpar_opt_descr convert_options[] = {
     {OPT_RUN_ARGS_0, '\0', "run-args-0", false},
     {OPT_STREAM_INTERSECTION, '\0', "stream-intersection", false},
     {OPT_TIMERANGE, '\0', "timerange", true},
+    {OPT_TS_TZ, '\0', "ts-tz", true},
     {OPT_VERBOSE, 'v', "verbose", false},
     ARGPAR_OPT_DESCR_SENTINEL};
 
@@ -2804,6 +2812,47 @@ static int bt_value_to_cli_param_value_append(const bt_value *value, GString *bu
             }
         }
         g_string_append_c(buf, ']');
+        break;
+    }
+    case BT_VALUE_TYPE_MAP:
+    {
+        /*
+         * Sort the keys to make the resulting string
+         * deterministic.
+         */
+        GPtrArray *keys = g_ptr_array_new();
+
+        bt_value_map_foreach_entry_const(
+            value,
+            [](const char *key, const bt_value *, void *data) {
+                g_ptr_array_add(static_cast<GPtrArray *>(data), const_cast<char *>(key));
+                return BT_VALUE_MAP_FOREACH_ENTRY_CONST_FUNC_STATUS_OK;
+            },
+            keys);
+        g_ptr_array_sort(keys, [](gconstpointer a, gconstpointer b) {
+            return strcmp(*static_cast<const char * const *>(a),
+                          *static_cast<const char * const *>(b));
+        });
+        g_string_append_c(buf, '{');
+
+        for (guint i = 0; i < keys->len; i++) {
+            const auto key = static_cast<const char *>(g_ptr_array_index(keys, i));
+
+            if (i > 0) {
+                g_string_append(buf, ", ");
+            }
+
+            g_string_append_printf(buf, "%s=", key);
+            ret = bt_value_to_cli_param_value_append(
+                bt_value_map_borrow_entry_value_const(value, key), buf);
+            if (ret) {
+                g_ptr_array_free(keys, TRUE);
+                goto end;
+            }
+        }
+
+        g_string_append_c(buf, '}');
+        g_ptr_array_free(keys, TRUE);
         break;
     }
     default:
@@ -3392,6 +3441,16 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
     gchar *ctf_fs_source_clock_class_offset_arg = NULL;
     gchar *ctf_fs_source_clock_class_offset_ns_arg = NULL;
 
+    /* Argument of --ts-tz, if any */
+    gchar *ts_tz_arg = NULL;
+
+    /* Name of the first legacy timestamp format option, if any */
+    const char *legacy_clock_opt_name = NULL;
+
+    /* `ts-format` parameters of the implicit components */
+    bt_value *pretty_ts_format_val = NULL;
+    bt_value *trimmer_ts_format_val = NULL;
+
     if (argc < 1) {
         print_convert_usage(stdout);
         status = BT_CONFIG_CLI_ARGS_STATUS_INFO_ONLY;
@@ -3733,6 +3792,7 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
             case OPT_RUN_ARGS_0:
             case OPT_STREAM_INTERSECTION:
             case OPT_TIMERANGE:
+            case OPT_TS_TZ:
             case OPT_VERBOSE:
                 /* Ignore in this pass */
                 break;
@@ -3859,10 +3919,20 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
         case OPT_CLOCK_CYCLES:
             append_implicit_component_param(&implicit_text_args, "clock-cycles", "yes");
             implicit_text_args.exists = true;
+
+            if (!legacy_clock_opt_name) {
+                legacy_clock_opt_name = "--clock-cycles";
+            }
+
             break;
         case OPT_CLOCK_DATE:
             append_implicit_component_param(&implicit_text_args, "clock-date", "yes");
             implicit_text_args.exists = true;
+
+            if (!legacy_clock_opt_name) {
+                legacy_clock_opt_name = "--clock-date";
+            }
+
             break;
         case OPT_CLOCK_FORCE_CORRELATE:
             ctf_fs_source_force_clock_class_unix_epoch_origin = true;
@@ -3871,6 +3941,11 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
             append_implicit_component_param(&implicit_text_args, "clock-gmt", "yes");
             append_implicit_component_param(&implicit_trimmer_args, "gmt", "yes");
             implicit_text_args.exists = true;
+
+            if (!legacy_clock_opt_name) {
+                legacy_clock_opt_name = "--clock-gmt";
+            }
+
             break;
         case OPT_CLOCK_OFFSET:
             if (ctf_fs_source_clock_class_offset_arg) {
@@ -3899,6 +3974,11 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
         case OPT_CLOCK_SECONDS:
             append_implicit_component_param(&implicit_text_args, "clock-seconds", "yes");
             implicit_text_args.exists = true;
+
+            if (!legacy_clock_opt_name) {
+                legacy_clock_opt_name = "--clock-seconds";
+            }
+
             break;
         case OPT_COLOR:
             implicit_text_args.exists = true;
@@ -4042,6 +4122,19 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
              */
             stream_intersection_mode = true;
             break;
+        case OPT_TS_TZ:
+            if (ts_tz_arg) {
+                BT_CLI_LOGE_APPEND_CAUSE("Duplicate --ts-tz option");
+                goto error;
+            }
+
+            ts_tz_arg = g_strdup(arg);
+            if (!ts_tz_arg) {
+                BT_CLI_LOGE_APPEND_CAUSE_OOM();
+                goto error;
+            }
+
+            break;
         case OPT_VERBOSE:
             *default_log_level = logging_level_min(*default_log_level, BT_LOG_INFO);
             break;
@@ -4065,6 +4158,59 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
     }
 
     set_auto_log_levels(default_log_level);
+
+    if (ts_tz_arg && legacy_clock_opt_name) {
+        BT_CLI_LOGE_APPEND_CAUSE("--ts-tz and %s options are mutually exclusive.",
+                                 legacy_clock_opt_name);
+        goto error;
+    }
+
+    /*
+     * Translate --ts-tz to the `ts-format` parameter of the implicit
+     * `sink.text.pretty` component.
+     *
+     * This doesn't make the implicit `sink.text.pretty` component
+     * exist.
+     */
+    if (ts_tz_arg) {
+        pretty_ts_format_val = bt_value_map_create();
+        if (!pretty_ts_format_val) {
+            BT_CLI_LOGE_APPEND_CAUSE_OOM();
+            goto error;
+        }
+
+        if (bt_value_map_insert_string_entry(pretty_ts_format_val, "tz", ts_tz_arg)) {
+            BT_CLI_LOGE_APPEND_CAUSE_OOM();
+            goto error;
+        }
+
+        if (append_parameter_to_args(implicit_text_args.extra_params, "ts-format",
+                                     pretty_ts_format_val)) {
+            goto error;
+        }
+    }
+
+    /*
+     * Translate --ts-tz to the `ts-format` parameter of the implicit
+     * `filter.utils.trimmer` component.
+     */
+    if (ts_tz_arg) {
+        trimmer_ts_format_val = bt_value_map_create();
+        if (!trimmer_ts_format_val) {
+            BT_CLI_LOGE_APPEND_CAUSE_OOM();
+            goto error;
+        }
+
+        if (bt_value_map_insert_string_entry(trimmer_ts_format_val, "tz", ts_tz_arg)) {
+            BT_CLI_LOGE_APPEND_CAUSE_OOM();
+            goto error;
+        }
+
+        if (append_parameter_to_args(implicit_trimmer_args.extra_params, "ts-format",
+                                     trimmer_ts_format_val)) {
+            goto error;
+        }
+    }
 
     /*
      * Legacy behaviour: --verbose used to make the `text` output
@@ -4579,6 +4725,9 @@ end:
 
     g_free(ctf_fs_source_clock_class_offset_arg);
     g_free(ctf_fs_source_clock_class_offset_ns_arg);
+    g_free(ts_tz_arg);
+    BT_VALUE_PUT_REF_AND_RESET(pretty_ts_format_val);
+    BT_VALUE_PUT_REF_AND_RESET(trimmer_ts_format_val);
 
     if (auto_disc_comp_name) {
         g_string_free(auto_disc_comp_name, TRUE);

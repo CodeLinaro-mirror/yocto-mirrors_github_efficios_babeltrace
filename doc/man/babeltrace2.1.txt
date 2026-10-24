@@ -4,7 +4,7 @@
 
 = babeltrace2(1)
 :manpagetype: program
-:revdate: 14 September 2019
+:revdate: 24 October 2026
 
 
 == NAME

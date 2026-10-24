@@ -39,6 +39,16 @@ $ babeltrace2 my-trace --timerange=22:55:43,22:55:46.967687564
 ----
 ====
 
+.Trim a CTF trace and pretty-print the events, with the trimming and event times in the time zone of the tracing system.
+====
+[role="term"]
+----
+$ babeltrace2 my-ctf-trace --ts-tz=Asia/Jakarta \
+                           --begin='2012-10-30 00:48:17' \
+                           --end='2012-10-30 00:48:18'
+----
+====
+
 .Trim a CTF trace, enable the stream intersection mode, and write a CTF trace.
 ====
 [role="term"]

@@ -2,7 +2,10 @@
 # SPDX-FileCopyrightText: 2025 EfficiOS Inc.
 # SPDX-License-Identifier: GPL-2.0-only
 
+import re
+
 import pytest
+import bt_tests_utils as btu
 import bt_tests_cli_utils as btu_cli
 
 
@@ -38,7 +41,8 @@ _END = "48:17.588680018"
 
 
 # Trims with `--begin` and/or `--end`, relative (time only) or absolute
-# (date and time), with either the GMT or the EST time zone.
+# (date and time), with either the GMT or the EST time zone, or with the
+# time zone of `--ts-tz` (which overrides the local time zone, EST).
 #
 # `begin` and `end` are `(hour, rest)` pairs, `hour` being a GMT hour.
 @pytest.mark.parametrize("absolute", [False, True], ids=["relative", "absolute"])
@@ -47,6 +51,17 @@ _END = "48:17.588680018"
     [
         pytest.param(["--clock-gmt"], None, 0, id="gmt"),
         pytest.param([], _EST_ENV, -5, id="est"),
+        pytest.param(["--ts-tz=local"], _EST_ENV, -5, id="ts-tz-local"),
+        pytest.param(["--ts-tz=utc"], _EST_ENV, 0, id="ts-tz-utc"),
+        pytest.param(["--ts-tz", "-04:00"], _EST_ENV, -4, id="ts-tz-neg-offset"),
+        pytest.param(["--ts-tz=+02:00"], _EST_ENV, 2, id="ts-tz-pos-offset"),
+        pytest.param(
+            ["--ts-tz=America/Toronto"],
+            _EST_ENV,
+            -4,
+            marks=btu.needs_zoneinfo("America/Toronto"),
+            id="ts-tz-id",
+        ),
     ],
 )
 @pytest.mark.parametrize(
@@ -90,7 +105,7 @@ def test_trimmer_range(
 
 
 # Trims with RFC 3339 `--begin` and/or `--end` times, of which the UTC
-# offset makes the time zone (`--clock-gmt`, EST) irrelevant.
+# offset makes the time zone (`--clock-gmt`, EST, `--ts-tz`) irrelevant.
 #
 # `begin` and `end` are `(hour, rest)` pairs, `hour` being a GMT hour.
 @pytest.mark.parametrize(
@@ -98,6 +113,7 @@ def test_trimmer_range(
     [
         pytest.param(["--clock-gmt"], None, id="gmt"),
         pytest.param([], _EST_ENV, id="est"),
+        pytest.param(["--ts-tz=+02:00"], _EST_ENV, id="ts-tz"),
     ],
 )
 @pytest.mark.parametrize(
@@ -166,6 +182,79 @@ def test_trimmer_rfc_3339_timerange(ctf_traces_dir, build_root_dir, brackets):
         )
         == 7
     )
+
+
+# Returns the line timestamps of `stdout` (between `[` and `]` at the
+# beginning of each line).
+def _line_timestamps(stdout):
+    return re.findall(r"^\[([^]]+)\]", stdout, re.MULTILINE)
+
+
+# Trims with `--begin` and `--end` times which an implicit
+# `sink.text.pretty` component prints with the timestamp format options
+# `fmt_args` and with the time zone options `tz_args` (`--ts-tz` or
+# `--clock-gmt`), which also apply to the implicit
+# `filter.utils.trimmer` component.
+@pytest.mark.parametrize(
+    "fmt_args",
+    [
+        pytest.param([], id="time"),
+    ],
+)
+@pytest.mark.parametrize(
+    "tz_args",
+    [
+        pytest.param(["--ts-tz=local"], id="ts-tz-local"),
+        pytest.param(["--ts-tz=utc"], id="ts-tz-utc"),
+        pytest.param(["--ts-tz=-04:00"], id="ts-tz-neg-offset"),
+        pytest.param(["--ts-tz=+09:00"], id="ts-tz-pos-offset"),
+        pytest.param(["--clock-gmt"], id="clock-gmt"),
+    ],
+)
+def test_trimmer_from_pretty(ctf_traces_dir, build_root_dir, fmt_args, tz_args):
+    trace_args = [
+        str(ctf_traces_dir / "1/succeed/wk-heartbeat-u"),
+        *fmt_args,
+        *tz_args,
+    ]
+    all_ts = _line_timestamps(
+        btu_cli.run_cli(
+            build_root_dir, trace_args, check=True, extra_env=_EST_ENV
+        ).stdout
+    )
+    begin = all_ts[5]
+    end = all_ts[12]
+    trimmed_ts = _line_timestamps(
+        btu_cli.run_cli(
+            build_root_dir,
+            trace_args + ["--begin", begin, "--end", end],
+            check=True,
+            extra_env=_EST_ENV,
+        ).stdout
+    )
+
+    # Same time zone and width: comparing strings compares times
+    assert trimmed_ts == [ts for ts in all_ts if begin <= ts <= end]
+    assert trimmed_ts[0] == begin
+    assert trimmed_ts[-1] == end
+
+
+# Makes sure `--ts-tz` reaches the implicit `filter.utils.trimmer`
+# component, even without an implicit `sink.text.pretty` component.
+def test_trimmer_ts_tz_invalid(ctf_traces_dir, build_root_dir):
+    result = btu_cli.run_cli(
+        build_root_dir,
+        [
+            str(ctf_traces_dir / "1/succeed/wk-heartbeat-u"),
+            "--output-format=dummy",
+            "--ts-tz=+25:00",
+            "--begin=17:48",
+        ],
+        check=False,
+        extra_env={"BABELTRACE_FLT_UTILS_TRIMMER_LOG_LEVEL": "E"},
+    )
+    assert result.returncode != 0
+    assert "Invalid `tz` entry of `ts-format` parameter" in result.stderr
 
 
 # Various format tests (using EST timezone). We sometimes apply a clock

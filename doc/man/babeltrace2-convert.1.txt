@@ -4,7 +4,7 @@
 
 = babeltrace2-convert(1)
 :manpagetype: command
-:revdate: 13 December 2024
+:revdate: 24 October 2026
 
 
 == NAME
@@ -316,6 +316,9 @@ There are many ways to create implicit components from options with the
   trimmer), specify the opt:--begin[], opt:--end[], or opt:--timerange[]
   option.
 +
+The opt:--ts-tz[] option also applies to the implicit
+compcls:filter.utils.trimmer[] component.
++
 Examples:
 +
 [role="term"]
@@ -366,8 +369,8 @@ command doesn't automatically create the implicit
 compcls:sink.text.pretty[] component.
 +
 The opt:--clock-cycles[], opt:--clock-date[], opt:--clock-gmt[],
-opt:--clock-seconds[], opt:--color[], opt:--fields[], opt:--names[], and
-opt:--no-delta[] options all apply to the implicit
+opt:--clock-seconds[], opt:--color[], opt:--fields[], opt:--names[],
+opt:--no-delta[], and opt:--ts-tz[] options all apply to the implicit
 compcls:sink.text.pretty[] component.
 +
 The opt:--output[] option without opt:--output-format[]=``ctf`` makes
@@ -669,6 +672,9 @@ The format of _TIME_ is one of:
 --
 include::common-trimmer-time-format.txt[]
 --
++
+The time zone of a date/time without a UTC offset is the one of the
+opt:--ts-tz[] option (local time zone by default).
 
 opt:-e[] _TIME_::
 opt:--end[]=_TIME_::
@@ -744,6 +750,8 @@ opt:--clock-cycles[]::
 +
 The manparam:sink.text.pretty[clock-cycles] parameter makes the component
 print the event time in clock cycles.
++
+This option is mutually exclusive with the opt:--ts-tz[] option.
 
 opt:--clock-date[]::
     Set the manparam:sink.text.pretty[clock-date] initialization
@@ -751,6 +759,8 @@ opt:--clock-date[]::
 +
 The manparam:sink.text.pretty[clock-date] parameter makes the component
 print the date and the time of events.
++
+This option is mutually exclusive with the opt:--ts-tz[] option.
 
 opt:--clock-gmt[]::
     Set the manparam:sink.text.pretty[clock-gmt] initialization parameter
@@ -758,6 +768,15 @@ opt:--clock-gmt[]::
 +
 The manparam:sink.text.pretty[clock-gmt] parameter makes the component
 not apply the local timezone to the printed times.
++
+This option also makes an implicit compcls:filter.utils.trimmer[]
+component, if any, parse the opt:--begin[] and opt:--end[] times in the
+GMT time zone (except RFC{nbsp}3339 date-times, which have their own
+UTC offset).
++
+Deprecated: use opt:--ts-tz[]=``utc`` instead.
++
+This option is mutually exclusive with the opt:--ts-tz[] option.
 
 opt:--clock-seconds[]::
     Set the manparam:sink.text.pretty[clock-seconds] initialization
@@ -765,6 +784,8 @@ opt:--clock-seconds[]::
 +
 The manparam:sink.text.pretty[clock-seconds] parameter makes the
 component print the event times in seconds since the Unix epoch.
++
+This option is mutually exclusive with the opt:--ts-tz[] option.
 
 opt:--color[]=_WHEN_::
     Set the manparam:sink.text.pretty[color] initialization parameter of
@@ -835,6 +856,57 @@ component doesn't print the duration since the last event on the line.
 
 
 === Shared options
+
+opt:--ts-tz[]=_TZ_::
+    Set the nlparam:tz[] entry of the
+    manparam:sink.text.pretty[ts-format] initialization parameter of
+    the implicit compcls:sink.text.pretty[] component, if any, and of
+    the manparam:filter.utils.trimmer[ts-format] initialization
+    parameter of the implicit compcls:filter.utils.trimmer[] component,
+    if any, to _TZ_.
++
+In other words, _TZ_ is the time zone in which the implicit
+compcls:sink.text.pretty[] component prints timestamps and in which the
+implicit compcls:filter.utils.trimmer[] component interprets the
+opt:--begin[] and opt:--end[] date/times without a UTC offset.
++
+The available values for _TZ_ are:
++
+--
+`local` (default)::
+    Local time zone of the system running the `convert` command,
+    honoring the `TZ` environment variable.
+
+`utc`::
+    UTC.
+
+`+HH:MM` or `-HH:MM`::
+    Fixed UTC offset.
+
+Time zone identifier::
+    Named time zone, typically an identifier of the
+    https://www.iana.org/time-zones[IANA time zone database] such
+    as `Asia/Vladivostok`.
++
+On Windows, a time zone identifier is a Windows time zone name such as
+`Eastern Standard Time`.
+--
++
+With the `local` time zone or a time zone identifier, the UTC offset
+honors daylight saving time, therefore it may change from one line to
+the next.
++
+Current LTTng tracers don't record the time zone of the tracing system:
+to express timestamps in this time zone, specify its identifier or UTC
+offset explicitly.
++
+This option doesn't force the sink component of the `convert` command to
+be an implicit compcls:sink.text.pretty[] component, nor does it create
+an implicit compcls:filter.utils.trimmer[] component.
++
+This option is mutually exclusive with the opt:--clock-cycles[],
+opt:--clock-date[], opt:--clock-gmt[], and opt:--clock-seconds[]
+options.
 
 opt:-w[] _PATH_::
 opt:--output[]=_PATH_::
