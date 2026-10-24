@@ -651,13 +651,14 @@ __bt2_complete() {
   __bt2_add_opts --debug-info-dir 'set where to find the debugging info'
   __bt2_add_switches --debug-info-full-path 'write the full paths to files in debugging info fields'
   __bt2_add_opts --debug-info-target-prefix 'prepend to the paths to executables recorded in the trace'
-  __bt2_add_switches --clock-cycles 'print the event record time in clock cycles'
-  __bt2_add_switches --clock-date 'print the date and the time of event records'
+  __bt2_add_switches --clock-cycles 'same as `--pretty-ts-format=cycles` (legacy)'
+  __bt2_add_switches --clock-date 'same as `--pretty-ts-format=date-time` (legacy)'
   __bt2_add_switches --clock-gmt 'same as `--ts-tz=utc` (legacy)'
-  __bt2_add_switches --clock-seconds 'print the event record times in seconds since Unix epoch'
+  __bt2_add_switches --clock-seconds 'same as `--pretty-ts-format=seconds-from-origin` (legacy)'
   __bt2_add_opts --fields 'print specific metadata fields'
   __bt2_add_opts --names 'print specific structures'
   __bt2_add_switches --no-delta 'do not print the duration since the last event record on the line'
+  __bt2_add_opts --pretty-ts-format 'set the format of the printed timestamps'
   __bt2_add_opts --output -w 'set the output path'
   __bt2_add_switches --run-args 'print the equivalent `run` arguments, space-separated'
   __bt2_add_switches --run-args-0 'print the equivalent `run` arguments, null-separated'
@@ -810,25 +811,28 @@ __bt2_complete() {
       --debug-info-target-prefix)
         in_opt_name=debug-info-target-prefix;;
       --clock-cycles)
-        __bt2_exclude_opts --clock-cycles --clock-seconds --clock-date --clock-gmt --ts-tz
+        __bt2_exclude_opts --clock-cycles --clock-seconds --clock-date --clock-gmt \
+          --pretty-ts-format --ts-tz
         has_pretty_opt=1
         is_convert_cmd=1
         has_non_output_convert_opt=1
         ;;
       --clock-seconds)
-        __bt2_exclude_opts --clock-seconds --clock-cycles --clock-date --ts-tz
+        __bt2_exclude_opts --clock-seconds --clock-cycles --clock-date \
+          --pretty-ts-format --ts-tz
         has_pretty_opt=1
         is_convert_cmd=1
         has_non_output_convert_opt=1
         ;;
       --clock-date)
-        __bt2_exclude_opts --clock-date --clock-cycles --clock-seconds --ts-tz
+        __bt2_exclude_opts --clock-date --clock-cycles --clock-seconds \
+          --pretty-ts-format --ts-tz
         has_pretty_opt=1
         is_convert_cmd=1
         has_non_output_convert_opt=1
         ;;
       --clock-gmt)
-        __bt2_exclude_opts --clock-gmt --clock-cycles --ts-tz
+        __bt2_exclude_opts --clock-gmt --clock-cycles --pretty-ts-format --ts-tz
         has_pretty_opt=1
         is_convert_cmd=1
         has_non_output_convert_opt=1
@@ -855,6 +859,15 @@ __bt2_complete() {
         is_convert_cmd=1
         has_non_output_convert_opt=1
         ;;
+      --pretty-ts-format=*)
+        __bt2_exclude_opts --pretty-ts-format \
+          --clock-cycles --clock-date --clock-gmt --clock-seconds
+        has_pretty_opt=1
+        is_convert_cmd=1
+        has_non_output_convert_opt=1
+        ;;
+      --pretty-ts-format)
+        in_opt_name=pretty-ts-format;;
       --output=*)
         __bt2_exclude_opts --output -w
         is_convert_cmd=1
@@ -969,6 +982,13 @@ __bt2_complete() {
             ;;
           names)
             __bt2_exclude_opts --names
+            has_pretty_opt=1
+            is_convert_cmd=1
+            has_non_output_convert_opt=1
+            ;;
+          pretty-ts-format)
+            __bt2_exclude_opts --pretty-ts-format \
+              --clock-cycles --clock-date --clock-gmt --clock-seconds
             has_pretty_opt=1
             is_convert_cmd=1
             has_non_output_convert_opt=1
@@ -1134,7 +1154,8 @@ __bt2_complete() {
       --color \
       --fields \
       --names \
-      --no-delta
+      --no-delta \
+      --pretty-ts-format
   fi
 
   # Add current component options when there's a current component
@@ -1197,6 +1218,18 @@ __bt2_complete() {
       'context[context scopes]' \
       'scope[scope]' \
       'header[header scopes]'
+    return
+  elif [[ $in_opt_name == pretty-ts-format ]] || compset -P --pretty-ts-format=; then
+    local -a pretty_ts_formats=(
+      'cycles:clock value, in cycles'
+      'seconds-from-origin:seconds since the origin of the clock'
+      'time:time of day (default)'
+      'date-time:date and time of day'
+      'rfc-3339:RFC 3339 date-time'
+      'metar:METAR observation time (UTC)'
+    )
+
+    _describe -V 'timestamp format' pretty_ts_formats
     return
   elif [[ $in_opt_name == output ]] || compset -P --output=; then
     _files

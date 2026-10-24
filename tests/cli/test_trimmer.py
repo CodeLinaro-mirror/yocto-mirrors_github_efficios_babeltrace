@@ -195,20 +195,25 @@ def _line_timestamps(stdout):
 # `fmt_args` and with the time zone options `tz_args` (`--ts-tz` or
 # `--clock-gmt`), which also apply to the implicit
 # `filter.utils.trimmer` component.
+#
+# `--pretty-ts-format` and `--clock-gmt` are mutually exclusive.
 @pytest.mark.parametrize(
-    "fmt_args",
+    ["fmt_args", "tz_args"],
     [
-        pytest.param([], id="time"),
-    ],
-)
-@pytest.mark.parametrize(
-    "tz_args",
-    [
-        pytest.param(["--ts-tz=local"], id="ts-tz-local"),
-        pytest.param(["--ts-tz=utc"], id="ts-tz-utc"),
-        pytest.param(["--ts-tz=-04:00"], id="ts-tz-neg-offset"),
-        pytest.param(["--ts-tz=+09:00"], id="ts-tz-pos-offset"),
-        pytest.param(["--clock-gmt"], id="clock-gmt"),
+        pytest.param(fmt_args, tz_args, id=f"{fmt_id}-{tz_id}")
+        for fmt_id, fmt_args in [
+            ("time", []),
+            ("date-time", ["--pretty-ts-format=date-time"]),
+            ("rfc-3339", ["--pretty-ts-format=rfc-3339"]),
+        ]
+        for tz_id, tz_args in [
+            ("ts-tz-local", ["--ts-tz=local"]),
+            ("ts-tz-utc", ["--ts-tz=utc"]),
+            ("ts-tz-neg-offset", ["--ts-tz=-04:00"]),
+            ("ts-tz-pos-offset", ["--ts-tz=+09:00"]),
+            ("clock-gmt", ["--clock-gmt"]),
+        ]
+        if not (fmt_args and tz_args == ["--clock-gmt"])
     ],
 )
 def test_trimmer_from_pretty(ctf_traces_dir, build_root_dir, fmt_args, tz_args):
@@ -237,6 +242,31 @@ def test_trimmer_from_pretty(ctf_traces_dir, build_root_dir, fmt_args, tz_args):
     assert trimmed_ts == [ts for ts in all_ts if begin <= ts <= end]
     assert trimmed_ts[0] == begin
     assert trimmed_ts[-1] == end
+
+
+# Makes sure that, with a `--pretty-ts-format` type to which the time
+# zone doesn't apply, `--ts-tz` still applies to the implicit
+# `filter.utils.trimmer` component.
+#
+# 13:48:17.588 at UTC-04:00 is 12:48:17.588 EST (see
+# test_trimmer_formats()).
+@pytest.mark.parametrize("fmt", ["cycles", "seconds-from-origin", "metar"])
+def test_trimmer_ts_tz_with_pretty_ts_format_without_tz(
+    ctf_traces_dir, build_root_dir, fmt
+):
+    assert (
+        _trimmed_event_count(
+            ctf_traces_dir,
+            build_root_dir,
+            [
+                f"--pretty-ts-format={fmt}",
+                "--ts-tz=-04:00",
+                "--begin=2012-10-29 13:48:17.588",
+            ],
+            _EST_ENV,
+        )
+        == 13
+    )
 
 
 # Makes sure `--ts-tz` reaches the implicit `filter.utils.trimmer`

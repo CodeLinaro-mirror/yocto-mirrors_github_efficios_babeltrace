@@ -809,6 +809,7 @@ enum
     OPT_OUTPUT_FORMAT,
     OPT_PARAMS,
     OPT_PLUGIN_PATH,
+    OPT_PRETTY_TS_FORMAT,
     OPT_RESET_BASE_PARAMS,
     OPT_RETRY_DURATION,
     OPT_RUN_ARGS,
@@ -2344,10 +2345,6 @@ static void print_convert_usage(FILE *fp)
     fprintf(fp, "\n");
     fprintf(fp, "Implicit `sink.text.pretty` component options:\n");
     fprintf(fp, "\n");
-    fprintf(fp, "      --clock-cycles                Print timestamps in clock cycles\n");
-    fprintf(fp, "      --clock-date                  Print timestamp dates\n");
-    fprintf(fp, "      --clock-seconds               Print the timestamps as `SEC.NS` instead\n");
-    fprintf(fp, "                                    of `hh:mm:ss.nnnnnnnnn`\n");
     fprintf(fp, "      --color=(never | auto | always)\n");
     fprintf(fp, "                                    Never, automatically, or always emit\n");
     fprintf(fp, "                                    console color codes\n");
@@ -2363,6 +2360,10 @@ static void print_convert_usage(FILE *fp)
     fprintf(fp, "                                    consecutive events\n");
     fprintf(fp, "  -w, --output=PATH                 Write output text to PATH instead of\n");
     fprintf(fp, "                                    the standard output\n");
+    fprintf(fp, "      --pretty-ts-format=TYPE       Print timestamps using the format TYPE:\n");
+    fprintf(fp, "                                      `cycles`, `seconds-from-origin`,\n");
+    fprintf(fp, "                                      `time` (default), `date-time`,\n");
+    fprintf(fp, "                                      `rfc-3339`, or `metar`\n");
     fprintf(fp, "\n");
     fprintf(fp, "Implicit `filter.utils.trimmer` component options:\n");
     fprintf(fp, "\n");
@@ -2397,7 +2398,11 @@ static void print_convert_usage(FILE *fp)
     fprintf(fp, "\n");
     fprintf(fp, "Legacy options that still work:\n");
     fprintf(fp, "\n");
+    fprintf(fp, "      --clock-cycles                Same as `--pretty-ts-format=cycles`\n");
+    fprintf(fp, "      --clock-date                  Same as `--pretty-ts-format=date-time`\n");
     fprintf(fp, "      --clock-gmt                   Same as `--ts-tz=utc`\n");
+    fprintf(fp, "      --clock-seconds               Same as\n");
+    fprintf(fp, "                                    `--pretty-ts-format=seconds-from-origin`\n");
     fprintf(fp, "  -i, --input-format=(ctf | lttng-live)\n");
     fprintf(fp, "                                    `ctf`:\n");
     fprintf(fp, "                                      Create an implicit `source.ctf.fs`\n");
@@ -2469,6 +2474,7 @@ static const struct argpar_opt_descr convert_options[] = {
     {OPT_OUTPUT, 'w', "output", true},
     {OPT_OUTPUT_FORMAT, 'o', "output-format", true},
     {OPT_PARAMS, 'p', "params", true},
+    {OPT_PRETTY_TS_FORMAT, '\0', "pretty-ts-format", true},
     {OPT_RETRY_DURATION, '\0', "retry-duration", true},
     {OPT_RUN_ARGS, '\0', "run-args", false},
     {OPT_RUN_ARGS_0, '\0', "run-args-0", false},
@@ -3367,6 +3373,20 @@ enum convert_current_item_type
 };
 
 /*
+ * Returns whether or not the `tz` entry of the `ts-format`
+ * initialization parameter of a `sink.text.pretty` component applies
+ * to the timestamp format type `type` (its `type` entry).
+ *
+ * The time zone doesn't apply to a number of clock cycles, to a number
+ * of seconds from origin, and to a METAR observation time (always UTC).
+ */
+static bool pretty_ts_format_type_has_tz(const char *type)
+{
+    return strcmp(type, "cycles") != 0 && strcmp(type, "seconds-from-origin") != 0 &&
+           strcmp(type, "metar") != 0;
+}
+
+/*
  * Creates a Babeltrace config object from the arguments of a convert
  * command.
  */
@@ -3441,11 +3461,18 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
     gchar *ctf_fs_source_clock_class_offset_arg = NULL;
     gchar *ctf_fs_source_clock_class_offset_ns_arg = NULL;
 
-    /* Argument of --ts-tz, if any */
+    /* Arguments of --pretty-ts-format and --ts-tz, if any */
+    gchar *pretty_ts_format_arg = NULL;
     gchar *ts_tz_arg = NULL;
 
     /* Name of the first legacy timestamp format option, if any */
     const char *legacy_clock_opt_name = NULL;
+
+    /*
+     * `tz` entry of the `ts-format` parameter of the implicit
+     * `sink.text.pretty` component.
+     */
+    const char *pretty_ts_tz = NULL;
 
     /* `ts-format` parameters of the implicit components */
     bt_value *pretty_ts_format_val = NULL;
@@ -3788,6 +3815,7 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
             case OPT_NO_DELTA:
             case OPT_OUTPUT_FORMAT:
             case OPT_OUTPUT:
+            case OPT_PRETTY_TS_FORMAT:
             case OPT_RUN_ARGS:
             case OPT_RUN_ARGS_0:
             case OPT_STREAM_INTERSECTION:
@@ -4099,6 +4127,20 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
                 goto error;
             }
             break;
+        case OPT_PRETTY_TS_FORMAT:
+            if (pretty_ts_format_arg) {
+                BT_CLI_LOGE_APPEND_CAUSE("Duplicate --pretty-ts-format option");
+                goto error;
+            }
+
+            pretty_ts_format_arg = g_strdup(arg);
+            if (!pretty_ts_format_arg) {
+                BT_CLI_LOGE_APPEND_CAUSE_OOM();
+                goto error;
+            }
+
+            implicit_text_args.exists = true;
+            break;
         case OPT_RUN_ARGS:
             if (print_run_args_0) {
                 BT_CLI_LOGE_APPEND_CAUSE("Cannot specify --run-args and --run-args-0.");
@@ -4159,27 +4201,44 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
 
     set_auto_log_levels(default_log_level);
 
-    if (ts_tz_arg && legacy_clock_opt_name) {
-        BT_CLI_LOGE_APPEND_CAUSE("--ts-tz and %s options are mutually exclusive.",
+    if ((pretty_ts_format_arg || ts_tz_arg) && legacy_clock_opt_name) {
+        BT_CLI_LOGE_APPEND_CAUSE("%s and %s options are mutually exclusive.",
+                                 pretty_ts_format_arg ? "--pretty-ts-format" : "--ts-tz",
                                  legacy_clock_opt_name);
         goto error;
     }
 
     /*
-     * Translate --ts-tz to the `ts-format` parameter of the implicit
-     * `sink.text.pretty` component.
+     * With a --pretty-ts-format type to which the time zone doesn't
+     * apply, --ts-tz only applies to the implicit
+     * `filter.utils.trimmer` component.
+     */
+    if (!pretty_ts_format_arg || pretty_ts_format_type_has_tz(pretty_ts_format_arg)) {
+        pretty_ts_tz = ts_tz_arg;
+    }
+
+    /*
+     * Translate --pretty-ts-format and --ts-tz to the `ts-format`
+     * parameter of the implicit `sink.text.pretty` component.
      *
      * This doesn't make the implicit `sink.text.pretty` component
-     * exist.
+     * exist when there's only --ts-tz.
      */
-    if (ts_tz_arg) {
+    if (pretty_ts_format_arg || pretty_ts_tz) {
         pretty_ts_format_val = bt_value_map_create();
         if (!pretty_ts_format_val) {
             BT_CLI_LOGE_APPEND_CAUSE_OOM();
             goto error;
         }
 
-        if (bt_value_map_insert_string_entry(pretty_ts_format_val, "tz", ts_tz_arg)) {
+        if (pretty_ts_format_arg &&
+            bt_value_map_insert_string_entry(pretty_ts_format_val, "type", pretty_ts_format_arg)) {
+            BT_CLI_LOGE_APPEND_CAUSE_OOM();
+            goto error;
+        }
+
+        if (pretty_ts_tz &&
+            bt_value_map_insert_string_entry(pretty_ts_format_val, "tz", pretty_ts_tz)) {
             BT_CLI_LOGE_APPEND_CAUSE_OOM();
             goto error;
         }
@@ -4725,6 +4784,7 @@ end:
 
     g_free(ctf_fs_source_clock_class_offset_arg);
     g_free(ctf_fs_source_clock_class_offset_ns_arg);
+    g_free(pretty_ts_format_arg);
     g_free(ts_tz_arg);
     BT_VALUE_PUT_REF_AND_RESET(pretty_ts_format_val);
     BT_VALUE_PUT_REF_AND_RESET(trimmer_ts_format_val);

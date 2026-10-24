@@ -628,8 +628,8 @@ def test_legacy_ts_format_ignored_warning(
         ), warnings
 
 
-# Tests the `--ts-tz` option of the `convert` command, which sets the
-# `tz` entry of the `ts-format` parameter of the implicit
+# Tests the `--ts-tz` and `--pretty-ts-format` options of the `convert`
+# command, which set the `ts-format` parameter of the implicit
 # `sink.text.pretty` component.
 @pytest.mark.parametrize(
     ["opts", "expected"],
@@ -658,6 +658,55 @@ def test_legacy_ts_format_ignored_warning(
             ],
             marks=btu.needs_zoneinfo("America/Toronto"),
             id="tz-id",
+        ),
+        pytest.param(
+            ["--pretty-ts-format=rfc-3339", "--ts-tz=utc"],
+            [
+                "[2012-01-15T12:00:00.000000000Z] e: { v = 0xAB }",
+                "[2012-07-15T12:00:00.000000000Z] e: { v = 0xAB }",
+            ],
+            id="rfc-3339-utc",
+        ),
+        pytest.param(
+            ["--pretty-ts-format=rfc-3339", "--ts-tz", "-04:00"],
+            [
+                "[2012-01-15T08:00:00.000000000-04:00] e: { v = 0xAB }",
+                "[2012-07-15T08:00:00.000000000-04:00] e: { v = 0xAB }",
+            ],
+            id="rfc-3339-offset",
+        ),
+        pytest.param(
+            ["--pretty-ts-format=rfc-3339", "--ts-tz=America/Toronto"],
+            [
+                "[2012-01-15T07:00:00.000000000-05:00] e: { v = 0xAB }",
+                "[2012-07-15T08:00:00.000000000-04:00] e: { v = 0xAB }",
+            ],
+            marks=btu.needs_zoneinfo("America/Toronto"),
+            id="rfc-3339-tz-id",
+        ),
+        pytest.param(
+            ["--pretty-ts-format=date-time", "--ts-tz=+05:30"],
+            [
+                "[2012-01-15 17:30:00.000000000] e: { v = 0xAB }",
+                "[2012-07-15 17:30:00.000000000] e: { v = 0xAB }",
+            ],
+            id="date-time-offset",
+        ),
+        pytest.param(
+            ["--pretty-ts-format=seconds-from-origin"],
+            [
+                "[1326628800.000000000] e: { v = 0xAB }",
+                "[1342353600.000000000] e: { v = 0xAB }",
+            ],
+            id="seconds-from-origin",
+        ),
+        pytest.param(
+            ["--pretty-ts-format=metar"],
+            [
+                "[151200Z] e: { v = 0xAB }",
+                "[151200Z] e: { v = 0xAB }",
+            ],
+            id="metar",
         ),
     ],
 )

@@ -103,13 +103,31 @@ $ babeltrace2 ctf-trace1 ctf-trace2 ctf-trace3 --stream-intersection \
 ----
 ====
 
-.Pretty-print a CTF trace and traces from an explicit source component, with the event times shown in seconds since the Unix epoch.
+.Pretty-print a CTF trace and traces from an explicit source component, with the event times shown in seconds since the origin of the clock.
 ====
 [role="term"]
 ----
 $ babeltrace2 ctf-trace --component=src.my-plugin.my-src \
               --params=path=spec-trace,output-some-event-type=yes \
-              --clock-seconds
+              --pretty-ts-format=seconds-from-origin
+----
+====
+
+.Pretty-print a CTF trace with RFC{nbsp}3339 UTC event times.
+====
+[role="term"]
+----
+$ babeltrace2 /path/to/ctf/trace --pretty-ts-format=rfc-3339 \
+                                 --ts-tz=utc
+----
+====
+
+.Pretty-print a CTF trace with RFC{nbsp}3339 event times in the time zone of the tracing system, honoring daylight saving time.
+====
+[role="term"]
+----
+$ babeltrace2 /path/to/ctf/trace --pretty-ts-format=rfc-3339 \
+                                 --ts-tz=America/Toronto
 ----
 ====
 

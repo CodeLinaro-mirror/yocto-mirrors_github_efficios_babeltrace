@@ -370,8 +370,8 @@ compcls:sink.text.pretty[] component.
 +
 The opt:--clock-cycles[], opt:--clock-date[], opt:--clock-gmt[],
 opt:--clock-seconds[], opt:--color[], opt:--fields[], opt:--names[],
-opt:--no-delta[], and opt:--ts-tz[] options all apply to the implicit
-compcls:sink.text.pretty[] component.
+opt:--no-delta[], opt:--pretty-ts-format[], and opt:--ts-tz[]
+options all apply to the implicit compcls:sink.text.pretty[] component.
 +
 The opt:--output[] option without opt:--output-format[]=``ctf`` makes
 the implicit compcls:sink.text.pretty[] component write its content to a
@@ -675,6 +675,10 @@ include::common-trimmer-time-format.txt[]
 +
 The time zone of a date/time without a UTC offset is the one of the
 opt:--ts-tz[] option (local time zone by default).
++
+TIP: opt:--pretty-ts-format[]=``rfc-3339`` makes the implicit
+compcls:sink.text.pretty[] component print RFC{nbsp}3339 date-times:
+you can copy such a timestamp to set _TIME_.
 
 opt:-e[] _TIME_::
 opt:--end[]=_TIME_::
@@ -751,7 +755,10 @@ opt:--clock-cycles[]::
 The manparam:sink.text.pretty[clock-cycles] parameter makes the component
 print the event time in clock cycles.
 +
-This option is mutually exclusive with the opt:--ts-tz[] option.
+Deprecated: use opt:--pretty-ts-format[]=``cycles`` instead.
++
+This option is mutually exclusive with the opt:--pretty-ts-format[] and
+opt:--ts-tz[] options.
 
 opt:--clock-date[]::
     Set the manparam:sink.text.pretty[clock-date] initialization
@@ -760,7 +767,10 @@ opt:--clock-date[]::
 The manparam:sink.text.pretty[clock-date] parameter makes the component
 print the date and the time of events.
 +
-This option is mutually exclusive with the opt:--ts-tz[] option.
+Deprecated: use opt:--pretty-ts-format[]=``date-time`` instead.
++
+This option is mutually exclusive with the opt:--pretty-ts-format[] and
+opt:--ts-tz[] options.
 
 opt:--clock-gmt[]::
     Set the manparam:sink.text.pretty[clock-gmt] initialization parameter
@@ -776,16 +786,22 @@ UTC offset).
 +
 Deprecated: use opt:--ts-tz[]=``utc`` instead.
 +
-This option is mutually exclusive with the opt:--ts-tz[] option.
+This option is mutually exclusive with the opt:--pretty-ts-format[] and
+opt:--ts-tz[] options.
 
 opt:--clock-seconds[]::
     Set the manparam:sink.text.pretty[clock-seconds] initialization
     parameter of the component to true.
 +
 The manparam:sink.text.pretty[clock-seconds] parameter makes the
-component print the event times in seconds since the Unix epoch.
+component print the event times in seconds since the origin of the
+clock.
 +
-This option is mutually exclusive with the opt:--ts-tz[] option.
+Deprecated: use opt:--pretty-ts-format[]=``seconds-from-origin``
+instead.
++
+This option is mutually exclusive with the opt:--pretty-ts-format[] and
+opt:--ts-tz[] options.
 
 opt:--color[]=_WHEN_::
     Set the manparam:sink.text.pretty[color] initialization parameter of
@@ -853,6 +869,65 @@ opt:--no-delta[]::
 +
 When the manparam:sink.text.pretty[no-delta] parameter is true, the
 component doesn't print the duration since the last event on the line.
+
+opt:--pretty-ts-format[]=_TYPE_::
+    Set the nlparam:type[] entry of the
+    manparam:sink.text.pretty[ts-format] initialization parameter of
+    the component to _TYPE_.
++
+The available values for _TYPE_ are:
++
+--
+`cycles`::
+    Clock value, in cycles.
++
+Example: `00000001351532897587`
+
+`seconds-from-origin`::
+    Seconds since the origin of the clock.
++
+Example: `1351532897.587654321`
+
+`time` (default)::
+    Time of day.
++
+Example: `13:48:17.587654321`
+
+`date-time`::
+    Date and time of day.
++
+Example: `2012-10-29 13:48:17.587654321`
+
+`rfc-3339`::
+    https://datatracker.ietf.org/doc/html/rfc3339#section-5.6[RFC{nbsp}3339]
+    date-time.
++
+Examples:
++
+* `2012-10-29T17:48:17.587654321Z`
+* `2012-10-29T13:48:17.587654321-04:00`
+
+`metar`::
+    https://en.wikipedia.org/wiki/METAR[METAR] observation time (day of
+    the month, hour, and minute), always in UTC.
++
+Example: `291748Z`
++
+WARNING: Many consecutive lines can have the same timestamp with this
+format.
+--
++
+Use opt:--ts-tz[] to choose the time zone of the `time`,
+`date-time`, and `rfc-3339` formats.
++
+The time zone doesn't apply to the `cycles`, `seconds-from-origin`,
+and `metar` formats: with _TYPE_ set to one of those, the opt:--ts-tz[]
+option only applies to the implicit compcls:filter.utils.trimmer[]
+component.
++
+This option is mutually exclusive with the opt:--clock-cycles[],
+opt:--clock-date[], opt:--clock-gmt[], and opt:--clock-seconds[]
+options.
 
 
 === Shared options
