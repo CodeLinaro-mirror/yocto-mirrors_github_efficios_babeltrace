@@ -647,6 +647,7 @@ __bt2_complete() {
   __bt2_add_opts --begin 'set the trimming beginning time'
   __bt2_add_opts --end 'set the trimming end time'
   __bt2_add_opts --timerange 'set the trimming time range'
+  __bt2_add_opts --trimmer-ts-format 'set the required format of the trimming times'
   __bt2_add_switches --debug-info 'create a debugging info filter component'
   __bt2_add_opts --debug-info-dir 'set where to find the debugging info'
   __bt2_add_switches --debug-info-full-path 'write the full paths to files in debugging info fields'
@@ -786,6 +787,13 @@ __bt2_complete() {
         ;;
       --timerange)
         in_opt_name=timerange;;
+      --trimmer-ts-format=*)
+        __bt2_exclude_opts --trimmer-ts-format --clock-gmt
+        is_convert_cmd=1
+        has_non_output_convert_opt=1
+        ;;
+      --trimmer-ts-format)
+        in_opt_name=trimmer-ts-format;;
       --debug-info)
         __bt2_exclude_opts --debug-info
         is_convert_cmd=1
@@ -832,7 +840,8 @@ __bt2_complete() {
         has_non_output_convert_opt=1
         ;;
       --clock-gmt)
-        __bt2_exclude_opts --clock-gmt --clock-cycles --pretty-ts-format --ts-tz
+        __bt2_exclude_opts --clock-gmt --clock-cycles --pretty-ts-format \
+          --trimmer-ts-format --ts-tz
         has_pretty_opt=1
         is_convert_cmd=1
         has_non_output_convert_opt=1
@@ -961,6 +970,11 @@ __bt2_complete() {
             ;;
           timerange)
             __bt2_exclude_opts --timerange --begin --end
+            is_convert_cmd=1
+            has_non_output_convert_opt=1
+            ;;
+          trimmer-ts-format)
+            __bt2_exclude_opts --trimmer-ts-format --clock-gmt
             is_convert_cmd=1
             has_non_output_convert_opt=1
             ;;
@@ -1195,6 +1209,16 @@ __bt2_complete() {
     return
   elif [[ $in_opt_name == timerange ]] || compset -P --timerange=; then
     _message -e descriptions 'trimming time range (`BEGIN,END` format)'
+    return
+  elif [[ $in_opt_name == trimmer-ts-format ]] || compset -P --trimmer-ts-format=; then
+    local -a trimmer_ts_formats=(
+      'auto:any format (default)'
+      'date-time:date/time without a UTC offset'
+      'seconds-from-origin:seconds from origin'
+      'rfc-3339:RFC 3339 date-time'
+    )
+
+    _describe -V 'trimming time format' trimmer_ts_formats
     return
   elif [[ $in_opt_name == debug-info-dir ]] || compset -P --debug-info-dir=; then
     _files -/

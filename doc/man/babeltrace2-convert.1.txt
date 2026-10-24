@@ -316,8 +316,8 @@ There are many ways to create implicit components from options with the
   trimmer), specify the opt:--begin[], opt:--end[], or opt:--timerange[]
   option.
 +
-The opt:--ts-tz[] option also applies to the implicit
-compcls:filter.utils.trimmer[] component.
+The opt:--trimmer-ts-format[] and opt:--ts-tz[] options also apply to
+the implicit compcls:filter.utils.trimmer[] component.
 +
 Examples:
 +
@@ -673,6 +673,8 @@ The format of _TIME_ is one of:
 include::common-trimmer-time-format.txt[]
 --
 +
+To require a specific format, use the opt:--trimmer-ts-format[] option.
++
 The time zone of a date/time without a UTC offset is the one of the
 opt:--ts-tz[] option (local time zone by default).
 +
@@ -693,6 +695,42 @@ opt:--timerange[]=_BEGIN_,_END_::
     Equivalent to opt:--begin[]=_BEGIN_ and opt:--end[]=_END_.
 +
 You can also surround the whole argument with “`[`” and “`]`”.
+
+opt:--trimmer-ts-format[]=_TYPE_::
+    Set the nlparam:type[] entry of the
+    manparam:filter.utils.trimmer[ts-format] initialization parameter
+    of the component to _TYPE_.
++
+_TYPE_ is the format which the opt:--begin[] and opt:--end[] times
+_must_ have (see the opt:--begin[] option), one of:
++
+--
+`auto` (default)::
+    Any format: the component guesses it.
+
+`date-time`::
+    Date/time, without a UTC offset.
+
+`seconds-from-origin`::
+    Seconds from origin.
+
+`rfc-3339`::
+    RFC{nbsp}3339 date-time.
+--
++
+With a type other than `auto`, the component fails if the opt:--begin[]
+or opt:--end[] time has another format instead of possibly misreading
+it.
++
+A number of seconds from origin and an RFC{nbsp}3339 date-time are
+exact times: with _TYPE_ set to `seconds-from-origin` or `rfc-3339`, the
+opt:--ts-tz[] option only applies to the implicit
+compcls:sink.text.pretty[] component.
++
+You must also specify the opt:--begin[], opt:--end[], or
+opt:--timerange[] option.
++
+This option is mutually exclusive with the opt:--clock-gmt[] option.
 
 
 === Implicit compcls:filter.lttng-utils.debug-info[] component
@@ -786,8 +824,8 @@ UTC offset).
 +
 Deprecated: use opt:--ts-tz[]=``utc`` instead.
 +
-This option is mutually exclusive with the opt:--pretty-ts-format[] and
-opt:--ts-tz[] options.
+This option is mutually exclusive with the opt:--pretty-ts-format[],
+opt:--trimmer-ts-format[], and opt:--ts-tz[] options.
 
 opt:--clock-seconds[]::
     Set the manparam:sink.text.pretty[clock-seconds] initialization
@@ -974,6 +1012,10 @@ the next.
 Current LTTng tracers don't record the time zone of the tracing system:
 to express timestamps in this time zone, specify its identifier or UTC
 offset explicitly.
++
+With opt:--trimmer-ts-format[]=``seconds-from-origin`` or
+opt:--trimmer-ts-format[]=``rfc-3339`` (exact times), this option only
+applies to the implicit compcls:sink.text.pretty[] component.
 +
 This option doesn't force the sink component of the `convert` command to
 be an implicit compcls:sink.text.pretty[] component, nor does it create

@@ -816,6 +816,7 @@ enum
     OPT_RUN_ARGS_0,
     OPT_STREAM_INTERSECTION,
     OPT_TIMERANGE,
+    OPT_TRIMMER_TS_FORMAT,
     OPT_TS_TZ,
     OPT_VERBOSE,
     OPT_VERSION,
@@ -2375,6 +2376,9 @@ static void print_convert_usage(FILE *fp)
     fprintf(fp, "  -t, --timerange=TIMERANGE         Set conversion time range to TIMERANGE:\n");
     fprintf(fp, "                                    BEGIN,END or [BEGIN,END] (literally `[` and\n");
     fprintf(fp, "                                    `]`) (see the format of BEGIN/END below)\n");
+    fprintf(fp, "      --trimmer-ts-format=TYPE      Require BEGIN and END to have the format\n");
+    fprintf(fp, "                                    TYPE: `auto` (default), `date-time`,\n");
+    fprintf(fp, "                                    `seconds-from-origin`, or `rfc-3339`\n");
     fprintf(fp, "\n");
     fprintf(fp, "Implicit `sink.text.pretty` and `filter.utils.trimmer` component options:\n");
     fprintf(fp, "\n");
@@ -2480,6 +2484,7 @@ static const struct argpar_opt_descr convert_options[] = {
     {OPT_RUN_ARGS_0, '\0', "run-args-0", false},
     {OPT_STREAM_INTERSECTION, '\0', "stream-intersection", false},
     {OPT_TIMERANGE, '\0', "timerange", true},
+    {OPT_TRIMMER_TS_FORMAT, '\0', "trimmer-ts-format", true},
     {OPT_TS_TZ, '\0', "ts-tz", true},
     {OPT_VERBOSE, 'v', "verbose", false},
     ARGPAR_OPT_DESCR_SENTINEL};
@@ -3387,6 +3392,19 @@ static bool pretty_ts_format_type_has_tz(const char *type)
 }
 
 /*
+ * Returns whether or not the `tz` entry of the `ts-format`
+ * initialization parameter of a `filter.utils.trimmer` component
+ * applies to the timestamp format type `type` (its `type` entry).
+ *
+ * The time zone doesn't apply to a number of seconds from origin and to
+ * an RFC 3339 date-time, which are exact times.
+ */
+static bool trimmer_ts_format_type_has_tz(const char *type)
+{
+    return strcmp(type, "seconds-from-origin") != 0 && strcmp(type, "rfc-3339") != 0;
+}
+
+/*
  * Creates a Babeltrace config object from the arguments of a convert
  * command.
  */
@@ -3461,18 +3479,26 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
     gchar *ctf_fs_source_clock_class_offset_arg = NULL;
     gchar *ctf_fs_source_clock_class_offset_ns_arg = NULL;
 
-    /* Arguments of --pretty-ts-format and --ts-tz, if any */
+    /*
+     * Arguments of --pretty-ts-format, --trimmer-ts-format, and
+     * --ts-tz, if any.
+     */
     gchar *pretty_ts_format_arg = NULL;
+    gchar *trimmer_ts_format_arg = NULL;
     gchar *ts_tz_arg = NULL;
 
     /* Name of the first legacy timestamp format option, if any */
     const char *legacy_clock_opt_name = NULL;
 
+    /* Whether or not --clock-gmt is specified */
+    bool clock_gmt = false;
+
     /*
-     * `tz` entry of the `ts-format` parameter of the implicit
-     * `sink.text.pretty` component.
+     * `tz` entries of the `ts-format` parameters of the implicit
+     * `sink.text.pretty` and `filter.utils.trimmer` components.
      */
     const char *pretty_ts_tz = NULL;
+    const char *trimmer_ts_tz = NULL;
 
     /* `ts-format` parameters of the implicit components */
     bt_value *pretty_ts_format_val = NULL;
@@ -3820,6 +3846,7 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
             case OPT_RUN_ARGS_0:
             case OPT_STREAM_INTERSECTION:
             case OPT_TIMERANGE:
+            case OPT_TRIMMER_TS_FORMAT:
             case OPT_TS_TZ:
             case OPT_VERBOSE:
                 /* Ignore in this pass */
@@ -3969,6 +3996,7 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
             append_implicit_component_param(&implicit_text_args, "clock-gmt", "yes");
             append_implicit_component_param(&implicit_trimmer_args, "gmt", "yes");
             implicit_text_args.exists = true;
+            clock_gmt = true;
 
             if (!legacy_clock_opt_name) {
                 legacy_clock_opt_name = "--clock-gmt";
@@ -4164,6 +4192,19 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
              */
             stream_intersection_mode = true;
             break;
+        case OPT_TRIMMER_TS_FORMAT:
+            if (trimmer_ts_format_arg) {
+                BT_CLI_LOGE_APPEND_CAUSE("Duplicate --trimmer-ts-format option");
+                goto error;
+            }
+
+            trimmer_ts_format_arg = g_strdup(arg);
+            if (!trimmer_ts_format_arg) {
+                BT_CLI_LOGE_APPEND_CAUSE_OOM();
+                goto error;
+            }
+
+            break;
         case OPT_TS_TZ:
             if (ts_tz_arg) {
                 BT_CLI_LOGE_APPEND_CAUSE("Duplicate --ts-tz option");
@@ -4209,12 +4250,38 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
     }
 
     /*
+     * --trimmer-ts-format is an option of the implicit
+     * `filter.utils.trimmer` component, which is useless without a
+     * beginning or end time.
+     */
+    if (trimmer_ts_format_arg && !implicit_trimmer_args.exists) {
+        BT_CLI_LOGE_APPEND_CAUSE(
+            "--trimmer-ts-format option requires --begin, --end, or --timerange.");
+        goto error;
+    }
+
+    if (trimmer_ts_format_arg && clock_gmt) {
+        BT_CLI_LOGE_APPEND_CAUSE(
+            "--trimmer-ts-format and --clock-gmt options are mutually exclusive.");
+        goto error;
+    }
+
+    /*
      * With a --pretty-ts-format type to which the time zone doesn't
      * apply, --ts-tz only applies to the implicit
      * `filter.utils.trimmer` component.
      */
     if (!pretty_ts_format_arg || pretty_ts_format_type_has_tz(pretty_ts_format_arg)) {
         pretty_ts_tz = ts_tz_arg;
+    }
+
+    /*
+     * With a --trimmer-ts-format type to which the time zone doesn't
+     * apply, --ts-tz only applies to the implicit `sink.text.pretty`
+     * component.
+     */
+    if (!trimmer_ts_format_arg || trimmer_ts_format_type_has_tz(trimmer_ts_format_arg)) {
+        trimmer_ts_tz = ts_tz_arg;
     }
 
     /*
@@ -4250,17 +4317,24 @@ bt_config_convert_from_args(int argc, const char *argv[], struct bt_config **cfg
     }
 
     /*
-     * Translate --ts-tz to the `ts-format` parameter of the implicit
-     * `filter.utils.trimmer` component.
+     * Translate --trimmer-ts-format and --ts-tz to the `ts-format`
+     * parameter of the implicit `filter.utils.trimmer` component.
      */
-    if (ts_tz_arg) {
+    if (trimmer_ts_format_arg || trimmer_ts_tz) {
         trimmer_ts_format_val = bt_value_map_create();
         if (!trimmer_ts_format_val) {
             BT_CLI_LOGE_APPEND_CAUSE_OOM();
             goto error;
         }
 
-        if (bt_value_map_insert_string_entry(trimmer_ts_format_val, "tz", ts_tz_arg)) {
+        if (trimmer_ts_format_arg && bt_value_map_insert_string_entry(trimmer_ts_format_val, "type",
+                                                                      trimmer_ts_format_arg)) {
+            BT_CLI_LOGE_APPEND_CAUSE_OOM();
+            goto error;
+        }
+
+        if (trimmer_ts_tz &&
+            bt_value_map_insert_string_entry(trimmer_ts_format_val, "tz", trimmer_ts_tz)) {
             BT_CLI_LOGE_APPEND_CAUSE_OOM();
             goto error;
         }
@@ -4785,6 +4859,7 @@ end:
     g_free(ctf_fs_source_clock_class_offset_arg);
     g_free(ctf_fs_source_clock_class_offset_ns_arg);
     g_free(pretty_ts_format_arg);
+    g_free(trimmer_ts_format_arg);
     g_free(ts_tz_arg);
     BT_VALUE_PUT_REF_AND_RESET(pretty_ts_format_val);
     BT_VALUE_PUT_REF_AND_RESET(trimmer_ts_format_val);

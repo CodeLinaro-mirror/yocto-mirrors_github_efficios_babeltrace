@@ -44,6 +44,9 @@ _END = "48:17.588680018"
 # (date and time), with either the GMT or the EST time zone, or with the
 # time zone of `--ts-tz` (which overrides the local time zone, EST).
 #
+# `--trimmer-ts-format=auto` and `--trimmer-ts-format=date-time` accept
+# such times and don't change their time zone.
+#
 # `begin` and `end` are `(hour, rest)` pairs, `hour` being a GMT hour.
 @pytest.mark.parametrize("absolute", [False, True], ids=["relative", "absolute"])
 @pytest.mark.parametrize(
@@ -61,6 +64,21 @@ _END = "48:17.588680018"
             -4,
             marks=btu.needs_zoneinfo("America/Toronto"),
             id="ts-tz-id",
+        ),
+        pytest.param(
+            ["--trimmer-ts-format=auto"], _EST_ENV, -5, id="trimmer-ts-format-auto"
+        ),
+        pytest.param(
+            ["--trimmer-ts-format=date-time"],
+            _EST_ENV,
+            -5,
+            id="trimmer-ts-format-date-time",
+        ),
+        pytest.param(
+            ["--trimmer-ts-format=date-time", "--ts-tz=+02:00"],
+            _EST_ENV,
+            2,
+            id="trimmer-ts-format-date-time-ts-tz",
         ),
     ],
 )
@@ -105,7 +123,8 @@ def test_trimmer_range(
 
 
 # Trims with RFC 3339 `--begin` and/or `--end` times, of which the UTC
-# offset makes the time zone (`--clock-gmt`, EST, `--ts-tz`) irrelevant.
+# offset makes the time zone (`--clock-gmt`, EST, `--ts-tz`) irrelevant,
+# possibly requiring this format with `--trimmer-ts-format`.
 #
 # `begin` and `end` are `(hour, rest)` pairs, `hour` being a GMT hour.
 @pytest.mark.parametrize(
@@ -114,6 +133,14 @@ def test_trimmer_range(
         pytest.param(["--clock-gmt"], None, id="gmt"),
         pytest.param([], _EST_ENV, id="est"),
         pytest.param(["--ts-tz=+02:00"], _EST_ENV, id="ts-tz"),
+        pytest.param(
+            ["--trimmer-ts-format=rfc-3339"], _EST_ENV, id="trimmer-ts-format"
+        ),
+        pytest.param(
+            ["--trimmer-ts-format=rfc-3339", "--ts-tz=+02:00"],
+            _EST_ENV,
+            id="trimmer-ts-format-ts-tz",
+        ),
     ],
 )
 @pytest.mark.parametrize(
@@ -217,10 +244,54 @@ def _line_timestamps(stdout):
     ],
 )
 def test_trimmer_from_pretty(ctf_traces_dir, build_root_dir, fmt_args, tz_args):
+    _check_trimmer_from_pretty(ctf_traces_dir, build_root_dir, fmt_args + tz_args)
+
+
+# Like test_trimmer_from_pretty(), but also requiring the format
+# `trimmer_ts_format` of the `--begin` and `--end` times with
+# `--trimmer-ts-format`.
+@pytest.mark.parametrize(
+    ["args", "trimmer_ts_format"],
+    [
+        pytest.param([], "date-time", id="time"),
+        pytest.param(
+            ["--pretty-ts-format=date-time", "--ts-tz=+09:00"],
+            "date-time",
+            id="date-time-ts-tz",
+        ),
+        pytest.param(["--pretty-ts-format=rfc-3339"], "rfc-3339", id="rfc-3339"),
+        pytest.param(
+            ["--pretty-ts-format=rfc-3339", "--ts-tz=+09:00"],
+            "rfc-3339",
+            id="rfc-3339-ts-tz",
+        ),
+        pytest.param(
+            ["--pretty-ts-format=seconds-from-origin"],
+            "seconds-from-origin",
+            id="seconds-from-origin",
+        ),
+    ],
+)
+def test_trimmer_from_pretty_trimmer_ts_format(
+    ctf_traces_dir, build_root_dir, args, trimmer_ts_format
+):
+    _check_trimmer_from_pretty(
+        ctf_traces_dir,
+        build_root_dir,
+        args,
+        ["--trimmer-ts-format=" + trimmer_ts_format],
+    )
+
+
+# Checks that trimming with `--begin` and `--end` times which an
+# implicit `sink.text.pretty` component prints, both with the additional
+# arguments `args`, keeps the expected lines.
+#
+# `trim_args` are additional arguments for the trimming run only.
+def _check_trimmer_from_pretty(ctf_traces_dir, build_root_dir, args, trim_args=()):
     trace_args = [
         str(ctf_traces_dir / "1/succeed/wk-heartbeat-u"),
-        *fmt_args,
-        *tz_args,
+        *args,
     ]
     all_ts = _line_timestamps(
         btu_cli.run_cli(
@@ -232,7 +303,7 @@ def test_trimmer_from_pretty(ctf_traces_dir, build_root_dir, fmt_args, tz_args):
     trimmed_ts = _line_timestamps(
         btu_cli.run_cli(
             build_root_dir,
-            trace_args + ["--begin", begin, "--end", end],
+            trace_args + list(trim_args) + ["--begin", begin, "--end", end],
             check=True,
             extra_env=_EST_ENV,
         ).stdout
@@ -285,6 +356,38 @@ def test_trimmer_ts_tz_invalid(ctf_traces_dir, build_root_dir):
     )
     assert result.returncode != 0
     assert "Invalid `tz` entry of `ts-format` parameter" in result.stderr
+
+
+# Makes sure the implicit `filter.utils.trimmer` component refuses a
+# `--begin` time which doesn't have the format of `--trimmer-ts-format`.
+@pytest.mark.parametrize(
+    ["ts_format", "begin"],
+    [
+        pytest.param("date-time", "2012-10-29T17:48:17Z", id="date-time-rfc-3339"),
+        pytest.param("date-time", "1351532897", id="date-time-sec"),
+        pytest.param("seconds-from-origin", "17:48:17", id="sec-time"),
+        pytest.param("seconds-from-origin", "2012-10-29 17:48:17", id="sec-date-time"),
+        pytest.param("rfc-3339", "2012-10-29 17:48:17", id="rfc-3339-date-time"),
+        pytest.param("rfc-3339", "1351532897", id="rfc-3339-sec"),
+    ],
+)
+def test_trimmer_ts_format_mismatch(ctf_traces_dir, build_root_dir, ts_format, begin):
+    result = btu_cli.run_cli(
+        build_root_dir,
+        [
+            str(ctf_traces_dir / "1/succeed/wk-heartbeat-u"),
+            "--output-format=dummy",
+            "--trimmer-ts-format=" + ts_format,
+            "--begin=" + begin,
+        ],
+        check=False,
+        extra_env={"BABELTRACE_FLT_UTILS_TRIMMER_LOG_LEVEL": "E"},
+    )
+    assert result.returncode != 0
+    assert (
+        "Invalid `{}` format (`type` entry of `ts-format` parameter)".format(ts_format)
+        in result.stderr
+    )
 
 
 # Various format tests (using EST timezone). We sometimes apply a clock

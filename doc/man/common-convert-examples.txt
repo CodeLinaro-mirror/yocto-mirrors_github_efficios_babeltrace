@@ -49,6 +49,17 @@ $ babeltrace2 my-ctf-trace --ts-tz=Asia/Jakarta \
 ----
 ====
 
+.Trim a CTF trace with an exact RFC{nbsp}3339 beginning time and pretty-print the events with RFC{nbsp}3339 event times in the time zone of the target system.
+====
+[role="term"]
+----
+$ babeltrace2 my-ctf-trace --trimmer-ts-format=rfc-3339 \
+                           --begin=2012-10-29T17:48:17.586558519Z \
+                           --pretty-ts-format=rfc-3339 \
+                           --ts-tz=Asia/Jakarta
+----
+====
+
 .Trim a CTF trace, enable the stream intersection mode, and write a CTF trace.
 ====
 [role="term"]
