@@ -498,11 +498,25 @@ bt_message *create_init_event_msg_from_line(
 		ti.tm_sec = sec;
 
 		ep_sec = bt_timegm(&ti);
-		if (ep_sec != (time_t) -1) {
-			ts = (uint64_t) ep_sec * NSEC_PER_SEC
-				+ (uint64_t) msec * NSEC_PER_MSEC;
+
+		/*
+		 * A clock snapshot can't represent a time before the
+		 * Unix epoch.
+		 *
+		 * This also covers a failing bt_timegm(), which
+		 * returns -1.
+		 */
+		if (ep_sec < 0) {
+			BT_COMP_LOGE_APPEND_CAUSE(dmesg_comp->self_comp,
+				"Cannot convert date/time to seconds from the Unix epoch "
+				"(date/time before the Unix epoch or out of range?): "
+				"year=%u, month=%u, day=%u, hour=%u, minute=%u, second=%lu",
+				year, mon, mday, hour, min, sec);
+			goto error;
 		}
 
+		ts = (uint64_t) ep_sec * NSEC_PER_SEC +
+			(uint64_t) msec * NSEC_PER_MSEC;
 		has_timestamp = true;
 	}
 

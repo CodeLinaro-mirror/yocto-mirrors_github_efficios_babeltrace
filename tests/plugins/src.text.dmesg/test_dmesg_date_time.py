@@ -8,6 +8,20 @@ import pytest
 import bt_tests_utils as btu
 
 
+# Returns a message iterator on a `src.text.dmesg` component reading
+# a file, within `tmp_path`, which contains a single line having the
+# `[ts]` timestamp.
+def _msg_iter(
+    dmesg_comp_cls: bt2._SourceComponentClassConst, tmp_path: pathlib.Path, ts: str
+) -> bt2.TraceCollectionMessageIterator:
+    path = tmp_path / "dmesg.txt"
+    path.write_text(f"[{ts}] meow\n")
+    return bt2.TraceCollectionMessageIterator(
+        [bt2.ComponentSpec(dmesg_comp_cls, params={"path": str(path)})],
+        plugin_set=btu.plugin_set(),
+    )
+
+
 # Tests the time of an event which a `src.text.dmesg` component creates
 # from a `[YYYY-MM-DD HH:MM:SS.MSEC]` timestamp (UTC).
 @pytest.mark.parametrize(
@@ -47,15 +61,36 @@ def test_date_time(
     ts: str,
     expected_ns: int,
 ):
-    path = tmp_path / "dmesg.txt"
-    path.write_text(f"[{ts}] meow\n")
-    msgs = bt2.TraceCollectionMessageIterator(
-        [bt2.ComponentSpec(dmesg_comp_cls, params={"path": str(path)})],
-        plugin_set=btu.plugin_set(),
-    )
+    msgs = _msg_iter(dmesg_comp_cls, tmp_path, ts)
 
     assert [
         msg.default_clock_snapshot.ns_from_origin
         for msg in msgs
         if isinstance(msg, bt2._EventMessageConst)
     ] == [expected_ns]
+
+
+# Tests that a `src.text.dmesg` component fails with a
+# `[YYYY-MM-DD HH:MM:SS.MSEC]` timestamp before the Unix epoch, which a
+# clock snapshot can't represent.
+@pytest.mark.parametrize(
+    "ts",
+    [
+        pytest.param("1969-12-31 23:59:59.000", id="one-sec-before-epoch"),
+        pytest.param("1900-01-01 00:00:00.000", id="1900"),
+    ],
+)
+def test_date_time_before_epoch(
+    dmesg_comp_cls: bt2._SourceComponentClassConst,
+    tmp_path: pathlib.Path,
+    ts: str,
+):
+    msgs = _msg_iter(dmesg_comp_cls, tmp_path, ts)
+
+    with pytest.raises(bt2._Error) as exc_info:
+        list(msgs)
+
+    assert any(
+        "Cannot convert date/time to seconds from the Unix epoch" in cause.message
+        for cause in exc_info.value
+    ), [cause.message for cause in exc_info.value]
