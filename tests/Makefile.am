@@ -1319,6 +1319,8 @@ utils_libtestcommon_la_SOURCES = \
 	utils/common.h \
 	utils/common.hpp
 
+noinst_PROGRAMS += c-common/test-safe
+
 noinst_PROGRAMS += cpp-common/test-c-string-view
 noinst_PROGRAMS += cpp-common/test-align
 noinst_PROGRAMS += cpp-common/test-data-len
@@ -1330,6 +1332,7 @@ cpp_common_test_parse_json_LDADD = $(CPP_COMMON_LIB_TEST_LDADD)
 
 noinst_PROGRAMS += cpp-common/test-prio-heap
 noinst_PROGRAMS += cpp-common/test-reverse-fixed-len-int-bits
+noinst_PROGRAMS += cpp-common/test-safe-ops
 
 noinst_PROGRAMS += cpp-common/test-uuid
 cpp_common_test_uuid_LDADD = \
