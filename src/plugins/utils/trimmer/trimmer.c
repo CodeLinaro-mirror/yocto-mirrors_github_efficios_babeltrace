@@ -284,7 +284,12 @@ int set_bound_ns_from_origin(struct trimmer_bound *bound,
 		result = mktime(&tm);
 	}
 
-	if (result < 0) {
+	/*
+	 * Reject a time before the Unix epoch (also covers a failing
+	 * bt_timegm() or mktime(), which return -1) as well as a number
+	 * of nanoseconds from origin which doesn't fit `int64_t`.
+	 */
+	if (result < 0 || (int64_t) result > (INT64_MAX - ns) / NS_PER_S) {
 		ret = -1;
 		goto end;
 	}
@@ -349,7 +354,11 @@ int set_bound_from_str(struct trimmer_comp *trimmer_comp,
 			nanoseconds = match_to_uint_ns(match_info, 7);
 		}
 
-		set_bound_ns_from_origin(bound, year, month, day, hours, minutes, seconds, nanoseconds, is_gmt);
+		ret = set_bound_ns_from_origin(bound, year, month, day, hours,
+			minutes, seconds, nanoseconds, is_gmt);
+		if (ret) {
+			goto cannot_convert;
+		}
 
 		goto end;
 	}
@@ -363,7 +372,11 @@ int set_bound_from_str(struct trimmer_comp *trimmer_comp,
 		month = match_to_uint(match_info, 2);
 		day = match_to_uint(match_info, 3);
 
-		set_bound_ns_from_origin(bound, year, month, day, 0, 0, 0, 0, is_gmt);
+		ret = set_bound_ns_from_origin(bound, year, month, day, 0, 0, 0,
+			0, is_gmt);
+		if (ret) {
+			goto cannot_convert;
+		}
 
 		goto end;
 	}
@@ -406,6 +419,21 @@ int set_bound_from_str(struct trimmer_comp *trimmer_comp,
 			nanoseconds = match_to_uint_ns(match_info, 3);
 		}
 
+		/*
+		 * Make sure that the number of nanoseconds from origin
+		 * fits `int64_t`.
+		 */
+		if (!bt_safe_to_mul_uint64(seconds, NS_PER_S) ||
+				!bt_safe_to_add_uint64(seconds * NS_PER_S,
+					nanoseconds) ||
+				seconds * NS_PER_S + nanoseconds > INT64_MAX) {
+			BT_COMP_LOGE_APPEND_CAUSE(trimmer_comp->self_comp,
+				"Number of nanoseconds from origin doesn't fit a "
+				"signed 64-bit integer: param=\"%s\"", str);
+			ret = -1;
+			goto end;
+		}
+
 		bound->ns_from_origin = seconds * NS_PER_S + nanoseconds;
 
 		if (is_neg) {
@@ -420,6 +448,13 @@ int set_bound_from_str(struct trimmer_comp *trimmer_comp,
 	BT_COMP_LOGE_APPEND_CAUSE(trimmer_comp->self_comp,
 		"Invalid date/time format: param=\"%s\"", str);
 	ret = -1;
+	goto end;
+
+cannot_convert:
+	BT_COMP_LOGE_APPEND_CAUSE(trimmer_comp->self_comp,
+		"Cannot convert date/time to nanoseconds from origin "
+		"(date/time before the Unix epoch or after 2262?): "
+		"param=\"%s\"", str);
 
 end:
 	g_match_info_free(match_info);
@@ -951,6 +986,15 @@ int set_trimmer_iterator_bound(struct trimmer_iterator *trimmer_it,
 	ret = set_bound_ns_from_origin(bound, tm.tm_year + 1900, tm.tm_mon + 1,
 		tm.tm_mday, bound->time.hour, bound->time.minute,
 		bound->time.second, bound->time.ns, is_gmt);
+	if (ret) {
+		BT_COMP_LOGE_APPEND_CAUSE(trimmer_comp->self_comp,
+			"Cannot convert date/time to nanoseconds from origin "
+			"(date/time before the Unix epoch or after 2262?): "
+			"date-time=%04d-%02d-%02d %02u:%02u:%02u.%09u",
+			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+			bound->time.hour, bound->time.minute,
+			bound->time.second, bound->time.ns);
+	}
 
 end:
 	return ret;
