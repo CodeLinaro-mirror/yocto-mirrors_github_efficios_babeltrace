@@ -40,6 +40,7 @@ norecursedirs = [
 ]
 markers = [
     "needs_lttng_utils_plugin: skip test if the `lttng-utils` plugin isn't available",
+    "needs_64_bit_time_t: skip test if `time_t` is a 32-bit integer",
 ]
 
 [tool.coverage.run]

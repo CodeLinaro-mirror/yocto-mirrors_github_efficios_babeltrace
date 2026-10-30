@@ -942,6 +942,7 @@ EXTRA_DIST = \
 	plugins/src.ctf.lttng-live/stored-values.json \
 	plugins/src.ctf.lttng-live/test_live.py \
 	plugins/src.ctf.lttng-live/test_query_live.py \
+	plugins/src.text.dmesg/test_dmesg_date_time.py \
 	python-plugin-provider/bt_plugin_test_empty.py \
 	python-plugin-provider/bt_plugin_test_no_register.py \
 	python-plugin-provider/bt_plugin_test_python_plugin_provider.py \

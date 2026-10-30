@@ -93,6 +93,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     _log_env_var("BT_TESTS_CC_BIN")
     _log_env_var("BT_TESTS_PYTHON_BIN")
     _log_env_var("BT_TESTS_PYTHON_CONFIG_BIN")
+    _log_env_var("BT_TESTS_SIZEOF_TIME_T")
     _log_env_var("BT_TESTS_SRCDIR")
     _log_env_var("DYLD_LIBRARY_PATH")
     _log_env_var("LD_LIBRARY_PATH")
@@ -114,6 +115,7 @@ def pytest_collection_modifyitems(
     config: pytest.Config, items: List[pytest.Item]
 ) -> None:
     lttng_utils_plugin_avail = btu.plugin_by_name("lttng-utils") is not None
+    time_t_is_32_bit = os.environ.get("BT_TESTS_SIZEOF_TIME_T") == "4"
 
     for item in items:
         # Handle `needs_lttng_utils_plugin` marker
@@ -124,6 +126,10 @@ def pytest_collection_modifyitems(
             item.add_marker(
                 pytest.mark.skip(reason="`lttng-utils` plugin isn't available")
             )
+
+        # Handle `needs_64_bit_time_t` marker
+        if item.get_closest_marker("needs_64_bit_time_t") and time_t_is_32_bit:
+            item.add_marker(pytest.mark.skip(reason="`time_t` is a 32-bit integer"))
 
 
 @pytest.fixture(scope="session")

@@ -413,6 +413,15 @@ AC_CHECK_LIB([c], [posix_fallocate],
   [AC_DEFINE_UNQUOTED([BABELTRACE_HAVE_POSIX_FALLOCATE], 1, [Has ‘posix_fallocate’ support.])]
 )
 
+# Require timegm(), except on MinGW where bt_timegm() uses _mkgmtime()
+AS_IF([test "x$MINGW32" != "xyes"], [
+  AC_CHECK_FUNC([timegm], [], [AC_MSG_ERROR([‘timegm()’ is required])])
+])
+
+# Size of `time_t`, which some tests need
+AC_CHECK_SIZEOF([time_t], [], [#include <time.h>])
+AC_SUBST([SIZEOF_TIME_T], [$ac_cv_sizeof_time_t])
+
 
 ##                 ##
 ## User variables  ##
