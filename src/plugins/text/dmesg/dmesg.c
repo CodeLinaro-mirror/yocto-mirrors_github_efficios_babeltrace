@@ -12,11 +12,13 @@
 
 #include "dmesg.h"
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
 #include "common/assert.h"
+#include "common/safe.h"
 #include <babeltrace2/babeltrace.h>
 #include "compat/utc.h"
 #include "compat/stdio.h"
@@ -26,7 +28,6 @@
 #define NSEC_PER_USEC 1000UL
 #define NSEC_PER_MSEC 1000000UL
 #define NSEC_PER_SEC 1000000000ULL
-#define USEC_PER_SEC 1000000UL
 
 struct dmesg_component;
 
@@ -453,6 +454,41 @@ void dmesg_finalize(bt_self_component_source *self_comp)
 		bt_self_component_source_as_self_component(self_comp)));
 }
 
+/*
+ * Sets `*ns` to `sec` × 10⁹ + `frac` × `ns_per_frac`.
+ *
+ * Returns false if the result doesn't fit `int64_t`: the library
+ * converts a clock snapshot (1 GHz clock class, no offset) to a signed
+ * 64-bit number of nanoseconds from origin.
+ */
+static
+bool ns_from_sec_frac(uint64_t sec, uint64_t frac, uint64_t ns_per_frac,
+		uint64_t *ns)
+{
+	uint64_t sec_ns, frac_ns, total_ns;
+
+	if (!bt_safe_to_mul_uint64(sec, NSEC_PER_SEC) ||
+			!bt_safe_to_mul_uint64(frac, ns_per_frac)) {
+		return false;
+	}
+
+	sec_ns = sec * NSEC_PER_SEC;
+	frac_ns = frac * ns_per_frac;
+
+	if (!bt_safe_to_add_uint64(sec_ns, frac_ns)) {
+		return false;
+	}
+
+	total_ns = sec_ns + frac_ns;
+
+	if (total_ns > (uint64_t) INT64_MAX) {
+		return false;
+	}
+
+	*ns = total_ns;
+	return true;
+}
+
 static
 bt_message *create_init_event_msg_from_line(
 		struct dmesg_msg_iter *msg_iter,
@@ -461,7 +497,7 @@ bt_message *create_init_event_msg_from_line(
 	bt_event *event;
 	bt_message *msg = NULL;
 	bool has_timestamp = false;
-	unsigned long sec, usec, msec;
+	uint64_t sec, usec, msec;
 	unsigned int year, mon, mday, hour, min;
 	uint64_t ts = 0;
 	int ret = 0;
@@ -474,16 +510,17 @@ bt_message *create_init_event_msg_from_line(
 	}
 
 	/* Extract time from input line */
-	if (sscanf(line, "[%lu.%lu] ", &sec, &usec) == 2) {
-		ts = (uint64_t) sec * USEC_PER_SEC + (uint64_t) usec;
+	if (sscanf(line, "[%" SCNu64 ".%" SCNu64 "] ", &sec, &usec) == 2) {
+		/* The clock class we use has a 1 GHz frequency */
+		if (!ns_from_sec_frac(sec, usec, NSEC_PER_USEC, &ts)) {
+			BT_COMP_LOGE_APPEND_CAUSE(dmesg_comp->self_comp,
+				"Timestamp is too large (nanoseconds don't fit a signed 64-bit integer): "
+				"sec=%" PRIu64 ", usec=%" PRIu64, sec, usec);
+			goto error;
+		}
 
-		/*
-		 * The clock class we use has a 1 GHz frequency: convert
-		 * from µs to ns.
-		 */
-		ts *= NSEC_PER_USEC;
 		has_timestamp = true;
-	} else if (sscanf(line, "[%u-%u-%u %u:%u:%lu.%lu] ",
+	} else if (sscanf(line, "[%u-%u-%u %u:%u:%" SCNu64 ".%" SCNu64 "] ",
 			&year, &mon, &mday, &hour, &min,
 			&sec, &msec) == 7) {
 		time_t ep_sec;
@@ -510,13 +547,20 @@ bt_message *create_init_event_msg_from_line(
 			BT_COMP_LOGE_APPEND_CAUSE(dmesg_comp->self_comp,
 				"Cannot convert date/time to seconds from the Unix epoch "
 				"(date/time before the Unix epoch or out of range?): "
-				"year=%u, month=%u, day=%u, hour=%u, minute=%u, second=%lu",
+				"year=%u, month=%u, day=%u, hour=%u, minute=%u, second=%" PRIu64,
 				year, mon, mday, hour, min, sec);
 			goto error;
 		}
 
-		ts = (uint64_t) ep_sec * NSEC_PER_SEC +
-			(uint64_t) msec * NSEC_PER_MSEC;
+		if (!ns_from_sec_frac(ep_sec, msec, NSEC_PER_MSEC, &ts)) {
+			BT_COMP_LOGE_APPEND_CAUSE(dmesg_comp->self_comp,
+				"Date/time is too far in the future (after 2262?): "
+				"year=%u, month=%u, day=%u, hour=%u, minute=%u, "
+				"second=%" PRIu64 ", msec=%" PRIu64,
+				year, mon, mday, hour, min, sec, msec);
+			goto error;
+		}
+
 		has_timestamp = true;
 	}
 

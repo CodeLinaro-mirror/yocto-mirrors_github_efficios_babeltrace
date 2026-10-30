@@ -53,6 +53,14 @@ def _msg_iter(
             id="no-leap-day-2100",
             marks=pytest.mark.needs_64_bit_time_t,
         ),
+        # Greatest time of which the number of nanoseconds fits a
+        # signed 64-bit integer
+        pytest.param(
+            "2262-04-11 23:47:16.854",
+            9_223_372_036_854_000_000,
+            id="max-64-bit-ns",
+            marks=pytest.mark.needs_64_bit_time_t,
+        ),
     ],
 )
 def test_date_time(
@@ -70,6 +78,17 @@ def test_date_time(
     ] == [expected_ns]
 
 
+# Asserts that iterating `msgs` fails with an error of which a cause
+# message contains `expected_msg`.
+def _assert_fails(msgs: bt2.TraceCollectionMessageIterator, expected_msg: str):
+    with pytest.raises(bt2._Error) as exc_info:
+        list(msgs)
+
+    assert any(expected_msg in cause.message for cause in exc_info.value), [
+        cause.message for cause in exc_info.value
+    ]
+
+
 # Tests that a `src.text.dmesg` component fails with a
 # `[YYYY-MM-DD HH:MM:SS.MSEC]` timestamp before the Unix epoch, which a
 # clock snapshot can't represent.
@@ -85,12 +104,85 @@ def test_date_time_before_epoch(
     tmp_path: pathlib.Path,
     ts: str,
 ):
+    _assert_fails(
+        _msg_iter(dmesg_comp_cls, tmp_path, ts),
+        "Cannot convert date/time to seconds from the Unix epoch",
+    )
+
+
+# Tests that a `src.text.dmesg` component fails with a
+# `[YYYY-MM-DD HH:MM:SS.MSEC]` timestamp of which the number of
+# nanoseconds from the Unix epoch doesn't fit a signed 64-bit integer.
+@pytest.mark.needs_64_bit_time_t
+@pytest.mark.parametrize(
+    "ts",
+    [
+        pytest.param("2262-04-11 23:47:16.855", id="one-msec-after-max"),
+        pytest.param("2262-04-11 23:47:17.000", id="one-sec-after-max"),
+        # Doesn't even fit an unsigned 64-bit integer
+        pytest.param("2600-01-01 00:00:00.000", id="2600"),
+    ],
+)
+def test_date_time_after_max(
+    dmesg_comp_cls: bt2._SourceComponentClassConst,
+    tmp_path: pathlib.Path,
+    ts: str,
+):
+    _assert_fails(
+        _msg_iter(dmesg_comp_cls, tmp_path, ts), "Date/time is too far in the future"
+    )
+
+
+# Tests the time of an event which a `src.text.dmesg` component creates
+# from a `[SEC.USEC]` timestamp.
+@pytest.mark.parametrize(
+    ["ts", "expected_ns"],
+    [
+        pytest.param("0.000000", 0, id="zero"),
+        pytest.param("0.000001", 1_000, id="one-usec"),
+        pytest.param("12.345678", 12_345_678_000, id="sec-usec"),
+        # Greatest time of which the number of nanoseconds fits a
+        # signed 64-bit integer
+        pytest.param(
+            "9223372036.854775", 9_223_372_036_854_775_000, id="max-64-bit-ns"
+        ),
+    ],
+)
+def test_sec_usec(
+    dmesg_comp_cls: bt2._SourceComponentClassConst,
+    tmp_path: pathlib.Path,
+    ts: str,
+    expected_ns: int,
+):
     msgs = _msg_iter(dmesg_comp_cls, tmp_path, ts)
 
-    with pytest.raises(bt2._Error) as exc_info:
-        list(msgs)
+    assert [
+        msg.default_clock_snapshot.ns_from_origin
+        for msg in msgs
+        if isinstance(msg, bt2._EventMessageConst)
+    ] == [expected_ns]
 
-    assert any(
-        "Cannot convert date/time to seconds from the Unix epoch" in cause.message
-        for cause in exc_info.value
-    ), [cause.message for cause in exc_info.value]
+
+# Tests that a `src.text.dmesg` component fails with a `[SEC.USEC]`
+# timestamp of which the number of nanoseconds doesn't fit a signed
+# 64-bit integer.
+@pytest.mark.parametrize(
+    "ts",
+    [
+        pytest.param("9223372036.854776", id="one-usec-after-max"),
+        pytest.param("9223372037.000000", id="one-sec-after-max"),
+        # Seconds × 10⁹ + microseconds × 10³ doesn't fit an unsigned
+        # 64-bit integer
+        pytest.param("18446744073.709552", id="sum-overflow"),
+        # Seconds × 10⁹ doesn't fit an unsigned 64-bit integer
+        pytest.param("18446744074.000000", id="sec-overflow"),
+        # Microseconds × 10³ doesn't fit an unsigned 64-bit integer
+        pytest.param("0.18446744073709552", id="usec-overflow"),
+    ],
+)
+def test_sec_usec_after_max(
+    dmesg_comp_cls: bt2._SourceComponentClassConst,
+    tmp_path: pathlib.Path,
+    ts: str,
+):
+    _assert_fails(_msg_iter(dmesg_comp_cls, tmp_path, ts), "Timestamp is too large")
