@@ -14,7 +14,6 @@
 #include "cpp-common/bt2/trace-ir.hpp"
 
 #include "catch2/catch_test_macros.hpp"
-#include "common.hpp"
 #include "utils/run-in.hpp"
 
 namespace {
@@ -858,10 +857,15 @@ TEST_CASE("Static BLOB field: write and read bytes")
             data[1] = 0x34;
             data[2] = 0x56;
             data[3] = 0x78;
-            CHECK(intFromByte(field.data()[0]) == 0x12);
-            CHECK(intFromByte(field.data()[1]) == 0x34);
-            CHECK(intFromByte(field.data()[2]) == 0x56);
-            CHECK(intFromByte(field.data()[3]) == 0x78);
+
+            /*
+             * Unary `+` promotes a byte so that Catch2 prints it as
+             * a number instead of as a raw character.
+             */
+            CHECK(+field.data()[0] == 0x12);
+            CHECK(+field.data()[1] == 0x34);
+            CHECK(+field.data()[2] == 0x56);
+            CHECK(+field.data()[3] == 0x78);
         },
         1);
 }
@@ -893,9 +897,9 @@ TEST_CASE("Dynamic BLOB field: set length and write bytes")
             data[0] = 0xab;
             data[1] = 0xcd;
             data[2] = 0xef;
-            CHECK(intFromByte(field.data()[0]) == 0xab);
-            CHECK(intFromByte(field.data()[1]) == 0xcd);
-            CHECK(intFromByte(field.data()[2]) == 0xef);
+            CHECK(+field.data()[0] == 0xab);
+            CHECK(+field.data()[1] == 0xcd);
+            CHECK(+field.data()[2] == 0xef);
         },
         1);
 }

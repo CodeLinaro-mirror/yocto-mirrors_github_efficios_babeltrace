@@ -13,7 +13,6 @@
 #include "catch2/catch_template_test_macros.hpp"
 #include "catch2/catch_test_macros.hpp"
 #include "catch2/generators/catch_generators.hpp"
-#include "common.hpp"
 
 TEST_CASE("`bt2c::nativeEndianness` matches the actual host endianness")
 {
@@ -36,8 +35,12 @@ TEMPLATE_TEST_CASE(
     const auto val = GENERATE(TestType {0}, TestType {0x12}, std::numeric_limits<TestType>::min(),
                               std::numeric_limits<TestType>::max());
 
-    CHECK(intFromByte(bt2c::littleEndianToNative(val)) == intFromByte(val));
-    CHECK(intFromByte(bt2c::bigEndianToNative(val)) == intFromByte(val));
+    /*
+     * Unary `+` promotes an 8-bit value so that Catch2 prints it as
+     * a number instead of as a raw character.
+     */
+    CHECK(+bt2c::littleEndianToNative(val) == +val);
+    CHECK(+bt2c::bigEndianToNative(val) == +val);
 }
 
 TEMPLATE_TEST_CASE_SIG(
