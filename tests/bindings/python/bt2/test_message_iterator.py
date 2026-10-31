@@ -6,6 +6,7 @@ import sys
 import bt2
 import utils
 import pytest
+import bt_tests_utils as btu
 
 
 # Straightforward sink that creates one input port `in` and consumes
@@ -272,10 +273,10 @@ def test_cfg_can_seek_forward_wrong_type():
 
     graph = _create_graph(MySrc, _SimpleSink)
 
-    with pytest.raises(bt2._Error) as ctx:
+    with btu.raises_bt2_error_with_causes(
+        "TypeError: 'int' is not a 'bool' object", first_only=True
+    ):
         graph.run()
-
-    assert "TypeError: 'int' is not a 'bool' object" in ctx.value[0].message
 
 
 def test_comp():
@@ -471,7 +472,7 @@ def test_error_in_iter_with_cycle_after_having_created_upstream_iter():
     graph.connect_ports(src_comp.output_ports["out"], flt_comp.input_ports["in"])
     graph.connect_ports(flt_comp.output_ports["out"], snk_comp.input_ports["in"])
 
-    with pytest.raises(bt2._Error, match="ValueError: woops"):
+    with btu.raises_bt2_error_with_causes("ValueError: woops"):
         graph.run()
 
 
@@ -662,10 +663,8 @@ def test_can_seek_beginning_user_error():
         user_seek_beginning=lambda: None,
     )
 
-    with pytest.raises(bt2._Error) as ctx:
+    with btu.raises_bt2_error_with_causes("ValueError: moustiquaire", first_only=True):
         graph.run_once()
-
-    assert "ValueError: moustiquaire" in ctx.value[0].message
 
 
 def test_can_seek_beginning_wrong_return_value():
@@ -689,11 +688,10 @@ def test_can_seek_beginning_wrong_return_value():
         user_seek_beginning=lambda: None,
     )
 
-    with pytest.raises(bt2._Error) as ctx:
+    with btu.raises_bt2_error_with_causes(
+        "TypeError: 'str' is not a 'bool' object", first_only=True
+    ):
         graph.run_once()
-
-    cause = ctx.value[0]
-    assert "TypeError: 'str' is not a 'bool' object" in cause.message
 
 
 def test_seek_beginning():
@@ -754,7 +752,7 @@ def test_seek_beginning_user_error():
 
     graph = _setup_seek_test(MySink, user_seek_beginning=_user_seek_beginning)
 
-    with pytest.raises(bt2._Error):
+    with btu.raises_bt2_error_with_causes("ValueError: ouch"):
         graph.run_once()
 
 
@@ -1043,10 +1041,8 @@ def test_can_seek_ns_from_origin_user_error():
         user_seek_ns_from_origin=lambda: None,
     )
 
-    with pytest.raises(bt2._Error) as ctx:
+    with btu.raises_bt2_error_with_causes("ValueError: Joutel", first_only=True):
         graph.run_once()
-
-    assert "ValueError: Joutel" in ctx.value[0].message
 
 
 def test_can_seek_ns_from_origin_wrong_return_value():
@@ -1070,10 +1066,10 @@ def test_can_seek_ns_from_origin_wrong_return_value():
         user_seek_ns_from_origin=lambda: None,
     )
 
-    with pytest.raises(bt2._Error) as ctx:
+    with btu.raises_bt2_error_with_causes(
+        "TypeError: 'str' is not a 'bool' object", first_only=True
+    ):
         graph.run_once()
-
-    assert "TypeError: 'str' is not a 'bool' object" in ctx.value[0].message
 
 
 def test_seek_ns_from_origin():

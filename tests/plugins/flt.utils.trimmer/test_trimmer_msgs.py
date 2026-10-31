@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Tuple, Callable, Optional
 
 import bt2
 import pytest
+import bt_tests_utils as btu
 
 
 # Data of the output port of a `_Src` component.
@@ -133,14 +134,6 @@ def _msg_summary(msg: bt2._MessageConst) -> Tuple[str, Optional[int]]:
     )
 
 
-# Asserts that one of the error causes of `exc_info` has a message
-# which contains `expected_msg`.
-def _assert_has_cause(exc_info: pytest.ExceptionInfo, expected_msg: str):
-    assert any(expected_msg in cause.message for cause in exc_info.value), [
-        cause.message for cause in exc_info.value
-    ]
-
-
 # Tests that, when the end time of the trimming time range is infinite,
 # a message iterator inactivity message doesn't end the
 # trimming operation.
@@ -197,12 +190,10 @@ def test_no_default_clock_class(
             msg_iter._create_stream_end_message(stream),
         ]
 
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(
+        "Unsupported message: stream class has no default clock class"
+    ):
         _trim(trimmer_comp_cls, _SrcPortData(create_msgs), trimmer_params)
-
-    _assert_has_cause(
-        exc_info, "Unsupported message: stream class has no default clock class"
-    )
 
 
 # Tests that a `flt.utils.trimmer` message iterator appends an error
@@ -224,14 +215,11 @@ def test_clock_snapshot_ns_from_origin_overflow(
             msg_iter._create_stream_end_message(stream),
         ]
 
-    with pytest.raises(bt2._Error) as exc_info:
-        _trim(trimmer_comp_cls, _SrcPortData(create_msgs), {})
-
-    _assert_has_cause(
-        exc_info,
+    with btu.raises_bt2_error_with_causes(
         "Cannot convert clock snapshot to nanoseconds from origin: "
-        "msg-type=Event, clock-snapshot-value=23",
-    )
+        "msg-type=Event, clock-snapshot-value=23"
+    ):
+        _trim(trimmer_comp_cls, _SrcPortData(create_msgs), {})
 
 
 # Tests that a `flt.utils.trimmer` message iterator appends an error
@@ -256,14 +244,11 @@ def test_end_clock_value_overflow(trimmer_comp_cls: bt2._FilterComponentClassCon
             msg_iter._create_stream_end_message(stream_fast),
         ]
 
-    with pytest.raises(bt2._Error) as exc_info:
-        _trim(trimmer_comp_cls, _SrcPortData(create_msgs), {"end": "100"})
-
-    _assert_has_cause(
-        exc_info,
+    with btu.raises_bt2_error_with_causes(
         "Cannot convert the end time of the trimming time range to a clock value: "
-        "end-ns-from-origin=100000000000, clock-class-name=fast",
-    )
+        "end-ns-from-origin=100000000000, clock-class-name=fast"
+    ):
+        _trim(trimmer_comp_cls, _SrcPortData(create_msgs), {"end": "100"})
 
 
 # Tests that a `flt.utils.trimmer` message iterator, having found the

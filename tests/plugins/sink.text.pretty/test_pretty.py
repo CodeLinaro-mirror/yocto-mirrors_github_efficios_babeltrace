@@ -17,26 +17,20 @@ def test_unconnected_port_raises(pretty_comp_cls):
     graph = bt2.Graph()
     graph.add_component(pretty_comp_cls, "snk")
 
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(
+        'Single input port is not connected: port-name="in"', first_only=True
+    ):
         graph.run()
-
-    assert (
-        'Single input port is not connected: port-name="in"'
-        in exc_info.value[0].message
-    )
 
 
 # Tests that the component appends an error cause which describes an
 # invalid initialization parameter.
 def test_invalid_param_error_cause(pretty_comp_cls):
-    with pytest.raises(bt2._Error) as exc_info:
-        bt2.Graph().add_component(pretty_comp_cls, "snk", params={"clock-gmt": "yes"})
-
-    assert any(
+    with btu.raises_bt2_error_with_causes(
         "Error validating parameter `clock-gmt`: unexpected type: "
-        "expected-type=BOOL, actual-type=STRING" in cause.message
-        for cause in exc_info.value
-    )
+        "expected-type=BOOL, actual-type=STRING"
+    ):
+        bt2.Graph().add_component(pretty_comp_cls, "snk", params={"clock-gmt": "yes"})
 
 
 # Tests that the component emits the right terminal color codes when
@@ -552,16 +546,11 @@ def test_ts_format_invalid(
 ):
     graph = bt2.Graph()
 
-    with pytest.raises(bt2._Error) as exc_info:
-        graph.add_component(pretty_comp_cls, "snk", params=params)
-
     if isinstance(expected_msgs, str):
         expected_msgs = [expected_msgs]
 
-    for expected_msg in expected_msgs:
-        assert any(expected_msg in cause.message for cause in exc_info.value), [
-            cause.message for cause in exc_info.value
-        ]
+    with btu.raises_bt2_error_with_causes(*expected_msgs):
+        graph.add_component(pretty_comp_cls, "snk", params=params)
 
 
 # Tests that the component warns about each legacy timestamp format

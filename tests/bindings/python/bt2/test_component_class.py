@@ -3,6 +3,7 @@
 
 import bt2
 import pytest
+import bt_tests_utils as btu
 
 
 class TestClassDef:
@@ -194,7 +195,7 @@ class TestUserQuery:
             def _user_query(cls, priv_query_exec, obj, params, method_obj):
                 raise ValueError
 
-        with pytest.raises(bt2._Error):
+        with btu.raises_bt2_error_with_causes("ValueError"):
             bt2.QueryExecutor(MySink, "obj", 23).query()
 
     def test_wrong_return_type(self):
@@ -206,7 +207,9 @@ class TestUserQuery:
             def _user_query(cls, priv_query_exec, obj, params, method_obj):
                 return ...
 
-        with pytest.raises(bt2._Error):
+        with btu.raises_bt2_error_with_causes(
+            "TypeError: cannot create value object from 'ellipsis' object"
+        ):
             bt2.QueryExecutor(MySink, "obj", 23).query()
 
     def test_params_none(self):

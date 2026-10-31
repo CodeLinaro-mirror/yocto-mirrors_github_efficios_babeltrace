@@ -16,10 +16,10 @@ def ctf_fs_comp_cls():
 
 
 def test_non_map_params(ctf_fs_comp_cls):
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(
+        "top-level is not a map value", first_only=True
+    ):
         bt2.QueryExecutor(ctf_fs_comp_cls, _QUERY_OBJECT).query()
-
-    assert "top-level is not a map value" in exc_info.value[0].message
 
 
 _CTF_VERSIONS = [pytest.param(1, id="ctf-1.8"), pytest.param(2, id="ctf-2")]
@@ -71,7 +71,9 @@ def test_clock_class_offset(
 def test_clock_class_offset_wrong_type(
     ctf_fs_comp_cls, ctf_traces_dir, ctf_version, param_name, param_value
 ):
-    with pytest.raises(bt2._Error):
+    with btu.raises_bt2_error_with_causes(
+        f"Error validating parameter `{param_name}`: unexpected type"
+    ):
         bt2.QueryExecutor(
             ctf_fs_comp_cls,
             _QUERY_OBJECT,

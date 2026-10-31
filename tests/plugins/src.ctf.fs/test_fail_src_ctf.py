@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
 import bt2
-import pytest
 import bt_tests_utils as btu
 
 
 def test_ctf_2_trace_with_mip_0(ctf_traces_dir, src_ctf_comp_cls, dummy_comp_cls):
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(
+        "CTF 2 traces are not supported with MIP version 0", first_only=True
+    ):
         btu.convert(
             bt2.ComponentSpec(
                 src_ctf_comp_cls,
@@ -16,7 +17,3 @@ def test_ctf_2_trace_with_mip_0(ctf_traces_dir, src_ctf_comp_cls, dummy_comp_cls
             btu.SinkComponentSpec(dummy_comp_cls),
             mip_version=0,
         )
-
-    assert (
-        "CTF 2 traces are not supported with MIP version 0" in exc_info.value[0].message
-    )

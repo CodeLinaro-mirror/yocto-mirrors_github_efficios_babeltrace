@@ -16,6 +16,7 @@ import platform
 import tempfile
 import textwrap
 import itertools
+import contextlib
 import subprocess
 from typing import (
     Any,
@@ -26,6 +27,8 @@ from typing import (
     Union,
     Iterable,
     Optional,
+    Sequence,
+    Generator,
 )
 
 import bt2
@@ -858,3 +861,36 @@ def needs_zoneinfo(*tz_ids: str) -> pytest.MarkDecorator:
         not all(zoneinfo_has(tz_id) for tz_id in tz_ids),
         reason=f"time zone database lacks {', '.join(tz_ids)}",
     )
+
+
+# Returns a context manager which expects (through pytest.raises()) its
+# body to raise a `bt2._Error` exception of which, for each message of
+# `expected_msgs`, at least one error cause message contains it.
+#
+# If `first_only` is true, then only considers the first error cause
+# (index 0, most specific) of the exception.
+#
+# The context manager yields the `pytest.ExceptionInfo` object of the
+# expected exception.
+@contextlib.contextmanager
+def raises_bt2_error_with_causes(
+    *expected_msgs: str,
+    first_only: bool = False,
+) -> Generator[pytest.ExceptionInfo[bt2._Error], None, None]:
+    __tracebackhide__ = True
+
+    with pytest.raises(bt2._Error) as exc_info:
+        yield exc_info
+
+    causes = typing.cast(Sequence[bt2._ErrorCause], exc_info.value)
+    msgs = [cause.message for cause in causes]
+    searched_msgs = msgs[:1] if first_only else msgs
+
+    for expected_msg in expected_msgs:
+        if not any(expected_msg in msg for msg in searched_msgs):
+            what = (
+                "First error cause message doesn't contain"
+                if first_only
+                else "No error cause message contains"
+            )
+            pytest.fail(f"{what} `{expected_msg}`: causes={msgs}")

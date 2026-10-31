@@ -508,16 +508,11 @@ def test_tz_invalid(
 ):
     graph = bt2.Graph()
 
-    with pytest.raises(bt2._Error) as exc_info:
-        graph.add_component(trimmer_comp_cls, "flt", params=params)
-
     if isinstance(expected_msgs, str):
         expected_msgs = [expected_msgs]
 
-    for expected_msg in expected_msgs:
-        assert any(expected_msg in cause.message for cause in exc_info.value), [
-            cause.message for cause in exc_info.value
-        ]
+    with btu.raises_bt2_error_with_causes(*expected_msgs):
+        graph.add_component(trimmer_comp_cls, "flt", params=params)
 
 
 # Error cause message of a date/time which the component can't convert
@@ -575,12 +570,8 @@ def test_tz_after_max(
         )
         return
 
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(expected_msg):
         _trimmed_events(trimmer_comp_cls, times, params)
-
-    assert any(expected_msg in cause.message for cause in exc_info.value), [
-        cause.message for cause in exc_info.value
-    ]
 
 
 # Tests RFC 3339 date-times as the `begin` and `end` parameters.
@@ -845,12 +836,8 @@ def test_rfc_3339_tz(trimmer_comp_cls, set_local_tz, params: Dict[str, Any]):
 def test_rfc_3339_invalid(trimmer_comp_cls, begin: str, expected_msg: str):
     graph = bt2.Graph()
 
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(f'{expected_msg}: param="{begin}"'):
         graph.add_component(trimmer_comp_cls, "flt", params={"begin": begin})
-
-    assert any(
-        f'{expected_msg}: param="{begin}"' in cause.message for cause in exc_info.value
-    ), [cause.message for cause in exc_info.value]
 
 
 # Number of seconds from origin of 12:00 and 13:30 UTC on 1 July 2024.
@@ -947,21 +934,17 @@ def test_ts_fmt_type_mismatch(
     val = _TYPE_FMT_BOUNDS[fmt][0]
     graph = bt2.Graph()
 
-    with pytest.raises(bt2._Error) as exc_info:
-        graph.add_component(
-            trimmer_comp_cls,
-            "flt",
-            params={"ts-format": {"type": ts_fmt_type}, param_name: val},
-        )
-
     expected_msg = (
         f"Invalid `{ts_fmt_type}` format (`type` entry of `ts-format` parameter): "
         f'param="{val}"'
     )
 
-    assert any(expected_msg in cause.message for cause in exc_info.value), [
-        cause.message for cause in exc_info.value
-    ]
+    with btu.raises_bt2_error_with_causes(expected_msg):
+        graph.add_component(
+            trimmer_comp_cls,
+            "flt",
+            params={"ts-format": {"type": ts_fmt_type}, param_name: val},
+        )
 
 
 # Tests that the component rejects invalid `type` entries of the
@@ -1001,9 +984,5 @@ def test_ts_fmt_type_invalid(
 ):
     graph = bt2.Graph()
 
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(expected_msg):
         graph.add_component(trimmer_comp_cls, "flt", params={"ts-format": ts_fmt})
-
-    assert any(expected_msg in cause.message for cause in exc_info.value), [
-        cause.message for cause in exc_info.value
-    ]

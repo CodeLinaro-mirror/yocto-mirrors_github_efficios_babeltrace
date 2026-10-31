@@ -3,6 +3,7 @@
 
 import bt2
 import pytest
+import bt_tests_utils as btu
 
 
 class _MyIter(bt2._UserMessageIterator):
@@ -262,7 +263,7 @@ def test_add_interrupter():
     )
     graph.add_interrupter(interrupter)
 
-    with pytest.raises(bt2._Error):
+    with btu.raises_bt2_error_with_causes("TypeError"):
         graph.run()
 
     interrupter.set()
@@ -272,7 +273,7 @@ def test_add_interrupter():
 
     interrupter.reset()
 
-    with pytest.raises(bt2._Error):
+    with btu.raises_bt2_error_with_causes("TypeError"):
         graph.run()
 
 
@@ -525,7 +526,7 @@ def test_run_error():
         graph.add_component(MySink, "sink").input_ports["in"],
     )
 
-    with pytest.raises(bt2._Error):
+    with btu.raises_bt2_error_with_causes("RuntimeError: error!"):
         graph.run()
 
 
@@ -585,7 +586,7 @@ def test_raise_in_comp_init():
         def _user_consume(self):
             raise bt2.Stop
 
-    with pytest.raises(bt2._Error):
+    with btu.raises_bt2_error_with_causes("ValueError: oops!"):
         bt2.Graph().add_component(MySink, "comp")
 
 
@@ -603,5 +604,5 @@ def test_raise_in_port_added_listener():
     graph = bt2.Graph()
     graph.add_port_added_listener(port_added_listener)
 
-    with pytest.raises(bt2._Error):
+    with btu.raises_bt2_error_with_causes("ValueError: oh noes!"):
         graph.add_component(MySink, "comp")

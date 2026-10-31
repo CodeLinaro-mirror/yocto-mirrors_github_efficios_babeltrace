@@ -3,6 +3,7 @@
 
 import bt2
 import pytest
+import bt_tests_utils as btu
 
 
 @pytest.mark.parametrize(
@@ -13,10 +14,10 @@ import pytest
     ],
 )
 def test_no_params(live_comp_cls, query_name):
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(
+        "top-level is not a map value", first_only=True
+    ):
         bt2.QueryExecutor(live_comp_cls, query_name).query()
-
-    assert "top-level is not a map value" in exc_info.value[0].message
 
 
 # Query the session list from a relay that returns a bad session list.
@@ -35,11 +36,14 @@ def test_list_sessions_bad_reply(
         **bad_v215_session_list_reply_case.server_options,
     )
 
-    with pytest.raises(bt2._Error) as exc_info:
-        bt2.QueryExecutor(live_comp_cls, "sessions", {"url": server.base_url}).query()
-
-    # Close server now to avoid waiting for the timeout since the
-    # client didn't disconnect cleanly.
-    server.close()
-
-    assert bad_v215_session_list_reply_case.expected_msg in str(exc_info.value)
+    with btu.raises_bt2_error_with_causes(
+        bad_v215_session_list_reply_case.expected_msg
+    ):
+        try:
+            bt2.QueryExecutor(
+                live_comp_cls, "sessions", {"url": server.base_url}
+            ).query()
+        finally:
+            # Close server now to avoid waiting for the timeout since
+            # the client didn't disconnect cleanly.
+            server.close()

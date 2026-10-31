@@ -58,16 +58,14 @@ def test_expect_failure(
     else:
         inputs = [str(trace_b_not_corrupted), str(trace_a_corrupted)]
 
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(
+        "At 48 bits: no event record class exists with ID 255 within the data stream",
+        first_only=True,
+    ):
         btu.convert(
             bt2.ComponentSpec(src_ctf_comp_cls, params={"inputs": inputs}),
             btu.SinkComponentSpec(dummy_comp_cls),
         )
-
-    assert (
-        "At 48 bits: no event record class exists with ID 255 within the data stream"
-        in exc_info.value[0].message
-    )
 
 
 # Trace with non-corrupted packet comes first lexicographically: expect

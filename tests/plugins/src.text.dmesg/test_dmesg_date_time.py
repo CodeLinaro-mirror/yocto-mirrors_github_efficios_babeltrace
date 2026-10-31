@@ -78,17 +78,6 @@ def test_date_time(
     ] == [expected_ns]
 
 
-# Asserts that iterating `msgs` fails with an error of which a cause
-# message contains `expected_msg`.
-def _assert_fails(msgs: bt2.TraceCollectionMessageIterator, expected_msg: str):
-    with pytest.raises(bt2._Error) as exc_info:
-        list(msgs)
-
-    assert any(expected_msg in cause.message for cause in exc_info.value), [
-        cause.message for cause in exc_info.value
-    ]
-
-
 # Tests that a `src.text.dmesg` component fails with a
 # `[YYYY-MM-DD HH:MM:SS.MSEC]` timestamp before the Unix epoch, which a
 # clock snapshot can't represent.
@@ -104,10 +93,10 @@ def test_date_time_before_epoch(
     tmp_path: pathlib.Path,
     ts: str,
 ):
-    _assert_fails(
-        _msg_iter(dmesg_comp_cls, tmp_path, ts),
-        "Cannot convert date/time to seconds from the Unix epoch",
-    )
+    with btu.raises_bt2_error_with_causes(
+        "Cannot convert date/time to seconds from the Unix epoch"
+    ):
+        list(_msg_iter(dmesg_comp_cls, tmp_path, ts))
 
 
 # Tests that a `src.text.dmesg` component fails with a
@@ -128,9 +117,8 @@ def test_date_time_after_max(
     tmp_path: pathlib.Path,
     ts: str,
 ):
-    _assert_fails(
-        _msg_iter(dmesg_comp_cls, tmp_path, ts), "Date/time is too far in the future"
-    )
+    with btu.raises_bt2_error_with_causes("Date/time is too far in the future"):
+        list(_msg_iter(dmesg_comp_cls, tmp_path, ts))
 
 
 # Tests the time of an event which a `src.text.dmesg` component creates
@@ -185,4 +173,5 @@ def test_sec_usec_after_max(
     tmp_path: pathlib.Path,
     ts: str,
 ):
-    _assert_fails(_msg_iter(dmesg_comp_cls, tmp_path, ts), "Timestamp is too large")
+    with btu.raises_bt2_error_with_causes("Timestamp is too large"):
+        list(_msg_iter(dmesg_comp_cls, tmp_path, ts))

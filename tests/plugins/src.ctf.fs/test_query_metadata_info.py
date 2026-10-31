@@ -14,10 +14,10 @@ def ctf_fs_comp_cls():
 
 
 def test_non_map_params(ctf_fs_comp_cls):
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(
+        "top-level is not a map value", first_only=True
+    ):
         bt2.QueryExecutor(ctf_fs_comp_cls, "metadata-info").query()
-
-    assert "top-level is not a map value" in exc_info.value[0].message
 
 
 @pytest.mark.parametrize("trace_name", ["succeed1", "lf-metadata", "crlf-metadata"])
@@ -40,20 +40,18 @@ def test_query_metadata_info(ctf_fs_comp_cls, ctf_traces_dir, trace_name):
 
 def test_non_existent_trace_dir(ctf_fs_comp_cls):
     with tempfile.TemporaryDirectory() as empty_dir:
-        with pytest.raises(bt2._Error) as exc_info:
+        with btu.raises_bt2_error_with_causes(
+            "No such file or directory", first_only=True
+        ):
             bt2.QueryExecutor(
                 ctf_fs_comp_cls, "metadata-info", {"path": empty_dir}
             ).query()
 
-        assert "No such file or directory" in exc_info.value[0].message
-
 
 def test_empty_metadata(ctf_fs_comp_cls, ctf_traces_dir):
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes("Metadata stream is empty", first_only=True):
         bt2.QueryExecutor(
             ctf_fs_comp_cls,
             "metadata-info",
             {"path": str(ctf_traces_dir / "1/fail/empty-metadata")},
         ).query()
-
-    assert "Metadata stream is empty" in exc_info.value[0].message

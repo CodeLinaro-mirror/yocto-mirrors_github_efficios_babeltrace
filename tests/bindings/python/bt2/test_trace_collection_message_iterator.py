@@ -6,6 +6,7 @@ import datetime
 
 import bt2
 import pytest
+import bt_tests_utils as btu
 
 
 def test_comp_spec_create_src_from_name():
@@ -1028,12 +1029,10 @@ def metadata_syntax_error_trace_dir(ctf_traces_dir):
 
 
 def test_ascd_metadata_syntax_error(metadata_syntax_error_trace_dir):
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(
+        'At line 3 in metadata stream: syntax error, unexpected CTF_RSBRAC: token="]"',
+        first_only=True,
+    ):
         bt2.TraceCollectionMessageIterator(
             [bt2.AutoSourceComponentSpec(str(metadata_syntax_error_trace_dir))]
         )
-
-    assert (
-        'At line 3 in metadata stream: syntax error, unexpected CTF_RSBRAC: token="]"'
-        in str(exc_info.value[0])
-    )

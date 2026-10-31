@@ -16,10 +16,10 @@ _CTF_VERSIONS = [pytest.param(1, id="ctf-1.8"), pytest.param(2, id="ctf-2")]
 
 @pytest.mark.parametrize("ctf_version", _CTF_VERSIONS)
 def test_non_map_params(ctf_fs_comp_cls, ctf_version):
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(
+        "top-level is not a map value", first_only=True
+    ):
         bt2.QueryExecutor(ctf_fs_comp_cls, "babeltrace.support-info").query()
-
-    assert "top-level is not a map value" in exc_info.value[0].message
 
 
 @pytest.mark.parametrize("ctf_version", _CTF_VERSIONS)

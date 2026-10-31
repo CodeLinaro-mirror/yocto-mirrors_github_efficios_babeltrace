@@ -51,18 +51,16 @@ def _convert_attach_expect_error(
     src_params,
     *expected_msgs,
 ):
-    with pytest.raises(bt2._Error) as exc_info:
-        btu.convert(
-            bt2.ComponentSpec(live_comp_cls, src_params),
-            btu.SinkComponentSpec(dummy_comp_cls),
-        )
-
-    # Close server now to avoid waiting for the timeout since the
-    # client didn't disconnect cleanly.
-    server.close()
-
-    for expected_msg in expected_msgs:
-        assert expected_msg in str(exc_info.value)
+    with btu.raises_bt2_error_with_causes(*expected_msgs):
+        try:
+            btu.convert(
+                bt2.ComponentSpec(live_comp_cls, src_params),
+                btu.SinkComponentSpec(dummy_comp_cls),
+            )
+        finally:
+            # Close server now to avoid waiting for the timeout since
+            # the client didn't disconnect cleanly.
+            server.close()
 
 
 # Test the basic listing of sessions.

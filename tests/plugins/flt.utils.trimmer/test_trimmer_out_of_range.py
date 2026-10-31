@@ -8,12 +8,6 @@ import pytest
 import bt_tests_utils as btu
 
 
-def _assert_has_cause(exc: bt2._Error, expected_msg: str):
-    assert any(expected_msg in cause.message for cause in exc), [
-        cause.message for cause in exc
-    ]
-
-
 # Tests that a `flt.utils.trimmer` component rejects a `begin` or `end`
 # date/time (UTC) of which the number of nanoseconds from origin is
 # negative or doesn't fit a signed 64-bit integer.
@@ -31,16 +25,15 @@ def test_out_of_range(
     param_name: str,
     date_time: str,
 ):
-    with pytest.raises(bt2._Error) as exc_info:
+    expected_msg = (
+        "Cannot convert date/time to nanoseconds from origin (date/time before "
+        f'the Unix epoch or after 2262?): param="{date_time}"'
+    )
+
+    with btu.raises_bt2_error_with_causes(expected_msg):
         bt2.Graph().add_component(
             trimmer_comp_cls, "flt", params={"gmt": True, param_name: date_time}
         )
-
-    _assert_has_cause(
-        exc_info.value,
-        "Cannot convert date/time to nanoseconds from origin (date/time before "
-        f'the Unix epoch or after 2262?): param="{date_time}"',
-    )
 
 
 # Tests that a `flt.utils.trimmer` component rejects a `begin` or `end`
@@ -66,13 +59,10 @@ def test_sec_out_of_range(
     param_name: str,
     time: str,
 ):
-    with pytest.raises(bt2._Error) as exc_info:
-        bt2.Graph().add_component(trimmer_comp_cls, "flt", params={param_name: time})
+    expected_msg = f'Time is out of range (nanoseconds from origin): param="{time}"'
 
-    _assert_has_cause(
-        exc_info.value,
-        f'Time is out of range (nanoseconds from origin): param="{time}"',
-    )
+    with btu.raises_bt2_error_with_causes(expected_msg):
+        bt2.Graph().add_component(trimmer_comp_cls, "flt", params={param_name: time})
 
 
 # Tests that a `flt.utils.trimmer` component accepts the largest number
@@ -139,14 +129,13 @@ def test_iter_before_epoch(
     graph.connect_ports(src_comp.output_ports["out"], flt_comp.input_ports["in"])
     graph.connect_ports(flt_comp.output_ports["out"], sink_comp.input_ports["in"])
 
-    with pytest.raises(bt2._Error) as exc_info:
-        graph.run()
-
-    _assert_has_cause(
-        exc_info.value,
+    expected_msg = (
         "Cannot convert date/time to nanoseconds from origin (date/time before "
-        "the Unix epoch or after 2262?): date-time=1969-12-31T12:00:00.000000000",
+        "the Unix epoch or after 2262?): date-time=1969-12-31T12:00:00.000000000"
     )
+
+    with btu.raises_bt2_error_with_causes(expected_msg):
+        graph.run()
 
 
 # Number of seconds from the Unix epoch of 2040-01-01 00:00:00 UTC,
@@ -234,11 +223,10 @@ def test_iter_after_2038(
         assert event_ns() == [(_SEC_2040 + 13 * 3600) * 1_000_000_000]
         return
 
-    with pytest.raises(bt2._Error) as exc_info:
-        event_ns()
-
-    _assert_has_cause(
-        exc_info.value,
+    expected_msg = (
         "Cannot convert timestamp to date and time (number of seconds doesn't "
-        "fit `time_t`): ts=2208988800",
+        "fit `time_t`): ts=2208988800"
     )
+
+    with btu.raises_bt2_error_with_causes(expected_msg):
+        event_ns()

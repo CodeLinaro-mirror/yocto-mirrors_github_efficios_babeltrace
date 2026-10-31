@@ -130,16 +130,11 @@ def test_accepts_empty_params(dummy_comp_cls):
     ],
 )
 def test_rejects_non_empty_params(dummy_comp_cls, params):
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes("This component expects no parameters"):
         btu.convert(
             bt2.ComponentSpec(_Src, obj=_Scenario.EMPTY_STREAM),
             btu.SinkComponentSpec(dummy_comp_cls, params=params),
         )
-
-    assert any(
-        "This component expects no parameters" in cause.message
-        for cause in exc_info.value
-    )
 
 
 # Verifies that a `sink.utils.dummy` component consumes every expected
@@ -174,14 +169,10 @@ def test_multiple_streams(dummy_comp_cls):
 # Verifies that an error raised by the upstream message iterator is
 # propagated through a `sink.utils.dummy` component.
 def test_propagates_upstream_error(dummy_comp_cls):
-    with pytest.raises(bt2._Error) as exc_info:
+    with btu.raises_bt2_error_with_causes(
+        "source failure", "Failed to get messages from upstream component"
+    ):
         btu.convert(
             bt2.ComponentSpec(_Src, obj=_Scenario.FAIL_IMMEDIATELY),
             btu.SinkComponentSpec(dummy_comp_cls),
         )
-
-    causes = list(exc_info.value)
-    assert any("source failure" in c.message for c in causes)
-    assert any(
-        "Failed to get messages from upstream component" in c.message for c in causes
-    )

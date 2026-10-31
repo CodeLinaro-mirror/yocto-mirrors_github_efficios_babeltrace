@@ -5,6 +5,7 @@ import sys
 
 import bt2
 import pytest
+import bt_tests_utils as btu
 
 
 @pytest.mark.parametrize("fail_on_load_error", [False, True])
@@ -63,7 +64,7 @@ class TestPythonPluginLoading:
         )
 
         if fail_on_load_error:
-            with pytest.raises(bt2._Error, match="Cannot load Python plugin"):
+            with btu.raises_bt2_error_with_causes("Cannot load Python plugin"):
                 bt2.find_plugins_in_path(
                     str(plugin_path), fail_on_load_error=fail_on_load_error
                 )
@@ -83,7 +84,7 @@ class TestPythonPluginLoading:
         before = {k for k in sys.modules if k.startswith("bt_plugin_")}
 
         if fail_on_load_error:
-            with pytest.raises(bt2._Error, match="Cannot load Python plugin"):
+            with btu.raises_bt2_error_with_causes("Cannot load Python plugin"):
                 bt2.find_plugins_in_path(
                     str(plugin_path), fail_on_load_error=fail_on_load_error
                 )
