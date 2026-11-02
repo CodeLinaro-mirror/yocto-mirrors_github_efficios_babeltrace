@@ -107,7 +107,7 @@ public:
     */
     static DataLen fromBytes(const unsigned long long lenBytes) noexcept
     {
-        return DataLen {safeMul(lenBytes, 8ULL)};
+        return DataLen {safeMulDbg(lenBytes, 8ULL)};
     }
 
     /*!
@@ -295,7 +295,7 @@ public:
     */
     DataLen& operator+=(const DataLen len) noexcept
     {
-        _mLenBits = safeAdd(_mLenBits, len._mLenBits);
+        _mLenBits = safeAddDbg(_mLenBits, len._mLenBits);
         return *this;
     }
 
@@ -311,7 +311,7 @@ public:
     */
     DataLen& operator-=(const DataLen len) noexcept
     {
-        _mLenBits = safeSub(_mLenBits, len._mLenBits);
+        _mLenBits = safeSubDbg(_mLenBits, len._mLenBits);
         return *this;
     }
 
@@ -327,7 +327,7 @@ public:
     */
     DataLen& operator*=(const unsigned long long mul) noexcept
     {
-        _mLenBits = safeMul(_mLenBits, mul);
+        _mLenBits = safeMulDbg(_mLenBits, mul);
         return *this;
     }
 
@@ -351,7 +351,7 @@ private:
 */
 inline DataLen operator+(const DataLen lenA, const DataLen lenB) noexcept
 {
-    return DataLen::fromBits(safeAdd(*lenA, *lenB));
+    return DataLen::fromBits(safeAddDbg(*lenA, *lenB));
 }
 
 /*!
@@ -370,7 +370,7 @@ inline DataLen operator+(const DataLen lenA, const DataLen lenB) noexcept
 */
 inline DataLen operator-(const DataLen lenA, const DataLen lenB) noexcept
 {
-    return DataLen::fromBits(safeSub(*lenA, *lenB));
+    return DataLen::fromBits(safeSubDbg(*lenA, *lenB));
 }
 
 /*!
@@ -389,7 +389,7 @@ inline DataLen operator-(const DataLen lenA, const DataLen lenB) noexcept
 */
 inline DataLen operator*(const DataLen len, const unsigned long long mul) noexcept
 {
-    return DataLen::fromBits(safeMul(*len, mul));
+    return DataLen::fromBits(safeMulDbg(*len, mul));
 }
 
 /*
@@ -431,7 +431,7 @@ inline DataLen operator"" _bits(const unsigned long long val) noexcept
 */
 inline DataLen operator"" _KiBits(const unsigned long long val) noexcept
 {
-    return DataLen::fromBits(safeMul(val, 1024ULL));
+    return DataLen::fromBits(safeMulDbg(val, 1024ULL));
 }
 
 /*!
@@ -447,7 +447,7 @@ inline DataLen operator"" _KiBits(const unsigned long long val) noexcept
 */
 inline DataLen operator"" _MiBits(const unsigned long long val) noexcept
 {
-    return DataLen::fromBits(safeMul(val, 1024ULL * 1024));
+    return DataLen::fromBits(safeMulDbg(val, 1024ULL * 1024));
 }
 
 /*!
@@ -463,7 +463,7 @@ inline DataLen operator"" _MiBits(const unsigned long long val) noexcept
 */
 inline DataLen operator"" _GiBits(const unsigned long long val) noexcept
 {
-    return DataLen::fromBits(safeMul(val, 1024ULL * 1024 * 1024));
+    return DataLen::fromBits(safeMulDbg(val, 1024ULL * 1024 * 1024));
 }
 
 /*!
@@ -495,7 +495,7 @@ inline DataLen operator"" _bytes(const unsigned long long val) noexcept
 */
 inline DataLen operator"" _KiBytes(const unsigned long long val) noexcept
 {
-    return DataLen::fromBytes(safeMul(val, 1024ULL));
+    return DataLen::fromBytes(safeMulDbg(val, 1024ULL));
 }
 
 /*!
@@ -511,7 +511,7 @@ inline DataLen operator"" _KiBytes(const unsigned long long val) noexcept
 */
 inline DataLen operator"" _MiBytes(const unsigned long long val) noexcept
 {
-    return DataLen::fromBytes(safeMul(val, 1024ULL * 1024));
+    return DataLen::fromBytes(safeMulDbg(val, 1024ULL * 1024));
 }
 
 /*!
@@ -527,7 +527,7 @@ inline DataLen operator"" _MiBytes(const unsigned long long val) noexcept
 */
 inline DataLen operator"" _GiBytes(const unsigned long long val) noexcept
 {
-    return DataLen::fromBytes(safeMul(val, 1024ULL * 1024 * 1024));
+    return DataLen::fromBytes(safeMulDbg(val, 1024ULL * 1024 * 1024));
 }
 
 } /* namespace literals::datalen */
