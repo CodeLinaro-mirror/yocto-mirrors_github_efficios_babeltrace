@@ -18,6 +18,7 @@
 #include <functional>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -408,7 +409,8 @@ private:
      *
      * Returns false (writing nothing to the output buffer) if
      * `_mOpts.clkFmt` is `ClkFormat::SecFromOrigin`, the timestamp is
-     * negative, or one of the underlying timing/format calls fails.
+     * negative, its number of seconds doesn't fit `time_t`, or one of
+     * the underlying timing/format calls fails.
      * Callers should fall back to the `ClkFormat::SecFromOrigin` format
      * in that case.
      */
@@ -425,6 +427,17 @@ private:
                            "ts-s={}, ts-ns={}",
                            -static_cast<std::int64_t>(tsSecAbs), tsNsAbs);
                 _mNegTsWarnDone = true;
+            }
+
+            return false;
+        }
+
+        if (tsSecAbs > static_cast<std::uint64_t>(std::numeric_limits<time_t>::max())) {
+            if (!_mTimeTOverflowWarnDone) {
+                BT_CPPLOGW("Falling back to seconds from origin format for timestamp of which "
+                           "the number of seconds doesn't fit `time_t`: ts-s={}, ts-ns={}",
+                           tsSecAbs, tsNsAbs);
+                _mTimeTOverflowWarnDone = true;
             }
 
             return false;
@@ -1625,6 +1638,12 @@ private:
      * negative timestamp warning.
      */
     bool _mNegTsWarnDone = false;
+
+    /*
+     * Whether _writeTsWall() already emitted the one-shot warning about
+     * a timestamp of which the number of seconds doesn't fit `time_t`.
+     */
+    bool _mTimeTOverflowWarnDone = false;
 
     /*
      * For each bit of the integer backing the enumeration field value:

@@ -131,6 +131,10 @@ def pytest_collection_modifyitems(
         if item.get_closest_marker("needs_64_bit_time_t") and time_t_is_32_bit:
             item.add_marker(pytest.mark.skip(reason="`time_t` is a 32-bit integer"))
 
+        # Handle `needs_32_bit_time_t` marker
+        if item.get_closest_marker("needs_32_bit_time_t") and not time_t_is_32_bit:
+            item.add_marker(pytest.mark.skip(reason="`time_t` isn't a 32-bit integer"))
+
 
 @pytest.fixture(scope="session")
 def src_tests_dir() -> pathlib.Path:
