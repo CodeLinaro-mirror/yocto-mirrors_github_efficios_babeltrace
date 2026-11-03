@@ -5,6 +5,7 @@ import types
 
 import bt2
 import pytest
+import bt_tests_utils as btu
 
 
 def _assert_has_cause(exc: bt2._Error, expected_msg: str):
@@ -140,4 +141,99 @@ def test_iter_before_epoch(
         exc_info.value,
         "Cannot convert date/time to nanoseconds from origin (date/time before "
         "the Unix epoch or after 2262?): date-time=1969-12-31 12:00:00.000000000",
+    )
+
+
+# Number of seconds from the Unix epoch of 2040-01-01 00:00:00 UTC,
+# which doesn't fit a signed 32-bit integer.
+_SEC_2040 = 2_208_988_800
+
+
+class _After2038MsgIter(bt2._UserMessageIterator):
+    def __init__(self, config, port):
+        stream = port.user_data.tc().create_stream(port.user_data.sc)
+
+        # The default clock class has an offset of `_SEC_2040` seconds
+        # from the Unix epoch, therefore those event messages are at
+        # 2040-01-01 00:00:00 and 13:00:00 UTC.
+        self._msgs = [
+            self._create_stream_beginning_message(stream),
+            self._create_event_message(port.user_data.ec, stream, 0),
+            self._create_event_message(port.user_data.ec, stream, 13 * 3600),
+            self._create_stream_end_message(stream),
+        ]
+        self._at = 0
+
+        # The trimmer message iterator seeks its upstream message
+        # iterator to the beginning time
+        config.can_seek_forward = True
+
+    def _user_seek_beginning(self):
+        self._at = 0
+
+    def __next__(self):
+        if self._at == len(self._msgs):
+            raise StopIteration
+
+        self._at += 1
+        return self._msgs[self._at - 1]
+
+
+class _After2038Src(bt2._UserSourceComponent, message_iterator_class=_After2038MsgIter):
+    def __init__(self, config, params, obj):
+        tc = self._create_trace_class()
+        sc = tc.create_stream_class(
+            default_clock_class=self._create_clock_class(
+                frequency=1, offset=bt2.ClockOffset(_SEC_2040)
+            )
+        )
+        self._add_output_port(
+            "out",
+            types.SimpleNamespace(tc=tc, sc=sc, ec=sc.create_event_class(name="ev")),
+        )
+
+
+# Tests that a `flt.utils.trimmer` message iterator converts a `begin`
+# time without a date to a number of nanoseconds from origin on the
+# date of the first message (after 2038) when its number of seconds fits
+# `time_t`, otherwise that it fails.
+@pytest.mark.parametrize(
+    "fits_time_t",
+    [
+        pytest.param(True, marks=pytest.mark.needs_64_bit_time_t, id="64-bit-time-t"),
+        pytest.param(False, marks=pytest.mark.needs_32_bit_time_t, id="32-bit-time-t"),
+    ],
+)
+def test_iter_after_2038(
+    trimmer_comp_cls: bt2._FilterComponentClassConst, fits_time_t: bool
+):
+    def event_ns():
+        msg_it = bt2.TraceCollectionMessageIterator(
+            [bt2.ComponentSpec(_After2038Src)],
+            [
+                bt2.ComponentSpec(
+                    trimmer_comp_cls, params={"gmt": True, "begin": "12:00"}
+                )
+            ],
+            plugin_set=btu.plugin_set(),
+        )
+
+        return [
+            msg.default_clock_snapshot.ns_from_origin
+            for msg in msg_it
+            if isinstance(msg, bt2._EventMessageConst)
+        ]
+
+    if fits_time_t:
+        # Only the 2040-01-01 13:00:00 UTC event message remains
+        assert event_ns() == [(_SEC_2040 + 13 * 3600) * 1_000_000_000]
+        return
+
+    with pytest.raises(bt2._Error) as exc_info:
+        event_ns()
+
+    _assert_has_cause(
+        exc_info.value,
+        "Cannot convert timestamp to date and time (number of seconds doesn't "
+        "fit `time_t`): ts=2208988800",
     )

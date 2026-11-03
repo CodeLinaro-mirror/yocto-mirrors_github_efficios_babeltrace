@@ -962,10 +962,21 @@ int set_trimmer_iterator_bound(struct trimmer_iterator *trimmer_it,
 	struct trimmer_comp *trimmer_comp = trimmer_it->trimmer_comp;
 	struct tm tm;
 	struct tm *res;
-	time_t time_seconds = (time_t) (ns_from_origin / NS_PER_S);
+	const int64_t ts_sec = ns_from_origin / NS_PER_S;
+	time_t time_seconds = (time_t) ts_sec;
 	int ret = 0;
 
 	BT_ASSERT(!bound->is_set);
+
+	if ((int64_t) time_seconds != ts_sec) {
+		BT_COMP_LOGE_APPEND_CAUSE(trimmer_comp->self_comp,
+			"Cannot convert timestamp to date and time "
+			"(number of seconds doesn't fit `time_t`): "
+			"ts=%" PRId64, ts_sec);
+		ret = -1;
+		goto end;
+	}
+
 	errno = 0;
 
 	/* We only need to extract the date from this time */
