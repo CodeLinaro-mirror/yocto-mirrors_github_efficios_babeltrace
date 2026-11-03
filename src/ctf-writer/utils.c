@@ -28,7 +28,6 @@ const char * const reserved_keywords_str[] = {"align", "callsite",
 	"unsigned", "variant", "void", "_Bool", "_Complex", "_Imaginary"};
 
 static GHashTable *reserved_keywords_set;
-static int init_done;
 
 static
 void try_init_reserved_keywords(void)
@@ -50,8 +49,6 @@ void try_init_reserved_keywords(void)
 
 		g_hash_table_insert(reserved_keywords_set, quark, quark);
 	}
-
-	init_done = 1;
 }
 
 static __attribute__((destructor))
