@@ -295,6 +295,11 @@ class _Catch2TestItem(pytest.Item):
 
         sys.stdout.write(result.stdout)
 
+        # Catch2 exits with status 4 when all the selected test cases
+        # (only one here) skip themselves with `SKIP()`.
+        if result.returncode == 4:
+            pytest.skip(f"Catch2 test skipped: `{self._catch2_test_name}`")
+
         if result.returncode != 0:
             pytest.fail(f"Catch2 test failed: `{self._catch2_test_name}`")
 
