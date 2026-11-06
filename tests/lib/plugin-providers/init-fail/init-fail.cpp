@@ -22,7 +22,7 @@ bt_plugin_provider_initialize_func_status providerFailInit(bt_self_plugin_provid
     return BT_PLUGIN_PROVIDER_INITIALIZE_FUNC_STATUS_ERROR;
 }
 
-void providerFailFinalize(bt_self_plugin_provider *)
+[[noreturn]] void providerFailFinalize(bt_self_plugin_provider *)
 {
     /* This should never be called. */
     std::abort();
