@@ -302,13 +302,24 @@ TEST_CASE("`bt2c::Tz` with a named time zone having negative DST")
     /*
      * The time zone database flags the winter time (GMT) of
      * `Europe/Dublin` as DST, and its summer time (IST) as standard
-     * time. A POSIX `TZ` string can't express this: only run this test
-     * if the system knows `Europe/Dublin`.
+     * time. Only run this test if the system knows `Europe/Dublin`.
      */
     const auto tz = bt2c::Tz::createNamed("Europe/Dublin");
 
     if (!tz) {
         SKIP("Unknown `Europe/Dublin` time zone");
+    }
+
+    /*
+     * With a "slim" TZif file (for example, the Yocto default), GLib
+     * computes transitions from the POSIX `TZ` string footer
+     * (`IST-1GMT0,M10.5.0,M3.5.0/1`) instead of using pre-computed
+     * ones. It misinterprets the explicit `0` DST offset of `GMT0` and
+     * uses its default (standard time offset + 1 h) instead, making
+     * winter time UTC+2 instead of UTC. Skip this test in that case.
+     */
+    if (tz->utcOffsetSec(winterSec) != 0) {
+        SKIP("GLib computes a wrong winter UTC offset for `Europe/Dublin`");
     }
 
     SECTION("Date/time which occurs twice (end of IST): first occurrence")
