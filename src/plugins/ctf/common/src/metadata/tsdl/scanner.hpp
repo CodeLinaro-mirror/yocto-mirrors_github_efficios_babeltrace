@@ -38,6 +38,11 @@ struct ctf_scanner
     struct objstack *objstack = nullptr;
 };
 
+/*
+ * Scanner of the current parsing operation, defined in `parser.ypp`.
+ */
+extern thread_local const ctf_scanner *currentCtfScanner;
+
 struct ctf_scanner *ctf_scanner_alloc(const bt2c::Logger& parentLogger);
 
 void ctf_scanner_free(struct ctf_scanner *scanner);

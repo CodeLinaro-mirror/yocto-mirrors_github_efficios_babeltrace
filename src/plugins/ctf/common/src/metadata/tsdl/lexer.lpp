@@ -27,8 +27,6 @@
 			return CTF_ERROR;				\
 		}							\
 	} while (0)
-
-extern thread_local const ctf_scanner *const currentCtfScanner;
 %}
 
 %x comment_ml comment_sl string_lit char_const
