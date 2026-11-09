@@ -55,8 +55,6 @@ integers.
 #include <optional>
 #include <type_traits>
 
-#include <glib.h>
-
 #include "common/assert.h"
 
 namespace bt2c {
@@ -80,7 +78,7 @@ constexpr std::optional<T> safeMul(const T a, const T b) noexcept
 {
     static_assert(std::is_unsigned_v<T>, "`T` is an unsigned type.");
 
-    if (G_UNLIKELY(a != 0 && b != 0 && a > std::numeric_limits<T>::max() / b)) {
+    if (a != 0 && b != 0 && a > std::numeric_limits<T>::max() / b) {
         return std::nullopt;
     }
 
@@ -131,12 +129,12 @@ constexpr std::optional<T> safeAdd(const T a, const T b) noexcept
     static_assert(std::is_integral_v<T>, "`T` is an integral type.");
 
     if constexpr (std::is_signed_v<T>) {
-        if (G_UNLIKELY((b > 0 && a > std::numeric_limits<T>::max() - b) ||
-                       (b < 0 && a < std::numeric_limits<T>::min() - b))) {
+        if ((b > 0 && a > std::numeric_limits<T>::max() - b) ||
+            (b < 0 && a < std::numeric_limits<T>::min() - b)) {
             return std::nullopt;
         }
     } else {
-        if (G_UNLIKELY(a > std::numeric_limits<T>::max() - b)) {
+        if (a > std::numeric_limits<T>::max() - b) {
             return std::nullopt;
         }
     }
@@ -189,12 +187,12 @@ constexpr std::optional<T> safeSub(const T a, const T b) noexcept
     static_assert(std::is_integral_v<T>, "`T` is an integral type.");
 
     if constexpr (std::is_signed_v<T>) {
-        if (G_UNLIKELY((b < 0 && a > std::numeric_limits<T>::max() + b) ||
-                       (b > 0 && a < std::numeric_limits<T>::min() + b))) {
+        if ((b < 0 && a > std::numeric_limits<T>::max() + b) ||
+            (b > 0 && a < std::numeric_limits<T>::min() + b)) {
             return std::nullopt;
         }
     } else {
-        if (G_UNLIKELY(a < b)) {
+        if (a < b) {
             return std::nullopt;
         }
     }
