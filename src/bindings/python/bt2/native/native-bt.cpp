@@ -16,6 +16,7 @@
 #include <babeltrace2/babeltrace.h>
 
 #include "common/func-status.h"
+#include "common/macros.h"
 
 #include "api.hpp"
 #include "runtime/exc.hpp"
@@ -99,7 +100,14 @@ const bt2py::PyModuleBuilder& pyModuleBuilder()
 
 } /* namespace */
 
-PyMODINIT_FUNC PyInit_native_bt();
+/*
+ * Before Python 3.9, `PyMODINIT_FUNC` doesn't set the visibility of the
+ * function, but this module is built with `-fvisibility=hidden`.
+ *
+ * GCC ignores `BT_EXPORT` before `PyMODINIT_FUNC` because the latter
+ * starts with `extern "C"`, therefore spell out the declaration.
+ */
+extern "C" BT_EXPORT PyObject *PyInit_native_bt();
 
 PyMODINIT_FUNC PyInit_native_bt()
 {
