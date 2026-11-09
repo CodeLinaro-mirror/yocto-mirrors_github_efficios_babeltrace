@@ -27,9 +27,11 @@ try:
         import bt2
         import moultipart
         import bt_tests_utils as btu
-    except ImportError:
+    except ImportError as exc:
         pytest.exit(
-            "Cannot import `bt2`, `moultipart`, or `bt_tests_utils`: make sure to source `tests/utils/env.sh` before you run `bt-pytest`!",
+            f"Cannot import `bt2`, `moultipart`, or `bt_tests_utils`:\n\n"
+            f"  {type(exc).__name__}: {exc}\n\n"
+            "Make sure to source `tests/utils/env.sh` before you run `bt-pytest`!",
             returncode=1,
         )
 finally:
