@@ -411,10 +411,10 @@ any other <code>BT_PLUGIN*()</code> macro.
 
 @bt_pre_not_null{_name}
 */
-#define BT_PLUGIN_WITH_ID(_id, _name)					\
-	struct __bt_plugin_descriptor __bt_plugin_descriptor_##_id = {	\
-		.name = _name,						\
-	};								\
+#define BT_PLUGIN_WITH_ID(_id, _name)						\
+	static struct __bt_plugin_descriptor __bt_plugin_descriptor_##_id = {	\
+		.name = _name,							\
+	};									\
 	static struct __bt_plugin_descriptor const * const __bt_plugin_descriptor_##_id##_ptr __BT_PLUGIN_DESCRIPTOR_ATTRS = &__bt_plugin_descriptor_##_id
 
 /*!
@@ -422,7 +422,7 @@ any other <code>BT_PLUGIN*()</code> macro.
     Alias of BT_PLUGIN_WITH_ID() with the \bt_p{_id} parameter set to
     <code>auto</code>.
 */
-#define BT_PLUGIN(_name) 		static BT_PLUGIN_WITH_ID(auto, #_name)
+#define BT_PLUGIN(_name) 		BT_PLUGIN_WITH_ID(auto, #_name)
 
 /*! @} */
 

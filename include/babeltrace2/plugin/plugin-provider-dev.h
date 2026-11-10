@@ -307,7 +307,7 @@ use any other <code>BT_PLUGIN_PROVIDER*()</code> macro.
 @bt_pre_not_null{_name}
 */
 #define BT_PLUGIN_PROVIDER_WITH_ID(_id, _name)							\
-	struct __bt_plugin_provider_descriptor __bt_plugin_provider_descriptor_##_id = {	\
+	static struct __bt_plugin_provider_descriptor __bt_plugin_provider_descriptor_##_id = {	\
 		.name = _name,									\
 	};											\
 	static struct __bt_plugin_provider_descriptor const * const __bt_plugin_provider_descriptor_##_id##_ptr __BT_PLUGIN_PROVIDER_DESCRIPTOR_ATTRS = &__bt_plugin_provider_descriptor_##_id
@@ -317,7 +317,7 @@ use any other <code>BT_PLUGIN_PROVIDER*()</code> macro.
     Alias of BT_PLUGIN_PROVIDER_WITH_ID() with the \bt_p{_id} parameter
     set to <code>auto</code>.
 */
-#define BT_PLUGIN_PROVIDER(_name) 		static BT_PLUGIN_PROVIDER_WITH_ID(auto, #_name)
+#define BT_PLUGIN_PROVIDER(_name) 		BT_PLUGIN_PROVIDER_WITH_ID(auto, #_name)
 
 /*! @} */
 
