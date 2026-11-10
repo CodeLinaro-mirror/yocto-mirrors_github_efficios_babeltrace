@@ -457,7 +457,7 @@ public:
     template <typename EnumT>
     void addWiseEnumConstants(const char * const prefix)
     {
-        for (const auto& enumerator : wise_enum::range<EnumT>) {
+        for (const auto& enumerator : wise_enum::enumerators<EnumT>::range) {
             this->addConstant(prefix + _upperSnakeCase(enumerator.name),
                               static_cast<long long>(enumerator.value));
         }
