@@ -918,6 +918,7 @@ m4_define([WARN_FLAGS_LIST], [ dnl
   -Wextra dnl
   -Wmissing-prototypes dnl
   -Wmissing-declarations dnl
+  -Wmissing-variable-declarations dnl
   -Wnull-dereference dnl
   -Wundef dnl
   -Wredundant-decls dnl
